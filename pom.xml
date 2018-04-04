@@ -15,6 +15,8 @@
 	</scm>
 
 	<properties>
+		<slf4j.version>1.7.25</slf4j.version>
+		<dokan-java.version>0.1</dokan-java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -41,14 +43,22 @@
 		<dependency>
 			<groupId>com.github.dokan-dev</groupId>
 			<artifactId>dokan-java</artifactId>
-			<version>0.1</version>
+			<version>${dokan-java.version}</version>
 		</dependency>
 
+		<!-- Testing via junit -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>3.8.1</version>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- Logging -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 	</dependencies>
 
