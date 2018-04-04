@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.cryptomator</groupId>
+	<artifactId>dokany-nio-adapter</artifactId>
+	<version>0.1.0-SNAPSHOT</version>
+	<description>Access resources at a given NIO path via Dokany.</description>
+	<name>dokany-nio-adapter</name>
+	<url>https://github.com/cryptomator/dokany-nio-adapter</url>
+
+	<scm>
+		<connection>scm:git:git@github.com:cryptomator/fuse-nio-adapter.git</connection>
+		<developerConnection>scm:git:git@github.com:cryptomator/fuse-nio-adapter.git</developerConnection>
+		<url>git@github.com:cryptomator/fuse-nio-adapter.git</url>
+	</scm>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<licenses>
+		<license>
+			<name>GNU Affero General Public License (AGPL) version 3.0</name>
+			<url>https://www.gnu.org/licenses/agpl.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Armin Schrenk</name>
+			<email>armin.schrenk@zoho.eu</email>
+			<timezone>+1</timezone>
+			<organization>cryptomator.org</organization>
+			<organizationUrl>http://cryptomator.org</organizationUrl>
+		</developer>
+	</developers>
+
+	<dependencies>
+		<!-- dokany stuff -->
+		<dependency>
+			<groupId>com.github.dokan-dev</groupId>
+			<artifactId>dokan-java</artifactId>
+			<version>0.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>8</source>
+					<target>8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<packaging>jar</packaging>
+</project>
