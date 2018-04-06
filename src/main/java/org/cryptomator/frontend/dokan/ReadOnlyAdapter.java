@@ -120,7 +120,7 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 	@Override
 	public FileData read(String path, int offset, int readLength) throws IOException {
 		//stubby
-		return null;
+		return new FileData(new byte[]{}, 0);
 	}
 
 	public int write(String s, int i, byte[] bytes, int i1) throws IOException {
@@ -241,13 +241,15 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 			if (attr.fileKey() != null) {
 				index = (long) attr.fileKey();
 			}
-			return new FullFileInfo(p.getFileName().toString(),
+			FullFileInfo data = new FullFileInfo(p.getFileName().toString(),
 					index,
 					FileUtil.dosAttributesToEnumIntegerSet(attr),
 					volumeInfo.getSerialNumber(),
 					FileUtil.javaFileTimeToWindowsFileTime(attr.creationTime()),
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastAccessTime()),
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastModifiedTime()));
+			data.setSize(attr.size());
+			return data;
 		} else {
 			throw new FileNotFoundException();
 		}
