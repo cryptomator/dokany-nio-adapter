@@ -241,7 +241,7 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 			if (attr.fileKey() != null) {
 				index = (long) attr.fileKey();
 			}
-			return new FullFileInfo(p.toString(),
+			return new FullFileInfo(p.getFileName().toString(),
 					index,
 					FileUtil.dosAttributesToEnumIntegerSet(attr),
 					volumeInfo.getSerialNumber(),
