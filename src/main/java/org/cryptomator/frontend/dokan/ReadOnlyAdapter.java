@@ -3,8 +3,10 @@ package org.cryptomator.frontend.dokan;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.Win32FindStreamData;
 import com.dokany.java.constants.FileAttribute;
+import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.structure.*;
 import com.sun.jna.platform.win32.WinBase;
+import org.apache.commons.io.IOCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,15 +22,30 @@ import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * TODO: research must be taken wether we need all the path checking or not (because before every operation a zwCreate is called)!
  */
 public class ReadOnlyAdapter extends DokanyFileSystem {
+
+	private IOCase ioCase;
+
 	public static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 
 	public ReadOnlyAdapter(DeviceOptions deviceOptions, VolumeInformation volumeInfo, FreeSpace freeSpace, Date rootCreationDate, String rootPath) {
 		super(deviceOptions, volumeInfo, freeSpace, rootCreationDate, rootPath);
+		if (volumeInfo.getFileSystemFeatures().contains(FileSystemFeature.CASE_PRESERVED_NAMES)
+				&& volumeInfo.getFileSystemFeatures().contains(FileSystemFeature.CASE_PRESERVED_NAMES)) {
+			ioCase = IOCase.SENSITIVE;
+		} else {
+			ioCase = IOCase.INSENSITIVE;
+		}
+	}
+
+	private Path getRootedPath(String s) {
+		return FileUtil.resolveToAbsoluteAndNormalizedPath(getRoot() + s);
 	}
 
 	public void mounted() throws IOException {
@@ -43,8 +60,37 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 		return Files.exists(Paths.get(s));
 	}
 
-	public Set<WinBase.WIN32_FIND_DATA> findFilesWithPattern(String s, DokanyFileInfo dokanyFileInfo, String s1) throws IOException {
-		return null;
+	/**
+	 * List all Files which contains the given pattern.
+	 * WARNING: currently the used libary uses the null pattern to list ALL files in the path, thus this method should be null save
+	 *
+	 * @param path
+	 * @param dokanyFileInfo
+	 * @param pattern
+	 * @return
+	 * @throws IOException
+	 */
+	public Set<WinBase.WIN32_FIND_DATA> findFilesWithPattern(String path, DokanyFileInfo dokanyFileInfo, String pattern) throws IOException {
+		Path p = getRootedPath(path);
+		Set<WinBase.WIN32_FIND_DATA> findings;
+		try (Stream<Path> stream = Files.list(p)) {
+			//stream.filter(path1 -> path.toString().contains(pattern)).map(FileUtil::pathToFindData);
+			Stream<Path> streamByPattern;
+			if (pattern == null || pattern.equals("*")) {
+				//we want to list all files
+				streamByPattern = stream;
+			} else {
+				streamByPattern = stream.filter(path1 -> path1.toString().contains(pattern));
+			}
+			findings = streamByPattern.map(path2 -> {
+				try {
+					return getInfoByPath(path2).toWin32FindData();
+				} catch (IOException e) {
+					return new WinBase.WIN32_FIND_DATA();
+				}
+			}).collect(Collectors.toSet());
+		}
+		return findings;
 	}
 
 	public Set<Win32FindStreamData> findStreams(String s) throws IOException {
@@ -95,8 +141,8 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 	}
 
 	public void cleanup(String path, DokanyFileInfo dokanyFileInfo) throws IOException {
-		if(dokanyFileInfo.deleteOnClose()){
-			Files.delete(FileUtil.resolveToAbsoluteAndNormalizedPath(path));
+		if (dokanyFileInfo.deleteOnClose()) {
+			Files.delete(getRootedPath(path));
 		}
 	}
 
@@ -113,46 +159,64 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 		//stubby
 	}
 
+	/**
+	 * Method nowhere used
+	 *
+	 * @param s
+	 * @return
+	 * @throws IOException
+	 */
 	public long truncate(String s) throws IOException {
 		return 0;
 	}
 
+	/**
+	 * TODO: differnec between this method and setEndOfFile??
+	 *
+	 * @param path
+	 * @param size
+	 * @throws IOException
+	 */
 	public void setAllocationSize(String path, int size) throws IOException {
-		Path p = FileUtil.resolveToAbsoluteAndNormalizedPath(path);
-		if(Files.exists(p)){
-			try (FileChannel fc = FileChannel.open(p, StandardOpenOption.WRITE) ){
+		Path p = getRootedPath(path);
+		if (Files.exists(p)) {
+			try (FileChannel fc = FileChannel.open(p, StandardOpenOption.WRITE)) {
 				fc.truncate(size);
 			}
-		}
-		else {
+		} else {
 			throw new FileNotFoundException();
 		}
 	}
 
-	public void setEndOfFile(String s, int i) throws IOException {
-
+	/**
+	 * this method depends on physical file size, meaning the sectors it uses on a disk
+	 *
+	 * @param path
+	 * @param size
+	 * @throws IOException
+	 */
+	public void setEndOfFile(String path, int size) throws IOException {
 	}
 
 	/**
 	 * Sets the supported file attributes of a file given by its path
 	 * TODO: WRITE TEST
+	 *
 	 * @param path String encoding the path of the desired file
 	 * @param attrs Set of file attributes
 	 * @throws IOException
 	 */
 	public void setAttributes(String path, EnumIntegerSet<FileAttribute> attrs) throws IOException {
-		Path p = FileUtil.resolveToAbsoluteAndNormalizedPath(path);
-		if(Files.exists(p)){
-			for(FileAttribute attr : attrs){
-				if(FileUtil.isFileAttributeSupported(attr)){
-					FileUtil.setAttribute(p,attr);
-				}
-				else{
+		Path p = getRootedPath(path);
+		if (Files.exists(p)) {
+			for (FileAttribute attr : attrs) {
+				if (FileUtil.isFileAttributeSupported(attr)) {
+					FileUtil.setAttribute(p, attr);
+				} else {
 					LOG.debug("Windows file attribute {} is currently not supported and thus will be ignored", attr.name());
 				}
 			}
-		}
-		else{
+		} else {
 			throw new FileNotFoundException();
 		}
 	}
@@ -160,16 +224,21 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 	/**
 	 * Returns information of a file given by path
 	 * TODO: support more windows file attributes!
+	 *
 	 * @param path String encoding the path of the desired file
 	 * @return FullFileInfo
 	 * @throws IOException
 	 */
 	public FullFileInfo getInfo(String path) throws IOException {
-		Path p = FileUtil.resolveToAbsoluteAndNormalizedPath(path);
-		if(Files.exists(p)){
+		return getInfoByPath(getRootedPath(path));
+
+	}
+
+	private FullFileInfo getInfoByPath(Path p) throws IOException {
+		if (Files.exists(p)) {
 			DosFileAttributes attr = Files.getFileAttributeView(p, DosFileAttributeView.class).readAttributes();
 			long index = 0;
-			if(attr.fileKey() != null){
+			if (attr.fileKey() != null) {
 				index = (long) attr.fileKey();
 			}
 			return new FullFileInfo(p.toString(),
@@ -179,14 +248,14 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 					FileUtil.javaFileTimeToWindowsFileTime(attr.creationTime()),
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastAccessTime()),
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastModifiedTime()));
-		}
-		else{
+		} else {
 			throw new FileNotFoundException();
 		}
 	}
 
 	/**
 	 * Sets the Creation, last access and last modified time stamps of a file given by path
+	 *
 	 * @param path String encoding the path of the desired file
 	 * @param creationTime new creation timestamp given in windows coding
 	 * @param lastAccessTime new last access timestamp given in windows coding
@@ -194,13 +263,12 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 	 * @throws IOException
 	 */
 	public void setTime(String path, WinBase.FILETIME creationTime, WinBase.FILETIME lastAccessTime, WinBase.FILETIME lastModificationTime) throws IOException {
-		Path p = Paths.get(path).normalize().toAbsolutePath();
-		if(Files.exists(p)){
+		Path p = getRootedPath(path);
+		if (Files.exists(p)) {
 			Files.setAttribute(p, "basic:creationTime", FileTime.fromMillis(creationTime.toDate().getTime()));
 			Files.setAttribute(p, "basic:lastAccessTime", FileTime.fromMillis(lastAccessTime.toDate().getTime()));
 			Files.setAttribute(p, "basic:lastModificationTime", FileTime.fromMillis(lastModificationTime.toDate().getTime()));
-		}
-		else {
+		} else {
 			throw new FileNotFoundException();
 		}
 	}

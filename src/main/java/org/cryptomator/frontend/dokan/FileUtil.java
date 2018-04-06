@@ -4,15 +4,10 @@ import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.sun.jna.platform.win32.WinBase;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
@@ -55,31 +50,43 @@ public class FileUtil {
 		return new WinBase.FILETIME(new Date(t.toMillis()));
 	}
 
-	public static Path resolveToAbsoluteAndNormalizedPath(String s){
+	public static Path resolveToAbsoluteAndNormalizedPath(String s) {
 		return Paths.get(s).normalize().toAbsolutePath();
 	}
 
 	/**
 	 * Indicates wether if the given windows file attribute is supported
+	 *
 	 * @param attr
 	 * @return
 	 */
-	public static boolean isFileAttributeSupported(FileAttribute attr){
-		switch (attr){
-			case ARCHIVE: case HIDDEN: case READONLY: case SYSTEM: case DIRECTORY: case NORMAL: case REPARSE_POINT:
+	public static boolean isFileAttributeSupported(FileAttribute attr) {
+		switch (attr) {
+			case ARCHIVE:
+			case HIDDEN:
+			case READONLY:
+			case SYSTEM:
+			case DIRECTORY:
+			case NORMAL:
+			case REPARSE_POINT:
 				return true;
 			default:
 				return false;
 		}
 	}
 
+	/**
+	 * @param p
+	 * @param attr
+	 * @throws IOException
+	 */
 	public static void setAttribute(Path p, FileAttribute attr) throws IOException {
 		switch (attr) {
 			case ARCHIVE:
 			case HIDDEN:
 			case READONLY:
 			case SYSTEM:
-				Files.setAttribute(p, "dos:"+attr.name().toLowerCase(),true);
+				Files.setAttribute(p, "dos:" + attr.name().toLowerCase(), true);
 				break;
 			case REPARSE_POINT:
 				Files.setAttribute(p, "basic:symboliclink", true);
