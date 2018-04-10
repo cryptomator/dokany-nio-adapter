@@ -21,6 +21,7 @@ import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,11 +32,13 @@ import java.util.stream.Stream;
 public class ReadOnlyAdapter extends DokanyFileSystem {
 
 	private IOCase ioCase;
+	private OpenFileFactory fac;
 
 	public static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 
 	public ReadOnlyAdapter(DeviceOptions deviceOptions, VolumeInformation volumeInfo, FreeSpace freeSpace, Date rootCreationDate, String rootPath) {
 		super(deviceOptions, volumeInfo, freeSpace, rootCreationDate, rootPath);
+		fac = new OpenFileFactory();
 		if (volumeInfo.getFileSystemFeatures().contains(FileSystemFeature.CASE_PRESERVED_NAMES)
 				&& volumeInfo.getFileSystemFeatures().contains(FileSystemFeature.CASE_PRESERVED_NAMES)) {
 			ioCase = IOCase.SENSITIVE;
@@ -118,9 +121,12 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 	}
 
 	@Override
-	public FileData read(String path, int offset, int readLength) throws IOException {
-		//stubby
-		return new FileData(new byte[]{}, 0);
+	public FileData read(String path, long offset, int readLength) throws IOException {
+		Path p = getRootedPath(path);
+		Set openFlag = new HashSet();
+		openFlag.add(StandardOpenOption.READ);
+		OpenFile file = fac.get(fac.open(p,openFlag));
+		return  file.read(offset,readLength);
 	}
 
 	public int write(String s, int i, byte[] bytes, int i1) throws IOException {
@@ -146,7 +152,7 @@ public class ReadOnlyAdapter extends DokanyFileSystem {
 		}
 	}
 
-	public void close(String s, DokanyFileInfo dokanyFileInfo) throws IOException {
+	public void close(String path, DokanyFileInfo dokanyFileInfo) throws IOException {
 		//stubby
 	}
 

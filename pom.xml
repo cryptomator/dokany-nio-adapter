@@ -17,6 +17,7 @@
 	<properties>
 		<slf4j.version>1.7.25</slf4j.version>
 		<dokan-java.version>0.1</dokan-java.version>
+		<guava.version>24.0-jre</guava.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -44,6 +45,13 @@
 			<groupId>com.github.dokan-dev</groupId>
 			<artifactId>dokan-java</artifactId>
 			<version>${dokan-java.version}</version>
+		</dependency>
+
+		<!-- Guava -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>${guava.version}</version>
 		</dependency>
 
 		<!-- Testing via junit -->
