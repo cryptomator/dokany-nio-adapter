@@ -16,8 +16,10 @@
 
 	<properties>
 		<slf4j.version>1.7.25</slf4j.version>
-		<dokan-java.version>0.1</dokan-java.version>
 		<guava.version>24.0-jre</guava.version>
+		<jna.version>4.5.1</jna.version>
+		<jna-platform.version>4.5.1</jna-platform.version>
+		<commons-io.version>2.6</commons-io.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -40,13 +42,6 @@
 	</developers>
 
 	<dependencies>
-		<!-- dokany stuff -->
-		<dependency>
-			<groupId>com.github.dokan-dev</groupId>
-			<artifactId>dokan-java</artifactId>
-			<version>${dokan-java.version}</version>
-		</dependency>
-
 		<!-- Guava -->
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -67,6 +62,33 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j.version}</version>
+		</dependency>
+
+		<!--jna stuff-->
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
+			<version>${jna.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+			<version>${jna-platform.version}</version>
+		</dependency>
+
+		<!-- Util imports -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons-io.version}</version>
+		</dependency>
+
+		<!-- unwanted xodus dependecy -->
+		<dependency>
+			<groupId>org.jetbrains.xodus</groupId>
+			<artifactId>xodus-vfs</artifactId>
+			<version>1.0.4</version>
 		</dependency>
 	</dependencies>
 
