@@ -21,31 +21,32 @@ public class OpenFileFactory implements AutoCloseable {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFileFactory.class);
 
 	private final ConcurrentMap<Long, OpenFile> openFiles = new ConcurrentHashMap<>();
-	private final AtomicLong fileHandleGen = new AtomicLong();
 
 	public OpenFileFactory() {
 	}
 
 	/**
 	 * @param path path of the file to open
+	 * @param fileHandle
 	 * @param options file open options
 	 * @return file handle used to identify and close open files.
 	 * @throws IOException
 	 */
-	public long open(Path path, OpenOption... options) throws IOException {
-		return this.open(path, Sets.newHashSet(options));
+	public long open(Path path, long fileHandle, OpenOption... options) throws IOException {
+		return this.open(path, fileHandle, Sets.newHashSet(options));
 	}
+
 
 	/**
 	 *
 	 * @param path path of the file to open
+	 * @param fileHandle
 	 * @param options file open options
 	 * @param attrs file attributes to set when opening
 	 * @return file handle used to identify and close open files.
 	 * @throws IOException
 	 */
-	public long open(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		long fileHandle = fileHandleGen.getAndIncrement();
+	public long open(Path path, long fileHandle, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		openFiles.put(fileHandle, new OpenFile(path, options, attrs));
 		return fileHandle;
 	}

@@ -110,12 +110,12 @@ public class DokanyUtils {
 	}
 
 	// TODO: can this return null?
-	private static String getFileName(final String fileName) {
+	static String getFileName(final String fileName) {
 		return FilenameUtils.getBaseName(fileName);
 	}
 
 	// TODO: can this return null?
-	private static String getExtension(final String fileName) {
+	static String getExtension(final String fileName) {
 		return FilenameUtils.getExtension(fileName);
 	}
 
@@ -139,11 +139,11 @@ public class DokanyUtils {
 		return str.substring(0, Math.min(str.length(), len));
 	}
 
-	private static long exceptionToErrorCode(final Throwable t) {
+	public static long exceptionToErrorCode(final Throwable t) {
 		return exceptionToErrorCode(t, NtStatus.UNSUCCESSFUL.getMask());
 	}
 
-	private static long exceptionToErrorCode(final Throwable t, final long defaultCode) {
+	public static long exceptionToErrorCode(final Throwable t, final long defaultCode) {
 		LOG.warn(t.getMessage(), t);
 
 		if (t instanceof DokanyException) {

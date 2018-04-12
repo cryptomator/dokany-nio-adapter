@@ -2,19 +2,46 @@ package org.cryptomator.frontend.dokan;
 
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyOperations;
+import com.dokany.java.DokanyUtils;
+import com.dokany.java.constants.ErrorCode;
+import com.dokany.java.constants.FileAccess;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
+import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinBase;
+import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 public class ReadOnlyAdapter implements DokanyFileSystem {
+
+	private final Path root;
+	private final OpenFileFactory fac;
+
+	public ReadOnlyAdapter(Path root) {
+		this.root = root;
+		this.fac = new OpenFileFactory();
+	}
+
 
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		Path path = root.resolve(rawPath.toString());
+		WinNT.HANDLE fileHandle = Kernel32.INSTANCE.CreateFile(path.toString(), rawDesiredAccess, rawShareAccess, securityContext, rawCreateDisposition, rawFileAttributes, null);
+		dokanyFileInfo.Context = Pointer.nativeValue(fileHandle.getPointer());
+		try {
+			//TODO: we already created & opened with the jna function. is this opening redundant?
+			fac.open(path, dokanyFileInfo.Context, FileUtil.accesRightsToOpenOptions(DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccess.values())));
+		} catch (IOException e) {
+			//TODO: does this method the correct thingie?
+			DokanyUtils.exceptionToErrorCode(e);
+		}
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override

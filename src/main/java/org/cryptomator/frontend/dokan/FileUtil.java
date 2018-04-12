@@ -1,16 +1,21 @@
 package org.cryptomator.frontend.dokan;
 
+import com.dokany.java.constants.FileAccess;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.EnumIntegerSet;
+import com.google.common.collect.Sets;
 import com.sun.jna.platform.win32.WinBase;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
+import java.util.Set;
 
 public class FileUtil {
 
@@ -98,5 +103,31 @@ public class FileUtil {
 			default:
 				throw new IllegalArgumentException();
 		}
+	}
+
+	public static Set<OpenOption> accesRightsToOpenOptions(EnumIntegerSet<FileAccess> accessRights){
+		Set<OpenOption> openOptions = Sets.newHashSet();
+		for(FileAccess acc: accessRights){
+			switch (acc){
+				case DELETE:
+					openOptions.add(StandardOpenOption.DELETE_ON_CLOSE);
+					break;
+				case READ_DATA: case GENERIC_READ:
+					openOptions.add(StandardOpenOption.READ);
+					break;
+				case WRITE_DATA: case GENERIC_WRITE:
+					openOptions.add(StandardOpenOption.WRITE);
+					break;
+				case APPEND_DATA:
+					openOptions.add(StandardOpenOption.APPEND);
+					break;
+				case SYNCHRONIZE:
+					openOptions.add(StandardOpenOption.SYNC);
+					break;
+				default:
+					//TODO: LOG the unsupported attribute somewhere
+			}
+		}
+		return openOptions;
 	}
 }
