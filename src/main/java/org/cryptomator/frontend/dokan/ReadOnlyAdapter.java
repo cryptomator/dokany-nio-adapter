@@ -5,6 +5,7 @@ import com.dokany.java.DokanyOperations;
 import com.dokany.java.DokanyUtils;
 import com.dokany.java.constants.ErrorCode;
 import com.dokany.java.constants.FileAccess;
+import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
 import com.sun.jna.Pointer;
@@ -17,6 +18,7 @@ import com.sun.jna.ptr.LongByReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +44,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			//TODO: we already created & opened with the jna function. is this opening redundant?
 			fac.open(path, dokanyFileInfo.Context, FileUtil.accesRightsToOpenOptions(DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccess.values())));
 		} catch (IOException e) {
-			//TODO: does this method the correct thingie?
+			//TODO: does this method do the correct thingie?
 			DokanyUtils.exceptionToErrorCode(e);
 		}
 		return ErrorCode.SUCCESS.getMask();
@@ -98,7 +100,24 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setFileAttributes(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		Path path = root.resolve(rawPath.toString());
+		//TODO; is this check necessary? we already checked this in zwCreateFile (via the open()-call
+		if (Files.exists(path)) {
+			for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
+				if (FileUtil.isFileAttributeSupported(attr)) {
+					try {
+						FileUtil.setAttribute(path, attr);
+					} catch (IOException e) {
+						return ErrorCode.ERROR_WRITE_FAULT.getMask();
+					}
+				} else {
+					LOG.debug("Windows file attribute {} is currently not supported and thus will be ignored", attr.name());
+				}
+			}
+		} else {
+			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+		}
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
