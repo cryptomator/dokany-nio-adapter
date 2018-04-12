@@ -147,7 +147,14 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		//TODO: do we need the path?
+		//Path path = root.resolve(rawPath.toString());
+		try {
+			fac.get(dokanyFileInfo.Context).truncate(rawLength);
+		} catch (IOException e) {
+			return ErrorCode.ERROR_WRITE_FAULT.getMask();
+		}
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
