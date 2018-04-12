@@ -14,12 +14,15 @@ import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
+	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private final Path root;
 	private final OpenFileFactory fac;
 
