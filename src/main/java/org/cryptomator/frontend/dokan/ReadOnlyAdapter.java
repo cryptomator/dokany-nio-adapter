@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ReadOnlyAdapter implements DokanyFileSystem {
@@ -49,12 +50,20 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		if(dokanyFileInfo.deleteOnClose()){
+			try {
+				Files.delete(root.resolve(rawPath.toString()));
+			} catch (IOException e) {
+				LOG.warn("Unable to delete File: "+e.getMessage());
+			}
+		}
 
 	}
 
 	@Override
 	public void closeFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-
+		//TODO: decide wether we use the jna functions or the classic java nio API
+		//Kernel32.INSTANCE.CloseHandle() should be called here, if we Kernel32.INSCTANCE.CreateFile()
 	}
 
 	@Override
