@@ -16,11 +16,15 @@ import com.sun.jna.ptr.LongByReference;
 public interface DokanyFileSystem {
 
 	/**
+	 * CreateFile Dokan API callback.
+	 *
 	 * CreateFile is called each time a request is made on a file system object.
-	 * <p>
-	 * If the file is a directory, this method is also called. In this case, the method should return {@link NtStatus#SUCCESS} when that directory can be opened and
-	 * {@link DokanyFileInfo#IsDirectory} has to be set to <i>true</i>. {@link DokanyFileInfo#Context} can be used to store
-	 * data FileStream that can be retrieved in all other request related to the context.
+	 *
+	 * In case OPEN_ALWAYS & CREATE_ALWAYS are successfully opening an existing file, STATUS_OBJECT_NAME_COLLISION should be returned instead of STATUS_SUCCESS . This will inform Dokan that the file has been opened and not created during the request.
+	 *
+	 * If the file is a directory, CreateFile is also called. In this case, CreateFile should return {@link NtStatus#SUCCESS} when that directory can be opened and {@link DokanyFileInfo#IsDirectory} has to be set to TRUE. On the other hand, if {@link DokanyFileInfo#IsDirectory} is set to TRUE but the path targets a file, {@link NtStatus#NOT_A_DIRECTORY} must be returned.
+	 *
+	 * {@link DokanyFileInfo#Context} can be used to store Data (like a filehandle) that can be retrieved in all other requests related to the Context. To avoid memory leak, Context needs to be released in {@link DokanyFileSystem#cleanup(WString, DokanyFileInfo)} .
 	 *
 	 * @param rawPath Path requested by the Kernel on the File System.
 	 * TODO: rewrite this parameter description to link to winBase
@@ -29,12 +33,13 @@ public interface DokanyFileSystem {
 	 * @param rawFileAttributes Provides attributes for files and directories. (see also in the .NET API <a href="https://docs.microsoft.com/en-us/dotnet/api/system.io.fileattributes">System.IO.FileAttributes</a>}
 	 * @param rawShareAccess Type of share access to other threads. Device and intermediate drivers usually set ShareAccess to zero, which gives the caller exclusive access to
 	 * the open file.
-	 * @param rawCreateDisposition Specifies the action to perform if the file does or does not exist.
+	 * @param rawCreateDisposition Specifies the action to perform if the file does or does not exist. Can be translated into a readable thing via {@link com.dokany.java.constants.CreationDisposition}
 	 * @param rawCreateOptions Specifies the options to apply when the driver creates or opens the file. (see also in the .NET API <a href="https://docs.microsoft.com/de-de/dotnet/api/system.io.fileoptions">System.IO.FileOptions</a>)
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return integer code of a {@link NtStatus}
 	 * @see Dokany documentation of <a href="https://dokan-dev.github.io/dokany-doc/html/struct_d_o_k_a_n___o_p_e_r_a_t_i_o_n_s.html#a40c2f61e1287237f5fd5c2690e795183">ZwCreateFile</a>
 	 * @see Microsoft documentation of <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/nf-ntifs-ntcreatefile">zwCreateFile</a>
+	 * @see Microsoft FileManagement documentation of <a href="https://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">CreateFile</a>
 	 */
 	long zwCreateFile(
 			WString rawPath,
