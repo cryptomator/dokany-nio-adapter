@@ -18,23 +18,23 @@ public interface DokanyFileSystem {
 	/**
 	 * CreateFile is called each time a request is made on a file system object.
 	 * <p>
-	 * If the file is a directory, this method is also called. In this case, the method should return {@link NtStatus#Success} when that directory can be opened and
-	 * {@link DokanyFileInfo#_isDirectory} has to be set to <i>true</i>. {@link DokanyFileInfo#_context} can be used to store
+	 * If the file is a directory, this method is also called. In this case, the method should return {@link NtStatus#SUCCESS} when that directory can be opened and
+	 * {@link DokanyFileInfo#IsDirectory} has to be set to <i>true</i>. {@link DokanyFileInfo#Context} can be used to store
 	 * data FileStream that can be retrieved in all other request related to the context.
 	 *
 	 * @param rawPath Path requested by the Kernel on the File System.
-	 * @param securityContext ??
-	 * @param rawDesiredAccess ?? Permissions for file or directory.
-	 * @param rawFileAttributes Provides attributes for files and directories. @see
-	 * {@linkplain https://msdn.microsoft.com/en-us/library/system.io.fileattributes(v=vs.110).aspx}
+	 * TODO: rewrite this parameter description to link to winBase
+	 * @param securityContext the security context of the kernel (see also in the windows driver API <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/wdm/ns-wdm-_io_security_context">IO_SECURITY_CONTEXT</a>)
+	 * @param rawDesiredAccess Permissions for file or directory. (see also in the windows API <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/access-mask">ACCESS_MASK</a>
+	 * @param rawFileAttributes Provides attributes for files and directories. (see also in the .NET API <a href="https://docs.microsoft.com/en-us/dotnet/api/system.io.fileattributes">System.IO.FileAttributes</a>}
 	 * @param rawShareAccess Type of share access to other threads. Device and intermediate drivers usually set ShareAccess to zero, which gives the caller exclusive access to
 	 * the open file.
-	 * @param rawCreateDisposition
-	 * @param rawCreateOptions Represents advanced options for creating a File object. @see
-	 * {@linkplain https://msdn.microsoft.com/en-us/library/system.io.fileoptions(v=vs.110).aspx}
+	 * @param rawCreateDisposition Specifies the action to perform if the file does or does not exist.
+	 * @param rawCreateOptions Specifies the options to apply when the driver creates or opens the file. (see also in the .NET API <a href="https://docs.microsoft.com/de-de/dotnet/api/system.io.fileoptions">System.IO.FileOptions</a>)
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
-	 * @return {@link NtStatus}
-	 * @see {@linkplain https://msdn.microsoft.com/en-us/library/windows/hardware/ff566424(v=vs.85).aspx} for more information about the parameters of this callback.
+	 * @return integer code of a {@link NtStatus}
+	 * @see Dokany documentation of <a href="https://dokan-dev.github.io/dokany-doc/html/struct_d_o_k_a_n___o_p_e_r_a_t_i_o_n_s.html#a40c2f61e1287237f5fd5c2690e795183">ZwCreateFile</a>
+	 * @see Microsoft documentation of <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/nf-ntifs-ntcreatefile">zwCreateFile</a>
 	 */
 	long zwCreateFile(
 			WString rawPath,
