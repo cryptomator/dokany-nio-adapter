@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.Set;
 
 public class ReadOnlyAdapter implements DokanyFileSystem {
@@ -210,7 +211,19 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setFileTime(WString rawPath, WinBase.FILETIME rawCreationTime, WinBase.FILETIME rawLastAccessTime, WinBase.FILETIME rawLastWriteTime, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		Path p = root.resolve(rawPath.toString());
+		try {
+			Files.setAttribute(p, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
+			Files.setAttribute(p, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
+			Files.setAttribute(p, "basic:lastModificationTime", FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
+			return ErrorCode.SUCCESS.getMask();
+		} catch (FileNotFoundException e) {
+			LOG.trace("File not found.");
+			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+		} catch (IOException e) {
+			LOG.debug("IO exception occurred: ", e);
+			return NtStatus.UNSUCCESSFUL.getMask();
+		}
 	}
 
 	@Override
