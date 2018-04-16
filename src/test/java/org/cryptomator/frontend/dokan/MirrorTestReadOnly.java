@@ -10,6 +10,7 @@ import com.dokany.java.structure.FreeSpace;
 import com.dokany.java.structure.VolumeInformation;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -41,7 +42,7 @@ public class MirrorTestReadOnly {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
 		FreeSpace freeSpace = new FreeSpace(200000, 200);
 
-		DokanyFileSystem myFs = new ReadOnlyAdapter(deviceOptions, volumeInfo, freeSpace, new Date(), "Y:\\test");
+		DokanyFileSystem myFs = new ReadOnlyAdapter(Paths.get("Y:\\test"));
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, myFs);
 
 		int res;

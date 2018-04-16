@@ -7,7 +7,8 @@ import com.sun.jna.Structure;
 
 public class Win32FindStreamData extends Structure implements DokanyOperations.Win32FindStreamDataInterface {
 	public long length;
-	public char[] cFileName = new char[DokanyOperationsProxy.MAX_PATH + 36];
+	//max path = 260 under windows
+	public char[] cFileName = new char[260 + 36];
 
 	@Override
 	public void length(final long val) {

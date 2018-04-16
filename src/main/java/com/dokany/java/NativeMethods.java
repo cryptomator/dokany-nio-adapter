@@ -103,16 +103,6 @@ class NativeMethods {
 			IntByReference outCreationDisposition);
 
 	/**
-	 * Convert IRP_MJ_CREATE DesiredAccess to generic rights.
-	 *
-	 * @param DesiredAccess Standard rights to convert
-	 * @return New DesiredAccess with generic rights.
-	 * @see {@linkplain https://msdn.microsoft.com/windows/hardware/drivers/ifs/access-mask}
-	 */
-	// TODO: change return type and method parameter type to FileAccess
-	static native long DokanMapStandardToGenericAccess(long desiredAccess);
-
-	/**
 	 * Checks whether Name can match Expression.
 	 *
 	 * @param expression - Expression can contain wildcard characters (? and *)
