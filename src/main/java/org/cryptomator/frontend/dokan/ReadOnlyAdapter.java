@@ -57,26 +57,32 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			ErrorCode err = ErrorCode.SUCCESS;
 			Set<OpenOption> openOptions = Sets.newHashSet();
 			if (Files.exists(path)) {
-				switch (creationDispositions) {
-					case CREATE_NEW:
-						return ErrorCode.ERROR_FILE_EXISTS.getMask();
-					case CREATE_ALWAYS:
-						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						err = ErrorCode.OBJECT_NAME_COLLISION;
-						break;
-					case OPEN_EXISTING:
-						//READ, due to READONLY
-						openOptions.add(StandardOpenOption.READ);
-						break;
-					case OPEN_ALWAYS:
-						openOptions.add(StandardOpenOption.READ);
-						err = ErrorCode.ERROR_ALREADY_EXISTS;
-						break;
-					case TRUNCATE_EXISTING:
-						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						break;
-					default:
-						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
+				if (Files.isDirectory(path) && Files.isReadable(path)){
+					dokanyFileInfo.IsDirectory = 1;
+					return ErrorCode.SUCCESS.getMask();
+				}
+				else {
+					switch (creationDispositions) {
+						case CREATE_NEW:
+							return ErrorCode.ERROR_FILE_EXISTS.getMask();
+						case CREATE_ALWAYS:
+							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+							err = ErrorCode.OBJECT_NAME_COLLISION;
+							break;
+						case OPEN_EXISTING:
+							//READ, due to READONLY
+							openOptions.add(StandardOpenOption.READ);
+							break;
+						case OPEN_ALWAYS:
+							openOptions.add(StandardOpenOption.READ);
+							err = ErrorCode.ERROR_ALREADY_EXISTS;
+							break;
+						case TRUNCATE_EXISTING:
+							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+							break;
+						default:
+							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
+					}
 				}
 			} else {
 				switch (creationDispositions) {
