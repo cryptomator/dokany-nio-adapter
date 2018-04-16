@@ -43,7 +43,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	/**
 	 * 1. A FileChannel is ALWAYS OPENED! (no matter the openOption)
-	 * 2. currently only the createDispostion paramteter is used
+	 * 2. currently only the createDispostion parameter is used
 	 */
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
@@ -73,7 +73,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
 						break;
 					default:
-						throw new IllegalStateException("Unknow createDispostion attribute: " + creationDispositions.name());
+						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
 				}
 			} else {
 				switch (creationDispositions) {
@@ -93,7 +93,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						//will fail
 						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 					default:
-						throw new IllegalStateException("Unknow createDispostion attribute: " + creationDispositions.name());
+						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
 				}
 			}
 			dokanyFileInfo.Context = fac.open(path, openOptions);
@@ -105,7 +105,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	}
 
 	/**
-	 * The fileHandle is already closed here, due to the requierements of the dokany implemenation to delete a file in the cleanUp method
+	 * The fileHandle is already closed here, due to the requirements of the dokany implementation to delete a file in the cleanUp method
 	 *
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
@@ -167,11 +167,11 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			data.setSize(attr.size());
 			data.copyTo(handleFileInfo);
 			return ErrorCode.SUCCESS.getMask();
-		} catch (FileNotFoundException e){
+		} catch (FileNotFoundException e) {
 			LOG.error("Could not found File");
 			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 		} catch (IOException e) {
-			LOG.error("IO error occured: ",e);
+			LOG.error("IO error occured: ", e);
 			return NtStatus.UNSUCCESSFUL.getMask();
 		}
 	}
