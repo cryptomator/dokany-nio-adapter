@@ -29,6 +29,8 @@ import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
@@ -152,8 +154,21 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	public long getFileInformation(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
 		Path p = root.resolve(fileName.toString());
 		try {
-			DosFileAttributes attr = Files.getFileAttributeView(p, DosFileAttributeView.class).readAttributes();
+			FullFileInfo data = getFileInfo(p);
+			data.copyTo(handleFileInfo);
+			return ErrorCode.SUCCESS.getMask();
+		} catch (FileNotFoundException e) {
+			LOG.error("Could not found File");
+			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+		} catch (IOException e) {
+			LOG.error("IO error occured: ", e);
+			return NtStatus.UNSUCCESSFUL.getMask();
+		}
+	}
 
+	private FullFileInfo getFileInfo(Path p) throws IOException {
+		try {
+			DosFileAttributes attr = Files.getFileAttributeView(p, DosFileAttributeView.class).readAttributes();
 			long index = 0;
 			if (attr.fileKey() != null) {
 				index = (long) attr.fileKey();
@@ -166,14 +181,13 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastAccessTime()),
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastModifiedTime()));
 			data.setSize(attr.size());
-			data.copyTo(handleFileInfo);
-			return ErrorCode.SUCCESS.getMask();
+			return data;
 		} catch (FileNotFoundException e) {
 			LOG.error("Could not found File");
-			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+			throw e;
 		} catch (IOException e) {
 			LOG.error("IO error occured: ", e);
-			return NtStatus.UNSUCCESSFUL.getMask();
+			throw e;
 		}
 	}
 
@@ -184,7 +198,39 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		Path path = root.resolve(fileName.toString());
+
+		LOG.trace("FindFilesWithPattern {}", path.toString());
+		Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
+		try (Stream<Path> stream = Files.list(path)) {
+			//stream.filter(path1 -> path.toString().contains(pattern)).map(FileUtil::pathToFindData);
+			Stream<Path> streamByPattern;
+			if (searchPattern == null || searchPattern.equals("*")) {
+				//we want to list all files
+				streamByPattern = stream;
+			} else {
+				streamByPattern = stream.filter(path1 -> path1.toString().contains(searchPattern));
+			}
+			findings = streamByPattern.map(path2 -> {
+				try {
+					return getFileInfo(path2).toWin32FindData();
+				} catch (IOException e) {
+					return new WinBase.WIN32_FIND_DATA();
+				}
+			}).collect(Collectors.toSet());
+		} catch (IOException e) {
+			LOG.warn("Unable to list directory content: ", e);
+		}
+		LOG.debug("Found {} paths", findings.size());
+		try {
+			findings.forEach(file -> {
+				LOG.trace("file in find: {}", file.getFileName());
+				rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+			});
+		} catch (Error e) {
+			LOG.warn("Error filling Win32FindData", e);
+		}
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override

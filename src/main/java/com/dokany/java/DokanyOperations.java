@@ -634,7 +634,7 @@ public class DokanyOperations extends Structure {
 	}
 
 	@FunctionalInterface
-	interface FillWin32FindData extends Callback {
+	public interface FillWin32FindData extends Callback {
 		/**
 		 *
 		 * @param rawFillFindData
@@ -669,7 +669,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface FillWin32FindStreamData extends Callback {
+	public interface FillWin32FindStreamData extends Callback {
 		/**
 		 *
 		 * @param rawFillFindData
