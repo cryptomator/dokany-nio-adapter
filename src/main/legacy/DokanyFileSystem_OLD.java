@@ -1,4 +1,4 @@
-package com.dokany.java;
+package com.dokany.java.legacy;
 
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.constants.MountOption;
