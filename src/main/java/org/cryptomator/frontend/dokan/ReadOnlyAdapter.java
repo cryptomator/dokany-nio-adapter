@@ -6,6 +6,7 @@ import com.dokany.java.DokanyUtils;
 import com.dokany.java.constants.CreationDisposition;
 import com.dokany.java.constants.ErrorCode;
 import com.dokany.java.constants.FileAttribute;
+import com.dokany.java.constants.NtStatus;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
 import com.google.common.collect.Sets;
@@ -37,7 +38,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 
 	/**
-	 * 1. A FileChannel is ALWAYS OPEND! (no matter the openOption)
+	 * 1. A FileChannel is ALWAYS OPENED! (no matter the openOption)
 	 * 2. currently only the createDispostion paramteter is used
 	 */
 	@Override
@@ -51,12 +52,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			if (Files.exists(path)) {
 				switch (creationDispositions) {
 					case CREATE_NEW:
-						//will throw exception
-						openOptions.add(StandardOpenOption.CREATE_NEW);
-						err = ErrorCode.ERROR_FILE_EXISTS;
-						//we could also directly return an error
-						//return  ErrorCode.ERROR_FILE_EXISTS.getMask();
-						break;
+						return ErrorCode.ERROR_FILE_EXISTS.getMask();
 					case CREATE_ALWAYS:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
 						err = ErrorCode.ERROR_ALREADY_EXISTS;
@@ -64,13 +60,16 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 					case OPEN_EXISTING:
 						//READ, due to READONLY
 						openOptions.add(StandardOpenOption.READ);
+						break;
 					case OPEN_ALWAYS:
 						openOptions.add(StandardOpenOption.READ);
 						err = ErrorCode.ERROR_ALREADY_EXISTS;
+						break;
 					case TRUNCATE_EXISTING:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+						break;
 					default:
-						openOptions.add(StandardOpenOption.READ);
+						throw new IllegalStateException("Unknow createDispostion attribute: " + creationDispositions.name());
 				}
 			} else {
 				switch (creationDispositions) {
@@ -82,42 +81,51 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						break;
 					case OPEN_EXISTING:
 						//will fail
-						openOptions.add(StandardOpenOption.READ);
-						err = ErrorCode.ERROR_FILE_NOT_FOUND;
+						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 					case OPEN_ALWAYS:
 						openOptions.add(StandardOpenOption.CREATE);
 						err = ErrorCode.ERROR_ALREADY_EXISTS;
 					case TRUNCATE_EXISTING:
 						//will fail
-						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						err = ErrorCode.ERROR_FILE_NOT_FOUND;
+						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 					default:
-						openOptions.add(StandardOpenOption.CREATE);
+						throw new IllegalStateException("Unknow createDispostion attribute: " + creationDispositions.name());
 				}
 			}
 			dokanyFileInfo.Context = fac.open(path, openOptions);
 			return err.getMask();
 		} catch (IOException e) {
-			return DokanyUtils.exceptionToErrorCode(e);
+			LOG.error("IO error: ", e);
+			return NtStatus.UNSUCCESSFUL.getMask();
 		}
 	}
 
+	/**
+	 * The fileHandle is already closed here, due to the requierements of the dokany implemenation to delete a file in the cleanUp method
+	 *
+	 * @param rawPath
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 */
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		if (dokanyFileInfo.deleteOnClose()) {
-			try {
-				Files.delete(root.resolve(rawPath.toString()));
-			} catch (IOException e) {
-				LOG.warn("Unable to delete File: " + e.getMessage());
+		try {
+			fac.close(dokanyFileInfo.Context);
+			if (dokanyFileInfo.deleteOnClose()) {
+				try {
+					Files.delete(root.resolve(rawPath.toString()));
+				} catch (IOException e) {
+					LOG.warn("Unable to delete File: ", e);
+				}
 			}
+		} catch (IOException e) {
+			LOG.warn("Unable to close FileHandle: ", e);
 		}
 
 	}
 
 	@Override
 	public void closeFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		//TODO: decide wether we use the jna functions or the classic java nio API
-		//Kernel32.INSTANCE.CloseHandle() should be called here, if we Kernel32.INSCTANCE.CreateFile()
+		dokanyFileInfo.Context = 0;
 	}
 
 	@Override
