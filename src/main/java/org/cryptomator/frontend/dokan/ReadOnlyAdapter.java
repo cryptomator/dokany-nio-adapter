@@ -9,6 +9,7 @@ import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.constants.NtStatus;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
+import com.dokany.java.structure.FullFileInfo;
 import com.google.common.collect.Sets;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
@@ -18,11 +19,14 @@ import com.sun.jna.ptr.LongByReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.DosFileAttributes;
 import java.util.Set;
 
 public class ReadOnlyAdapter implements DokanyFileSystem {
@@ -145,7 +149,31 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long getFileInformation(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		Path p = root.resolve(fileName.toString());
+		try {
+			DosFileAttributes attr = Files.getFileAttributeView(p, DosFileAttributeView.class).readAttributes();
+
+			long index = 0;
+			if (attr.fileKey() != null) {
+				index = (long) attr.fileKey();
+			}
+			FullFileInfo data = new FullFileInfo(p.getFileName().toString(),
+					index,
+					FileUtil.dosAttributesToEnumIntegerSet(attr),
+					0, //currently just a stub
+					FileUtil.javaFileTimeToWindowsFileTime(attr.creationTime()),
+					FileUtil.javaFileTimeToWindowsFileTime(attr.lastAccessTime()),
+					FileUtil.javaFileTimeToWindowsFileTime(attr.lastModifiedTime()));
+			data.setSize(attr.size());
+			data.copyTo(handleFileInfo);
+			return ErrorCode.SUCCESS.getMask();
+		} catch (FileNotFoundException e){
+			LOG.error("Could not found File");
+			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+		} catch (IOException e) {
+			LOG.error("IO error occured: ",e);
+			return NtStatus.UNSUCCESSFUL.getMask();
+		}
 	}
 
 	@Override
