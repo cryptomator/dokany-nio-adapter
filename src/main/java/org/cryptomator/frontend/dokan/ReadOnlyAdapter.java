@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
@@ -50,18 +51,17 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
-		Path path = root.resolve(rawPath.toString());
+		Path path = getRootedPath(rawPath.toString());
 		try {
 			CreationDisposition creationDispositions = DokanyUtils.enumFromInt(rawCreateDisposition, CreationDisposition.values());
 
 			ErrorCode err = ErrorCode.SUCCESS;
 			Set<OpenOption> openOptions = Sets.newHashSet();
 			if (Files.exists(path)) {
-				if (Files.isDirectory(path) && Files.isReadable(path)){
+				if (Files.isDirectory(path) && Files.isReadable(path)) {
 					dokanyFileInfo.IsDirectory = 1;
 					return ErrorCode.SUCCESS.getMask();
-				}
-				else {
+				} else {
 					switch (creationDispositions) {
 						case CREATE_NEW:
 							return ErrorCode.ERROR_FILE_EXISTS.getMask();
@@ -125,7 +125,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			fac.close(dokanyFileInfo.Context);
 			if (dokanyFileInfo.deleteOnClose()) {
 				try {
-					Files.delete(root.resolve(rawPath.toString()));
+					Files.delete(getRootedPath(rawPath.toString()));
 				} catch (IOException e) {
 					LOG.warn("Unable to delete File: ", e);
 				}
@@ -158,7 +158,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long getFileInformation(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
-		Path p = root.resolve(fileName.toString());
+		Path p = getRootedPath(fileName.toString());
 		try {
 			FullFileInfo data = getFileInfo(p);
 			data.copyTo(handleFileInfo);
@@ -204,7 +204,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		Path path = root.resolve(fileName.toString());
+		Path path = getRootedPath(fileName.toString());
 
 		LOG.trace("FindFilesWithPattern {}", path.toString());
 		Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
@@ -241,7 +241,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setFileAttributes(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
-		Path path = root.resolve(rawPath.toString());
+		Path path = getRootedPath(rawPath.toString());
 		//TODO; is this check necessary? we already checked this in zwCreateFile (via the open()-call
 		if (Files.exists(path)) {
 			for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
@@ -263,7 +263,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setFileTime(WString rawPath, WinBase.FILETIME rawCreationTime, WinBase.FILETIME rawLastAccessTime, WinBase.FILETIME rawLastWriteTime, DokanyFileInfo dokanyFileInfo) {
-		Path p = root.resolve(rawPath.toString());
+		Path p = getRootedPath(rawPath.toString());
 		try {
 			Files.setAttribute(p, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
 			Files.setAttribute(p, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
@@ -358,5 +358,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	@Override
 	public long findStreams(WString rawPath, DokanyOperations.FillWin32FindStreamData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
 		return 0;
+	}
+
+	private Path getRootedPath(String rawPath) {
+		return Paths.get(root.toString(), rawPath);
 	}
 }
