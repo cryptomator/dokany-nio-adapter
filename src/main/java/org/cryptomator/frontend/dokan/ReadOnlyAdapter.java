@@ -62,7 +62,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						return ErrorCode.ERROR_FILE_EXISTS.getMask();
 					case CREATE_ALWAYS:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						err = ErrorCode.ERROR_ALREADY_EXISTS;
+						err = ErrorCode.OBJECT_NAME_COLLISION;
 						break;
 					case OPEN_EXISTING:
 						//READ, due to READONLY
@@ -91,7 +91,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 					case OPEN_ALWAYS:
 						openOptions.add(StandardOpenOption.CREATE);
-						err = ErrorCode.ERROR_ALREADY_EXISTS;
+						err = ErrorCode.OBJECT_NAME_COLLISION;
 					case TRUNCATE_EXISTING:
 						//will fail
 						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
