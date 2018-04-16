@@ -3,11 +3,12 @@ package org.cryptomator.frontend.dokan;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyOperations;
 import com.dokany.java.DokanyUtils;
+import com.dokany.java.constants.CreationDisposition;
 import com.dokany.java.constants.ErrorCode;
-import com.dokany.java.constants.FileAccess;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
+import com.google.common.collect.Sets;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase;
@@ -18,7 +19,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
@@ -32,27 +36,79 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	}
 
 
+	/**
+	 * 1. A FileChannel is ALWAYS OPEND! (no matter the openOption)
+	 * 2. currently only the createDispostion paramteter is used
+	 */
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 		Path path = root.resolve(rawPath.toString());
-		//WinNT.HANDLE fileHandle = Kernel32.INSTANCE.CreateFile(path.toString(), rawDesiredAccess, rawShareAccess, securityContext, rawCreateDisposition, rawFileAttributes, null);
-		//dokanyFileInfo.Context = Pointer.nativeValue(fileHandle.getPointer());
 		try {
-			dokanyFileInfo.Context = fac.open(path, FileUtil.accesRightsToOpenOptions(DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccess.values())));
+			CreationDisposition creationDispositions = DokanyUtils.enumFromInt(rawCreateDisposition, CreationDisposition.values());
+
+			ErrorCode err = ErrorCode.SUCCESS;
+			Set<OpenOption> openOptions = Sets.newHashSet();
+			if (Files.exists(path)) {
+				switch (creationDispositions) {
+					case CREATE_NEW:
+						//will throw exception
+						openOptions.add(StandardOpenOption.CREATE_NEW);
+						err = ErrorCode.ERROR_FILE_EXISTS;
+						//we could also directly return an error
+						//return  ErrorCode.ERROR_FILE_EXISTS.getMask();
+						break;
+					case CREATE_ALWAYS:
+						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+						err = ErrorCode.ERROR_ALREADY_EXISTS;
+						break;
+					case OPEN_EXISTING:
+						//READ, due to READONLY
+						openOptions.add(StandardOpenOption.READ);
+					case OPEN_ALWAYS:
+						openOptions.add(StandardOpenOption.READ);
+						err = ErrorCode.ERROR_ALREADY_EXISTS;
+					case TRUNCATE_EXISTING:
+						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+					default:
+						openOptions.add(StandardOpenOption.READ);
+				}
+			} else {
+				switch (creationDispositions) {
+					case CREATE_NEW:
+						openOptions.add(StandardOpenOption.CREATE);
+						break;
+					case CREATE_ALWAYS:
+						openOptions.add(StandardOpenOption.CREATE);
+						break;
+					case OPEN_EXISTING:
+						//will fail
+						openOptions.add(StandardOpenOption.READ);
+						err = ErrorCode.ERROR_FILE_NOT_FOUND;
+					case OPEN_ALWAYS:
+						openOptions.add(StandardOpenOption.CREATE);
+						err = ErrorCode.ERROR_ALREADY_EXISTS;
+					case TRUNCATE_EXISTING:
+						//will fail
+						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+						err = ErrorCode.ERROR_FILE_NOT_FOUND;
+					default:
+						openOptions.add(StandardOpenOption.CREATE);
+				}
+			}
+			dokanyFileInfo.Context = fac.open(path, openOptions);
+			return err.getMask();
 		} catch (IOException e) {
-			//TODO: does this method do the correct thingie?
-			DokanyUtils.exceptionToErrorCode(e);
+			return DokanyUtils.exceptionToErrorCode(e);
 		}
-		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		if(dokanyFileInfo.deleteOnClose()){
+		if (dokanyFileInfo.deleteOnClose()) {
 			try {
 				Files.delete(root.resolve(rawPath.toString()));
 			} catch (IOException e) {
-				LOG.warn("Unable to delete File: "+e.getMessage());
+				LOG.warn("Unable to delete File: " + e.getMessage());
 			}
 		}
 
