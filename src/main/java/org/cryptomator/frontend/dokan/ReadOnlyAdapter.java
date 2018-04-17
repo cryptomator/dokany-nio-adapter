@@ -53,7 +53,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
-		LOG.trace("zwCreateFile is called for: " + path.toString());
+		LOG.trace("zwCreateFile() is called for: " + path.toString());
 		try {
 			CreationDisposition creationDispositions = DokanyUtils.enumFromInt(rawCreateDisposition, CreationDisposition.values());
 
@@ -123,7 +123,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		LOG.trace("cleanup is called for: " + getRootedPath(rawPath).toString());
+		LOG.trace("cleanup() is called for: " + getRootedPath(rawPath).toString());
 		try {
 			fac.close(dokanyFileInfo.Context);
 			if (dokanyFileInfo.deleteOnClose()) {
@@ -141,29 +141,34 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public void closeFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("closeFile() is called for " + getRootedPath(rawPath).toString());
 		dokanyFileInfo.Context = 0;
 	}
 
 	@Override
 	public long readFile(WString rawPath, Pointer rawBuffer, int rawBufferLength, IntByReference rawReadLength, long rawOffset, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("readFile() is called for " + getRootedPath(rawPath).toString());
 		return 0;
 	}
 
 	@Override
 	public long writeFile(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("writeFile() is called for " + getRootedPath(rawPath).toString());
 		return 0;
 	}
 
 	@Override
 	public long flushFileBuffers(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("flushFileBuffers() is called for " + getRootedPath(rawPath).toString());
 		return 0;
 	}
 
 	@Override
 	public long getFileInformation(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
-		Path p = getRootedPath(fileName);
+		Path path = getRootedPath(fileName);
+		LOG.trace("getFileInformation() is called for " + path.toString());
 		try {
-			FullFileInfo data = getFileInfo(p);
+			FullFileInfo data = getFileInfo(path);
 			data.copyTo(handleFileInfo);
 			return ErrorCode.SUCCESS.getMask();
 		} catch (FileNotFoundException e) {
@@ -202,14 +207,14 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long findFiles(WString rawPath, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("findFiles() is called for " + getRootedPath(rawPath).toString());
 		return findFilesWithPattern(rawPath, new WString("*"), rawFillFindData, dokanyFileInfo);
 	}
 
 	@Override
 	public long findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(fileName);
-
-		LOG.trace("FindFilesWithPattern {}", path.toString());
+		LOG.trace("findFilesWithPattern() is called for " + path.toString());
 		Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
 		try (Stream<Path> stream = Files.list(path)) {
 			//stream.filter(path1 -> path.toString().contains(pattern)).map(FileUtil::pathToFindData);
@@ -245,6 +250,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	@Override
 	public long setFileAttributes(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
+		LOG.trace("setFileAttributes() is called for " + path.toString());
 		//TODO; is this check necessary? we already checked this in zwCreateFile (via the open()-call
 		if (Files.exists(path)) {
 			for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
@@ -266,11 +272,12 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setFileTime(WString rawPath, WinBase.FILETIME rawCreationTime, WinBase.FILETIME rawLastAccessTime, WinBase.FILETIME rawLastWriteTime, DokanyFileInfo dokanyFileInfo) {
-		Path p = getRootedPath(rawPath);
+		Path path = getRootedPath(rawPath);
+		LOG.trace("setFileAttributes() is called for " + path.toString());
 		try {
-			Files.setAttribute(p, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
-			Files.setAttribute(p, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
-			Files.setAttribute(p, "basic:lastModificationTime", FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
+			Files.setAttribute(path, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
+			Files.setAttribute(path, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
+			Files.setAttribute(path, "basic:lastModificationTime", FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
 			return ErrorCode.SUCCESS.getMask();
 		} catch (FileNotFoundException e) {
 			LOG.trace("File not found.");
@@ -325,11 +332,13 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long getDiskFreeSpace(LongByReference freeBytesAvailable, LongByReference totalNumberOfBytes, LongByReference totalNumberOfFreeBytes, DokanyFileInfo dokanyFileInfo) {
+		//TODO
 		return 0;
 	}
 
 	@Override
 	public long getVolumeInformation(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
+		//TODO
 		return 0;
 	}
 
