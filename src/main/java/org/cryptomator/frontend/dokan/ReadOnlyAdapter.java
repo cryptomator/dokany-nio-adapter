@@ -7,9 +7,12 @@ import com.dokany.java.constants.CreationDisposition;
 import com.dokany.java.constants.ErrorCode;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.constants.NtStatus;
-import com.dokany.java.structure.ByHandleFileInfo;
-import com.dokany.java.structure.DokanyFileInfo;
 import com.dokany.java.structure.FullFileInfo;
+import com.dokany.java.structure.FreeSpace;
+import com.dokany.java.structure.VolumeInformation;
+import com.dokany.java.structure.DokanyFileInfo;
+import com.dokany.java.structure.ByHandleFileInfo;
+
 import com.google.common.collect.Sets;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
@@ -33,14 +36,25 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * TODO: change the behaviour, sucht that
+ * 1. a filehandle will never be 0
+ * 2. a zero dokanyFileInfox.context indicates that a file is not opended and the path must be used!
+ * 3. in zwCreateFile() if we just create ( and NOT open the file), the context stays zero
+ * 4. in close & cleanup we check wether context is zero or not
+ */
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 	private final Path root;
+	private final VolumeInformation volumeInformation;
+	private final FreeSpace freeSpace;
 	private final OpenFileFactory fac;
 
-	public ReadOnlyAdapter(Path root) {
+	public ReadOnlyAdapter(Path root, VolumeInformation volumeInformation, FreeSpace freeSpace) {
 		this.root = root;
+		this.volumeInformation = volumeInformation;
+		this.freeSpace = freeSpace;
 		this.fac = new OpenFileFactory();
 	}
 
@@ -217,9 +231,8 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		LOG.trace("findFilesWithPattern() is called for " + path.toString());
 		Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
 		try (Stream<Path> stream = Files.list(path)) {
-			//stream.filter(path1 -> path.toString().contains(pattern)).map(FileUtil::pathToFindData);
 			Stream<Path> streamByPattern;
-			if (searchPattern == null || searchPattern.equals("*")) {
+			if (searchPattern == null || searchPattern.toString().equals("*")) {
 				//we want to list all files
 				streamByPattern = stream;
 			} else {
@@ -277,7 +290,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		try {
 			Files.setAttribute(path, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
 			Files.setAttribute(path, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
-			Files.setAttribute(path, "basic:lastModificationTime", FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
+			Files.setLastModifiedTime(path, FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
 			return ErrorCode.SUCCESS.getMask();
 		} catch (FileNotFoundException e) {
 			LOG.trace("File not found.");
@@ -332,14 +345,32 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long getDiskFreeSpace(LongByReference freeBytesAvailable, LongByReference totalNumberOfBytes, LongByReference totalNumberOfFreeBytes, DokanyFileInfo dokanyFileInfo) {
-		//TODO
+		//freeBytesAvailable.setValue(freeSpace.getFreeBytes());
 		return 0;
+	}
+
+	public long getVolumeInformationXXX(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
 	public long getVolumeInformation(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
 		//TODO
-		return 0;
+		try {
+			rawVolumeNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getName(), rawVolumeNameSize));
+
+			rawVolumeSerialNumber.setValue(volumeInformation.getSerialNumber());
+
+			rawMaximumComponentLength.setValue(volumeInformation.getMaxComponentLength());
+
+			rawFileSystemFlags.setValue(volumeInformation.getFileSystemFeatures().toInt());
+
+			rawFileSystemNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getFileSystemName(), rawFileSystemNameSize));
+
+			return ErrorCode.SUCCESS.getMask();
+		} catch (final Throwable t) {
+			return DokanyUtils.exceptionToErrorCode(t);
+		}
 	}
 
 	@Override
