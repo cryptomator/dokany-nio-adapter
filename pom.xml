@@ -16,6 +16,7 @@
 
 	<properties>
 		<slf4j.version>1.7.25</slf4j.version>
+		<logback.version>1.2.3</logback.version>
 		<guava.version>24.0-jre</guava.version>
 		<jna.version>4.5.1</jna.version>
 		<jna-platform.version>4.5.1</jna-platform.version>
@@ -65,9 +66,14 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<version>${slf4j.version}</version>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-core</artifactId>
+				<version>${logback.version}</version>
+		</dependency>
+		<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${logback.version}</version>
 		</dependency>
 
 		<!--jna stuff-->

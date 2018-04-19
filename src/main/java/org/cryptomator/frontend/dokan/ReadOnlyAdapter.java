@@ -22,10 +22,10 @@ import com.sun.jna.ptr.LongByReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.FileStore;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -84,6 +84,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 			ErrorCode err = ErrorCode.SUCCESS;
 			Set<OpenOption> openOptions = Sets.newHashSet();
+			LOG.debug("Create Disposition flag is "+creationDispositions.name());
 			if (Files.exists(path)) {
 				if (Files.isDirectory(path) && Files.isReadable(path)) {
 					dokanyFileInfo.IsDirectory = 1;
@@ -215,8 +216,8 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			FullFileInfo data = getFileInfo(path);
 			data.copyTo(handleFileInfo);
 			return ErrorCode.SUCCESS.getMask();
-		} catch (FileNotFoundException e) {
-			LOG.error("Could not found File");
+		} catch (NoSuchFileException e) {
+			LOG.debug("File "+path.toString()+" not found.");
 			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 		} catch (IOException e) {
 			LOG.error("IO error occured: ", e);
@@ -240,8 +241,8 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 					FileUtil.javaFileTimeToWindowsFileTime(attr.lastModifiedTime()));
 			data.setSize(attr.size());
 			return data;
-		} catch (FileNotFoundException e) {
-			LOG.error("Could not found File");
+		} catch (NoSuchFileException e) {
+			LOG.debug("File "+p.toString()+" not found.");
 			throw e;
 		} catch (IOException e) {
 			LOG.error("IO error occured: ", e);
@@ -330,11 +331,11 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			Files.setAttribute(path, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
 			Files.setLastModifiedTime(path, FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
 			return ErrorCode.SUCCESS.getMask();
-		} catch (FileNotFoundException e) {
-			LOG.trace("File not found.");
+		} catch (NoSuchFileException e) {
+			LOG.debug("File "+path.toString()+" not found.");
 			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 		} catch (IOException e) {
-			LOG.debug("IO exception occurred: ", e);
+			LOG.debug("IO error occurred: ", e);
 			return NtStatus.UNSUCCESSFUL.getMask();
 		}
 	}
