@@ -159,37 +159,22 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		dokanyFileInfo.Context = 0;
 	}
 
-	/**
-	 * TODO: currently if the context of dokanyFileInfo is zero, this method just opens a new filechannel. Is this behaviour correct or necessary at all?
-	 *
-	 * @param rawPath
-	 * @param rawBuffer
-	 * @param rawBufferLength
-	 * @param rawReadLength
-	 * @param rawOffset
-	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
-	 * @return
-	 */
 	@Override
 	public long readFile(WString rawPath, Pointer rawBuffer, int rawBufferLength, IntByReference rawReadLength, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("readFile() is called for " + getRootedPath(rawPath).toString());
 		if (dokanyFileInfo.Context == 0) {
-			Path path = getRootedPath(rawPath);
+			LOG.warn("Attempt to read file " + getRootedPath(rawPath).toString() + " with invalid handle");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		} else {
 			try {
-				dokanyFileInfo.Context = fac.open(path, Collections.singleton(StandardOpenOption.READ));
+				rawReadLength.setValue(fac.get(dokanyFileInfo.Context).read(rawBuffer, rawBufferLength, rawOffset));
 			} catch (IOException e) {
-				LOG.error("Unable opening file " + path.toString() + " to read: ", e);
-				return NtStatus.UNSUCCESSFUL.getMask();
+				LOG.error("Error while reading file: ", e);
+				return ErrorCode.ERROR_READ_FAULT.getMask();
 			}
+			return ErrorCode.SUCCESS.getMask();
 		}
 
-		try {
-			rawReadLength.setValue(fac.get(dokanyFileInfo.Context).read(rawBuffer, rawBufferLength, rawOffset));
-		} catch (IOException e) {
-			LOG.error("Error while reading file: ", e);
-			return ErrorCode.ERROR_READ_FAULT.getMask();
-		}
-		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
