@@ -45,10 +45,11 @@ import java.util.stream.Stream;
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
+
 	private final Path root;
+	private final OpenFileFactory fac;
 	private final VolumeInformation volumeInformation;
 	private final FreeSpace freeSpace;
-	private final OpenFileFactory fac;
 
 	public ReadOnlyAdapter(Path root, VolumeInformation volumeInformation, FreeSpace freeSpace) {
 		this.root = root;
@@ -186,7 +187,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	@Override
 	public long flushFileBuffers(WString rawPath, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("flushFileBuffers() is called for " + getRootedPath(rawPath).toString());
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
@@ -315,22 +316,22 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long deleteFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long deleteDirectory(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long moveFile(WString rawPath, WString rawNewFileName, boolean rawReplaceIfExisting, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long setEndOfFile(WString rawPath, long rawByteOffset, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
@@ -349,18 +350,18 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long lockFile(WString rawPath, long rawByteOffset, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long unlockFile(WString rawPath, long rawByteOffset, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long getDiskFreeSpace(LongByReference freeBytesAvailable, LongByReference totalNumberOfBytes, LongByReference totalNumberOfFreeBytes, DokanyFileInfo dokanyFileInfo) {
 		//freeBytesAvailable.setValue(freeSpace.getFreeBytes());
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	/**
@@ -397,22 +398,22 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long mounted(DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long unmounted(DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long getFileSecurity(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, IntByReference rawSecurityDescriptorLengthNeeded, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
 	public long setFileSecurity(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
@@ -422,7 +423,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long findStreams(WString rawPath, DokanyOperations.FillWin32FindStreamData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	private Path getRootedPath(WString rawPath) {
