@@ -87,10 +87,20 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						case OPEN_EXISTING:
 							//READ, due to READONLY
 							openOptions.add(StandardOpenOption.READ);
+							//WRITE beacause the READWRITE adapter does not overwrite this method
+							openOptions.add(StandardOpenOption.WRITE);
+							if (dokanyFileInfo.writeToEndOfFile()) {
+								openOptions.add(StandardOpenOption.APPEND);
+							}
 							dokanyFileInfo.Context = fac.open(path, openOptions);
 							break;
 						case OPEN_ALWAYS:
 							openOptions.add(StandardOpenOption.READ);
+							//WRITE beacause the READWRITE adapter does not overwrite this method
+							openOptions.add(StandardOpenOption.WRITE);
+							if (dokanyFileInfo.writeToEndOfFile()) {
+								openOptions.add(StandardOpenOption.APPEND);
+							}
 							dokanyFileInfo.Context = fac.open(path, openOptions);
 							err = ErrorCode.OBJECT_NAME_COLLISION;
 							break;
