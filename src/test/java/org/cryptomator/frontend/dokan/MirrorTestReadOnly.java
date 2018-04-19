@@ -11,7 +11,6 @@ import com.dokany.java.structure.VolumeInformation;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

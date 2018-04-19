@@ -1,5 +1,9 @@
 package com.dokany.java.constants;
 
+/**
+ * Pseudo-Wrapper class for different NtStatus-Codes (e.g. ERROR_FILE_NOT_FOUND has the error code of {@link NtStatus#OBJECT_NAME_NOT_FOUND})
+ * TODO: maybe we should change this to use directly NtStatus. And are all error codes correct?
+ */
 public enum ErrorCode {
 	SUCCESS(0),
 	ERROR_WRITE_FAULT(29),
