@@ -41,13 +41,16 @@ import java.util.stream.Stream;
 /**
  * TODO: change the behaviour, sucht that
  * 3. in zwCreateFile() if we just create ( and NOT open the file), the context stays zero
+ * <p>
+ * TODO: currently file deletion throws no error and just executes the command and after a refresh the file is still there -> change it!
  */
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
 
-	private final Path root;
-	private final OpenFileFactory fac;
+	protected final Path root;
+	protected final OpenFileFactory fac;
+
 	private final VolumeInformation volumeInformation;
 	private final FreeSpace freeSpace;
 
@@ -121,6 +124,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
 				}
 			}
+
 			return err.getMask();
 		} catch (IOException e) {
 			LOG.error("IO error: ", e);
@@ -140,13 +144,6 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		try {
 			if (dokanyFileInfo.Context != 0) {
 				fac.close(dokanyFileInfo.Context);
-			}
-			if (dokanyFileInfo.deleteOnClose()) {
-				try {
-					Files.delete(getRootedPath(rawPath));
-				} catch (IOException e) {
-					LOG.warn("Unable to delete File: ", e);
-				}
 			}
 		} catch (IOException e) {
 			LOG.warn("Unable to close FileHandle: ", e);
@@ -181,7 +178,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	@Override
 	public long writeFile(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("writeFile() is called for " + getRootedPath(rawPath).toString());
-		return 0;
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
@@ -336,16 +333,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		try {
-			if (dokanyFileInfo.Context == 0) {
-				Path path = root.resolve(rawPath.toString());
-				dokanyFileInfo.Context = fac.open(path, new HashSet<OpenOption>(Collections.singleton(StandardOpenOption.WRITE)));
-			}
-			fac.get(dokanyFileInfo.Context).truncate(rawLength);
-		} catch (IOException e) {
-			return ErrorCode.ERROR_WRITE_FAULT.getMask();
-		}
-		return ErrorCode.SUCCESS.getMask();
+		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
 	@Override
@@ -426,7 +414,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		return NtStatus.UNSUCCESSFUL.getMask();
 	}
 
-	private Path getRootedPath(WString rawPath) {
+	protected Path getRootedPath(WString rawPath) {
 		return Paths.get(root.toString(), rawPath.toString());
 	}
 }

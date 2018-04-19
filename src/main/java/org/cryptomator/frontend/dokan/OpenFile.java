@@ -62,13 +62,14 @@ public class OpenFile implements Closeable {
 	/**
 	 * Writes up to {@code num} bytes from {@code buf} from {@code offset} into the current file
 	 *
-	 * @param offset Position of first byte to write at
+	 * @param buf Buffer
 	 * @param num Number of bytes to write
+	 * @param offset Position of first byte to write at
 	 * @return Actual number of bytes written
 	 * TODO: only the bytes which contains information or also some filling zeros?
 	 * @throws IOException If an exception occurs during write.
 	 */
-	public synchronized int write(long offset, int num) throws IOException {
+	public synchronized int write(Pointer buf, long num, long offset) throws IOException {
 		ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 		long written = 0;
 		channel.position(offset);
@@ -76,7 +77,7 @@ public class OpenFile implements Closeable {
 			long remaining = num - written;
 			bb.clear();
 			int len = (int) Math.min(remaining, bb.capacity());
-			//buf.get(written, bb.array(), 0, len);
+			buf.read(written, bb.array(), 0, len);
 			bb.limit(len);
 			channel.write(bb); // TODO check return value
 			written += len;
