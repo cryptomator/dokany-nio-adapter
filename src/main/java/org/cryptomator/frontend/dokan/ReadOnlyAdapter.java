@@ -93,7 +93,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						case OPEN_ALWAYS:
 							openOptions.add(StandardOpenOption.READ);
 							dokanyFileInfo.Context = fac.open(path, openOptions);
-							err = ErrorCode.ERROR_ALREADY_EXISTS;
+							err = ErrorCode.OBJECT_NAME_COLLISION;
 							break;
 						case TRUNCATE_EXISTING:
 							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
