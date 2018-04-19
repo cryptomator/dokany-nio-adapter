@@ -83,4 +83,30 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return ErrorCode.SUCCESS.getMask();
 		}
 	}
+
+	/**
+	 * Currently ignores other open file handles for this file
+	 * TODO: flush only current fileHandle in context or every write operation?
+	 *
+	 * @param rawPath
+	 * @param dokanyFileInfo
+	 * @return
+	 */
+	@Override
+	public long flushFileBuffers(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("flushFileBuffers() is called for " + getRootedPath(rawPath).toString());
+
+		if (dokanyFileInfo.Context == 0) {
+			LOG.warn("Attempt to flush file " + getRootedPath(rawPath).toString() + " with invalid handle");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		} else {
+			try {
+				fac.get(dokanyFileInfo.Context).flush();
+			} catch (IOException e) {
+				LOG.error("Error while reading file: ", e);
+				return ErrorCode.ERROR_WRITE_FAULT.getMask();
+			}
+			return ErrorCode.SUCCESS.getMask();
+		}
+	}
 }
