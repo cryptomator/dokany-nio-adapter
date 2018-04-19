@@ -40,10 +40,7 @@ import java.util.stream.Stream;
 
 /**
  * TODO: change the behaviour, sucht that
- * 1. a filehandle will never be 0
- * 2. a zero dokanyFileInfox.context indicates that a file is not opended and the path must be used!
  * 3. in zwCreateFile() if we just create ( and NOT open the file), the context stays zero
- * 4. in close & cleanup we check wether context is zero or not
  */
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
@@ -162,10 +159,37 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		dokanyFileInfo.Context = 0;
 	}
 
+	/**
+	 * TODO: currently if the context of dokanyFileInfo is zero, this method just opens a new filechannel. Is this behaviour correct or necessary at all?
+	 *
+	 * @param rawPath
+	 * @param rawBuffer
+	 * @param rawBufferLength
+	 * @param rawReadLength
+	 * @param rawOffset
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 */
 	@Override
 	public long readFile(WString rawPath, Pointer rawBuffer, int rawBufferLength, IntByReference rawReadLength, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("readFile() is called for " + getRootedPath(rawPath).toString());
-		return 0;
+		if (dokanyFileInfo.Context == 0) {
+			Path path = getRootedPath(rawPath);
+			try {
+				dokanyFileInfo.Context = fac.open(path, Collections.singleton(StandardOpenOption.READ));
+			} catch (IOException e) {
+				LOG.error("Unable opening file " + path.toString() + " to read: ", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
+
+		try {
+			rawReadLength.setValue(fac.get(dokanyFileInfo.Context).read(rawBuffer, rawBufferLength, rawOffset));
+		} catch (IOException e) {
+			LOG.error("Error while reading file: ", e);
+			return ErrorCode.ERROR_READ_FAULT.getMask();
+		}
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
@@ -354,9 +378,21 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		return 0;
 	}
 
+	/**
+	 * TODO: check this method (this is just a copy-paste of the DokanyOperationsProxy of dokan-java-project!)
+	 *
+	 * @param rawVolumeNameBuffer
+	 * @param rawVolumeNameSize
+	 * @param rawVolumeSerialNumber
+	 * @param rawMaximumComponentLength
+	 * @param rawFileSystemFlags
+	 * @param rawFileSystemNameBuffer
+	 * @param rawFileSystemNameSize
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 */
 	@Override
 	public long getVolumeInformation(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
-		//TODO
 		try {
 			rawVolumeNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getName(), rawVolumeNameSize));
 

@@ -1,7 +1,7 @@
 package org.cryptomator.frontend.dokan;
 
-import com.dokany.java.structure.FileData;
 import com.google.common.base.MoreObjects;
+import com.sun.jna.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,35 +30,32 @@ public class OpenFile implements Closeable {
 	/**
 	 * Reads up to {@code num} bytes beginning at {@code offset} into {@code buf}
 	 *
-	 * @param offset Position of first byte to read
+	 * @param buf Buffer
 	 * @param num Number of bytes to read
+	 * @param offset Position of first byte to read
+	 * @return Actual number of bytes read (can be less than {@code size} if reached EOF).
 	 * @throws IOException If an exception occurs during read.
 	 */
-	public synchronized FileData read(long offset, int num) throws IOException {
+	public synchronized int read(Pointer buf, long num, long offset) throws IOException {
 		long size = channel.size();
-		byte[] data = new byte[num];
 		if (offset >= size) {
-			return new FileData(new byte[]{},0);
+			return 0;
 		} else {
 			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-			int pos = 0;
+			long pos = 0;
 			channel.position(offset);
 			do {
 				long remaining = num - pos;
 				int read = readNext(bb, remaining);
 				if (read == -1) {
-					//reached EOF
-					return new FileData(data,pos); // reached EOF TODO: wtf cast
+					return (int) pos; // reached EOF TODO: wtf cast
 				} else {
 					LOG.trace("Reading {}-{} ({}-{})", offset + pos, offset + pos + read, offset, offset + num);
-					byte [] readings = bb.array();
-					for(int i=0;i<read;i++){
-						data[pos+i] = readings[i];
-					}
+					buf.write(pos, bb.array(), 0, read);
 					pos += read;
 				}
 			} while (pos < num);
-			return new FileData(data, pos); // TODO wtf cast
+			return (int) pos; // TODO wtf cast
 		}
 	}
 
@@ -68,7 +65,7 @@ public class OpenFile implements Closeable {
 	 * @param offset Position of first byte to write at
 	 * @param num Number of bytes to write
 	 * @return Actual number of bytes written
-	 *         TODO: only the bytes which contains information or also some filling zeros?
+	 * TODO: only the bytes which contains information or also some filling zeros?
 	 * @throws IOException If an exception occurs during write.
 	 */
 	public synchronized int write(long offset, int num) throws IOException {
