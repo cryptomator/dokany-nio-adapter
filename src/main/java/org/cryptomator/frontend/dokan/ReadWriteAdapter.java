@@ -78,7 +78,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 				rawNumberOfBytesWritten.setValue(fac.get(dokanyFileInfo.Context).write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
 			} catch (IOException e) {
 				LOG.error("Error while reading file: ", e);
-				return ErrorCode.ERROR_READ_FAULT.getMask();
+				return ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 			return ErrorCode.SUCCESS.getMask();
 		}

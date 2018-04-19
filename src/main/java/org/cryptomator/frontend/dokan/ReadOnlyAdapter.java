@@ -32,8 +32,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -133,7 +131,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	}
 
 	/**
-	 * The fileHandle is already closed here, due to the requirements of the dokany implementation to delete a file in the cleanUp method
+	 * the flag of {@link DokanyFileInfo#DeleteOnClose} is ignored due to ReadOnly
 	 *
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
