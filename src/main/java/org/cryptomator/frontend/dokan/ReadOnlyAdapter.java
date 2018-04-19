@@ -32,6 +32,8 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,9 +62,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 
 	/**
-	 * TODO: first point is not correct, fix this!
-	 * 1. A FileChannel is ALWAYS OPENED! (no matter the openOption)
-	 * 2. currently only the createDispostion parameter is used
+	 * currently only the createDispostion parameter is used
 	 */
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
@@ -88,9 +88,11 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						case OPEN_EXISTING:
 							//READ, due to READONLY
 							openOptions.add(StandardOpenOption.READ);
+							dokanyFileInfo.Context = fac.open(path, openOptions);
 							break;
 						case OPEN_ALWAYS:
 							openOptions.add(StandardOpenOption.READ);
+							dokanyFileInfo.Context = fac.open(path, openOptions);
 							err = ErrorCode.ERROR_ALREADY_EXISTS;
 							break;
 						case TRUNCATE_EXISTING:
@@ -121,7 +123,6 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
 				}
 			}
-			dokanyFileInfo.Context = fac.open(path, openOptions);
 			return err.getMask();
 		} catch (IOException e) {
 			LOG.error("IO error: ", e);
@@ -139,7 +140,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("cleanup() is called for: " + getRootedPath(rawPath).toString());
 		try {
-			fac.close(dokanyFileInfo.Context);
+			if (dokanyFileInfo.Context != 0) {
+				fac.close(dokanyFileInfo.Context);
+			}
 			if (dokanyFileInfo.deleteOnClose()) {
 				try {
 					Files.delete(getRootedPath(rawPath));
@@ -323,9 +326,11 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		//TODO: do we need the path?
-		//Path path = root.resolve(rawPath.toString());
 		try {
+			if (dokanyFileInfo.Context == 0) {
+				Path path = root.resolve(rawPath.toString());
+				dokanyFileInfo.Context = fac.open(path, new HashSet<OpenOption>(Collections.singleton(StandardOpenOption.WRITE)));
+			}
 			fac.get(dokanyFileInfo.Context).truncate(rawLength);
 		} catch (IOException e) {
 			return ErrorCode.ERROR_WRITE_FAULT.getMask();
