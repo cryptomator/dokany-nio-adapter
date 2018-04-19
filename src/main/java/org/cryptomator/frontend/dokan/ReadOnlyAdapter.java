@@ -42,6 +42,7 @@ import java.util.stream.Stream;
  * 3. in zwCreateFile() if we just create ( and NOT open the file), the context stays zero
  * <p>
  * TODO: currently file deletion throws no error and just executes the command and after a refresh the file is still there -> change it!
+ * TODO: currently zwCreateFile()-call only sends a CREATE_NEW flag, thus setting the context fails und one cannot read the file content! what should we do?
  */
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
@@ -125,7 +126,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			} else {
 				switch (creationDispositions) {
 					case CREATE_NEW:
-						openOptions.add(StandardOpenOption.CREATE);
+						openOptions.add(StandardOpenOption.CREATE_NEW);
 						break;
 					case CREATE_ALWAYS:
 						openOptions.add(StandardOpenOption.CREATE);
