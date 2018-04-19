@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileStore;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +49,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	protected final Path root;
 	protected final OpenFileFactory fac;
+	protected final FileStore fileStore;
 
 	private final VolumeInformation volumeInformation;
 	private final FreeSpace freeSpace;
@@ -57,6 +59,15 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		this.volumeInformation = volumeInformation;
 		this.freeSpace = freeSpace;
 		this.fac = new OpenFileFactory();
+
+		FileStore fileStore1;
+		try {
+			fileStore1 = Files.getFileStore(root);
+		} catch (IOException e) {
+			LOG.warn("Could not detect FileStore: ", e);
+			fileStore1 = null;
+		}
+		this.fileStore = fileStore1;
 	}
 
 
@@ -278,6 +289,14 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		return ErrorCode.SUCCESS.getMask();
 	}
 
+	/**
+	 * TODO: is this a read or write thing?
+	 *
+	 * @param rawPath
+	 * @param rawAttributes
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 */
 	@Override
 	public long setFileAttributes(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
@@ -356,8 +375,21 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long getDiskFreeSpace(LongByReference freeBytesAvailable, LongByReference totalNumberOfBytes, LongByReference totalNumberOfFreeBytes, DokanyFileInfo dokanyFileInfo) {
-		//freeBytesAvailable.setValue(freeSpace.getFreeBytes());
-		return NtStatus.UNSUCCESSFUL.getMask();
+		LOG.trace("getDiskFreeSpace() is called.");
+		if (fileStore != null) {
+			try {
+				totalNumberOfBytes.setValue(fileStore.getTotalSpace());
+				freeBytesAvailable.setValue(fileStore.getUsableSpace());
+				totalNumberOfFreeBytes.setValue(fileStore.getUnallocatedSpace());
+				return ErrorCode.SUCCESS.getMask();
+			} catch (IOException e) {
+				LOG.error("Unable to detect disk space status:", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		} else {
+			LOG.info("Information about disk space is not available.");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		}
 	}
 
 	/**
