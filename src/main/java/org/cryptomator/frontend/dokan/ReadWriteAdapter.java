@@ -27,20 +27,6 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		super(root, volumeInformation, freeSpace);
 	}
 
-	@Override
-	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		try {
-			if (dokanyFileInfo.Context == 0) {
-				Path path = root.resolve(rawPath.toString());
-				dokanyFileInfo.Context = fac.open(path, new HashSet<OpenOption>(Collections.singleton(StandardOpenOption.WRITE)));
-			}
-			fac.get(dokanyFileInfo.Context).truncate(rawLength);
-		} catch (IOException e) {
-			return ErrorCode.ERROR_WRITE_FAULT.getMask();
-		}
-		return ErrorCode.SUCCESS.getMask();
-	}
-
 	/**
 	 * The fileHandle is already closed here, due to the requirements of the dokany implementation to delete a file in the cleanUp method
 	 *
@@ -109,4 +95,39 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 			return ErrorCode.SUCCESS.getMask();
 		}
 	}
+
+	@Override
+	public long deleteFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		return NtStatus.UNSUCCESSFUL.getMask();
+	}
+
+	@Override
+	public long deleteDirectory(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		return NtStatus.UNSUCCESSFUL.getMask();
+	}
+
+	@Override
+	public long moveFile(WString rawPath, WString rawNewFileName, boolean rawReplaceIfExisting, DokanyFileInfo dokanyFileInfo) {
+		return NtStatus.UNSUCCESSFUL.getMask();
+	}
+
+	@Override
+	public long setEndOfFile(WString rawPath, long rawByteOffset, DokanyFileInfo dokanyFileInfo) {
+		return NtStatus.UNSUCCESSFUL.getMask();
+	}
+
+	@Override
+	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
+		try {
+			if (dokanyFileInfo.Context == 0) {
+				Path path = root.resolve(rawPath.toString());
+				dokanyFileInfo.Context = fac.open(path, new HashSet<OpenOption>(Collections.singleton(StandardOpenOption.WRITE)));
+			}
+			fac.get(dokanyFileInfo.Context).truncate(rawLength);
+		} catch (IOException e) {
+			return ErrorCode.ERROR_WRITE_FAULT.getMask();
+		}
+		return ErrorCode.SUCCESS.getMask();
+	}
+
 }
