@@ -13,11 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.HashSet;
 
 public class ReadWriteAdapter extends ReadOnlyAdapter {
 
@@ -105,8 +101,10 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 	 */
 	@Override
 	public long deleteFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		Path path = getRootedPath(rawPath);
+		LOG.trace("deleteFile() is called for " + path.toString());
 		if (dokanyFileInfo.Context == 0) {
-			LOG.warn("Attempt to call deleteFile() on " + getRootedPath(rawPath).toString() + " with invalid handle");
+			LOG.warn("Attempt to call deleteFile() on " + path.toString() + " with invalid handle");
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			if (fac.get(dokanyFileInfo.Context).canBeDeleted()) {
@@ -134,6 +132,7 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
+		LOG.trace("setAllocationSize() is called for " + getRootedPath(rawPath).toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.warn("Attempt to call setAllocationSize() on file " + getRootedPath(rawPath).toString() + " with invalid handle");
 			return NtStatus.UNSUCCESSFUL.getMask();
