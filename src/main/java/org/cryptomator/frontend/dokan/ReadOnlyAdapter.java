@@ -84,7 +84,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 			ErrorCode err = ErrorCode.SUCCESS;
 			Set<OpenOption> openOptions = Sets.newHashSet();
-			LOG.debug("Create Disposition flag is "+creationDispositions.name());
+			LOG.debug("Create Disposition flag is " + creationDispositions.name());
 			if (Files.exists(path)) {
 				if (Files.isDirectory(path) && Files.isReadable(path)) {
 					dokanyFileInfo.IsDirectory = 1;
@@ -92,7 +92,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 				} else {
 					switch (creationDispositions) {
 						case CREATE_NEW:
-							return ErrorCode.ERROR_FILE_EXISTS.getMask();
+							openOptions.add(StandardOpenOption.CREATE);
+							err = ErrorCode.ERROR_FILE_EXISTS;
+							break;
 						case CREATE_ALWAYS:
 							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
 							err = ErrorCode.OBJECT_NAME_COLLISION;
@@ -100,21 +102,13 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 						case OPEN_EXISTING:
 							//READ, due to READONLY
 							openOptions.add(StandardOpenOption.READ);
-							//WRITE beacause the READWRITE adapter does not overwrite this method
+							//WRITE because the READWRITE adapter does not overwrite this method
 							openOptions.add(StandardOpenOption.WRITE);
-							if (dokanyFileInfo.writeToEndOfFile()) {
-								openOptions.add(StandardOpenOption.APPEND);
-							}
-							dokanyFileInfo.Context = fac.open(path, openOptions);
 							break;
 						case OPEN_ALWAYS:
 							openOptions.add(StandardOpenOption.READ);
-							//WRITE beacause the READWRITE adapter does not overwrite this method
+							//WRITE because the READWRITE adapter does not overwrite this method
 							openOptions.add(StandardOpenOption.WRITE);
-							if (dokanyFileInfo.writeToEndOfFile()) {
-								openOptions.add(StandardOpenOption.APPEND);
-							}
-							dokanyFileInfo.Context = fac.open(path, openOptions);
 							err = ErrorCode.OBJECT_NAME_COLLISION;
 							break;
 						case TRUNCATE_EXISTING:
@@ -146,6 +140,11 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 				}
 			}
 
+			if (dokanyFileInfo.writeToEndOfFile()) {
+				openOptions.add(StandardOpenOption.APPEND);
+			}
+
+			dokanyFileInfo.Context = fac.open(path, openOptions);
 			return err.getMask();
 		} catch (IOException e) {
 			LOG.error("IO error: ", e);
@@ -217,7 +216,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			data.copyTo(handleFileInfo);
 			return ErrorCode.SUCCESS.getMask();
 		} catch (NoSuchFileException e) {
-			LOG.debug("File "+path.toString()+" not found.");
+			LOG.debug("File " + path.toString() + " not found.");
 			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 		} catch (IOException e) {
 			LOG.error("IO error occured: ", e);
@@ -242,7 +241,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			data.setSize(attr.size());
 			return data;
 		} catch (NoSuchFileException e) {
-			LOG.debug("File "+p.toString()+" not found.");
+			LOG.debug("File " + p.toString() + " not found.");
 			throw e;
 		} catch (IOException e) {
 			LOG.error("IO error occured: ", e);
@@ -332,7 +331,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			Files.setLastModifiedTime(path, FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
 			return ErrorCode.SUCCESS.getMask();
 		} catch (NoSuchFileException e) {
-			LOG.debug("File "+path.toString()+" not found.");
+			LOG.debug("File " + path.toString() + " not found.");
 			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 		} catch (IOException e) {
 			LOG.debug("IO error occurred: ", e);
