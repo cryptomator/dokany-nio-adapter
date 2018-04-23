@@ -132,6 +132,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 					case OPEN_ALWAYS:
 						openOptions.add(StandardOpenOption.CREATE);
 						err = ErrorCode.OBJECT_NAME_COLLISION;
+						break;
 					case TRUNCATE_EXISTING:
 						//will fail
 						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
