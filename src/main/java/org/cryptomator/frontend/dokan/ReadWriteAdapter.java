@@ -96,9 +96,25 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		}
 	}
 
+	/**
+	 * TODO: make the error distinciton more fine grained!
+	 *
+	 * @param rawPath
+	 * @param dokanyFileInfo
+	 * @return
+	 */
 	@Override
 	public long deleteFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		return NtStatus.UNSUCCESSFUL.getMask();
+		if (dokanyFileInfo.Context == 0) {
+			LOG.warn("Attempt to call deleteFile() on " + getRootedPath(rawPath).toString() + " with invalid handle");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		} else {
+			if (fac.get(dokanyFileInfo.Context).canBeDeleted()) {
+				return ErrorCode.SUCCESS.getMask();
+			} else {
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
 	}
 
 	@Override

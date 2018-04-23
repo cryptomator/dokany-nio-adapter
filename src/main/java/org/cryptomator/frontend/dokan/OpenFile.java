@@ -9,6 +9,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
@@ -102,6 +103,26 @@ public class OpenFile implements Closeable {
 
 	public void truncate(long size) throws IOException {
 		channel.truncate(size);
+	}
+
+	/**
+	 * Test via acquiring a FileLock if we can delete this file.
+	 * TODO: should this lock be released or not? if not, we should rename the method!
+	 *
+	 * @return
+	 */
+	public boolean canBeDeleted() {
+		try {
+			FileLock lock = channel.tryLock();
+			if (lock != null) {
+				lock.release();
+				return true;
+			} else {
+				return false;
+			}
+		} catch (IOException e) {
+			return false;
+		}
 	}
 
 	@Override
