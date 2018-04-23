@@ -118,16 +118,18 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public long setAllocationSize(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
-		try {
-			if (dokanyFileInfo.Context == 0) {
-				Path path = root.resolve(rawPath.toString());
-				dokanyFileInfo.Context = fac.open(path, new HashSet<OpenOption>(Collections.singleton(StandardOpenOption.WRITE)));
+		if (dokanyFileInfo.Context == 0) {
+			LOG.warn("Attempt to call setAllocationSize() on file " + getRootedPath(rawPath).toString() + " with invalid handle");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		} else {
+			try {
+				fac.get(dokanyFileInfo.Context).truncate(rawLength);
+			} catch (IOException e) {
+				LOG.error("Error while reading file: ", e);
+				return ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
-			fac.get(dokanyFileInfo.Context).truncate(rawLength);
-		} catch (IOException e) {
-			return ErrorCode.ERROR_WRITE_FAULT.getMask();
+			return ErrorCode.SUCCESS.getMask();
 		}
-		return ErrorCode.SUCCESS.getMask();
 	}
 
 }
