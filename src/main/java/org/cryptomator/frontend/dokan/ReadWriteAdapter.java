@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -115,9 +116,36 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 		}
 	}
 
+	/**
+	 * TODO: do we have to check if the path points to a directory?
+	 *
+	 * @param rawPath
+	 * @param dokanyFileInfo
+	 * @return
+	 */
 	@Override
 	public long deleteDirectory(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		return NtStatus.UNSUCCESSFUL.getMask();
+		Path path = getRootedPath(rawPath);
+		LOG.trace("deleteDirectory() is called for " + path.toString());
+		if (dokanyFileInfo.Context == 0) {
+			LOG.warn("Attempt to call deleteDirectory() on " + path.toString() + " with invalid handle");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		} else {
+			if (fac.get(dokanyFileInfo.Context).canBeDeleted()) {
+				try (DirectoryStream emptyCheck = Files.newDirectoryStream(path)) {
+					if (!emptyCheck.iterator().hasNext()) {
+						return ErrorCode.SUCCESS.getMask();
+					} else {
+						return NtStatus.DIRECTORY_NOT_EMPTY.getMask();
+					}
+
+				} catch (IOException e) {
+					return NtStatus.UNSUCCESSFUL.getMask();
+				}
+			} else {
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
 	}
 
 	@Override
