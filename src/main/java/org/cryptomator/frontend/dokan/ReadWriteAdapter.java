@@ -12,9 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
 
 public class ReadWriteAdapter extends ReadOnlyAdapter {
 
@@ -150,7 +154,30 @@ public class ReadWriteAdapter extends ReadOnlyAdapter {
 
 	@Override
 	public long moveFile(WString rawPath, WString rawNewFileName, boolean rawReplaceIfExisting, DokanyFileInfo dokanyFileInfo) {
-		return NtStatus.UNSUCCESSFUL.getMask();
+		Path path = getRootedPath(rawPath);
+		LOG.trace("moveFile() is called for " + path.toString());
+		if (dokanyFileInfo.Context == 0) {
+			LOG.warn("Attempt to call moveFile() on " + path.toString() + " with invalid handle");
+			return NtStatus.UNSUCCESSFUL.getMask();
+		} else {
+			try {
+				if (rawReplaceIfExisting) {
+					Files.move(path, getRootedPath(rawNewFileName), StandardCopyOption.REPLACE_EXISTING);
+				} else {
+					Files.move(path, getRootedPath(rawNewFileName));
+				}
+				return ErrorCode.SUCCESS.getMask();
+			} catch (FileAlreadyExistsException e) {
+				LOG.debug("File " + path.toString() + " already exists at new location.");
+				return ErrorCode.ERROR_FILE_EXISTS.getMask();
+			} catch (DirectoryNotEmptyException e) {
+				LOG.debug("Directoy to move is not emtpy.");
+				return NtStatus.DIRECTORY_NOT_EMPTY.getMask();
+			} catch (IOException e) {
+				LOG.warn("IO error occured while moving file" + path.toString());
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
 	}
 
 	@Override
