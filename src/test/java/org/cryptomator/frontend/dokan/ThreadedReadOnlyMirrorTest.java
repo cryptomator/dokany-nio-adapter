@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
-public class ThreadedReadOnlyMirror {
+public class ThreadedReadOnlyMirrorTest {
 
 	public static void main(String[] args) {
 		try (Scanner scanner = new Scanner(System.in)) {

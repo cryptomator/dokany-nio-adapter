@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class MirrorTestReadOnly {
+public class ReadOnlyMirrorTest {
 
 	private static final long TIMEOUT = 1000;
 
