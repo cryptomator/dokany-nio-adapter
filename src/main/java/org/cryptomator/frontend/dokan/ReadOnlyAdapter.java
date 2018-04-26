@@ -77,6 +77,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		Path path = getRootedPath(rawPath);
 		LOG.trace("zwCreateFile() is called for: " + path.toString());
 		Set<OpenOption> openOptions = Sets.newHashSet();
@@ -235,6 +238,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return;
+		}
 		LOG.trace("cleanup() is called for: " + getRootedPath(rawPath).toString());
 		try {
 			if (dokanyFileInfo.Context != 0) {
@@ -248,12 +254,18 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public void closeFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return;
+		}
 		LOG.trace("closeFile() is called for " + getRootedPath(rawPath).toString());
 		dokanyFileInfo.Context = 0;
 	}
 
 	@Override
 	public long readFile(WString rawPath, Pointer rawBuffer, int rawBufferLength, IntByReference rawReadLength, long rawOffset, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		LOG.trace("readFile() is called for " + getRootedPath(rawPath).toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.warn("Attempt to read file " + getRootedPath(rawPath).toString() + " with invalid handle");
@@ -284,6 +296,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long getFileInformation(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(fileName)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		Path path = getRootedPath(fileName);
 		LOG.trace("getFileInformation() is called for " + path.toString());
 		try {
@@ -326,12 +341,18 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long findFiles(WString rawPath, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		LOG.trace("findFiles() is called for " + getRootedPath(rawPath).toString());
 		return findFilesWithPattern(rawPath, new WString("*"), rawFillFindData, dokanyFileInfo);
 	}
 
 	@Override
 	public long findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(fileName)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		Path path = getRootedPath(fileName);
 		LOG.trace("findFilesWithPattern() is called for " + path.toString());
 		Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
@@ -375,6 +396,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public long setFileAttributes(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		Path path = getRootedPath(rawPath);
 		LOG.trace("setFileAttributes() is called for " + path.toString());
 		//TODO; is this check necessary? we already checked this in zwCreateFile (via the open()-call
@@ -402,6 +426,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	@Override
 	public long setFileTime(WString rawPath, WinBase.FILETIME rawCreationTime, WinBase.FILETIME rawLastAccessTime, WinBase.FILETIME rawLastWriteTime, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return ErrorCode.SUCCESS.getMask();
+		}
 		Path path = getRootedPath(rawPath);
 		LOG.trace("setFileAttributes() is called for " + path.toString());
 		try {
@@ -536,5 +563,16 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	protected Path getRootedPath(WString rawPath) {
 		return Paths.get(root.toString(), rawPath.toString());
+	}
+
+	protected boolean isSkipFile(WString filepath) {
+		String pathLowerCase = filepath.toString().toLowerCase();
+		if (pathLowerCase.endsWith("desktop.ini")
+				|| pathLowerCase.endsWith("autorun.inf")) {
+			LOG.trace("Skipping file: " + getRootedPath(filepath));
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
