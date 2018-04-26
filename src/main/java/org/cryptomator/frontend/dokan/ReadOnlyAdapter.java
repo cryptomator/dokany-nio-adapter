@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -38,11 +39,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * TODO: change the behaviour, sucht that
- * 3. in zwCreateFile() if we just create ( and NOT open the file), the context stays zero
  * <p>
  * TODO: currently file deletion throws no error and just executes the command and after a refresh the file is still there -> change it!
- * TODO: currently zwCreateFile()-call only sends a CREATE_NEW flag, thus setting the context fails und one cannot read the file content! what should we do?
+ * TODO: the whole dekstop.ini or autorun.inf files is currently filtered
  */
 public class ReadOnlyAdapter implements DokanyFileSystem {
 
@@ -73,84 +72,159 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 
 	/**
+	 * Creates always to a given path a openFile-object and setting the {@link DokanyFileInfo#Context} appropriately
 	 * currently only the createDispostion parameter is used
 	 */
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
 		LOG.trace("zwCreateFile() is called for: " + path.toString());
-		try {
-			CreationDisposition creationDispositions = DokanyUtils.enumFromInt(rawCreateDisposition, CreationDisposition.values());
-
-			ErrorCode err = ErrorCode.SUCCESS;
-			Set<OpenOption> openOptions = Sets.newHashSet();
-			LOG.debug("Create Disposition flag is " + creationDispositions.name());
-			if (Files.exists(path)) {
-				if (Files.isDirectory(path) && Files.isReadable(path)) {
-					dokanyFileInfo.IsDirectory = 1;
-					return ErrorCode.SUCCESS.getMask();
-				} else {
-					switch (creationDispositions) {
-						case CREATE_NEW:
-							openOptions.add(StandardOpenOption.CREATE);
-							err = ErrorCode.ERROR_FILE_EXISTS;
-							break;
-						case CREATE_ALWAYS:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							err = ErrorCode.OBJECT_NAME_COLLISION;
-							break;
-						case OPEN_EXISTING:
-							//READ, due to READONLY
-							openOptions.add(StandardOpenOption.READ);
-							//WRITE because the READWRITE adapter does not overwrite this method
-							openOptions.add(StandardOpenOption.WRITE);
-							break;
-						case OPEN_ALWAYS:
-							openOptions.add(StandardOpenOption.READ);
-							//WRITE because the READWRITE adapter does not overwrite this method
-							openOptions.add(StandardOpenOption.WRITE);
-							err = ErrorCode.OBJECT_NAME_COLLISION;
-							break;
-						case TRUNCATE_EXISTING:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						default:
-							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
-					}
-				}
-			} else {
-				switch (creationDispositions) {
-					case CREATE_NEW:
-						openOptions.add(StandardOpenOption.CREATE_NEW);
-						break;
-					case CREATE_ALWAYS:
-						openOptions.add(StandardOpenOption.CREATE);
-						break;
-					case OPEN_EXISTING:
-						//will fail
-						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
-					case OPEN_ALWAYS:
-						openOptions.add(StandardOpenOption.CREATE);
-						err = ErrorCode.OBJECT_NAME_COLLISION;
-						break;
-					case TRUNCATE_EXISTING:
-						//will fail
-						return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
-					default:
-						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDispositions.name());
-				}
+		Set<OpenOption> openOptions = Sets.newHashSet();
+		openOptions.add(StandardOpenOption.READ);
+		openOptions.add(StandardOpenOption.WRITE);
+		CreationDisposition creationDisposition = DokanyUtils.enumFromInt(rawCreateDisposition, CreationDisposition.values());
+		LOG.debug("Create Disposition flag is " + creationDisposition.name());
+		if (Files.exists(path)) {
+			switch (creationDisposition) {
+				case CREATE_NEW:
+					openOptions.add(StandardOpenOption.CREATE);
+					break;
+				case CREATE_ALWAYS:
+					openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+					break;
+				case OPEN_EXISTING:
+					break;
+				case OPEN_ALWAYS:
+					break;
+				case TRUNCATE_EXISTING:
+					openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+					break;
+				default:
+					throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
 			}
-
-			if (dokanyFileInfo.writeToEndOfFile()) {
-				openOptions.add(StandardOpenOption.APPEND);
+		} else {
+			switch (creationDisposition) {
+				case CREATE_NEW:
+					openOptions.add(StandardOpenOption.CREATE_NEW);
+					break;
+				case CREATE_ALWAYS:
+					openOptions.add(StandardOpenOption.CREATE);
+					break;
+				case OPEN_EXISTING:
+					break;
+				case OPEN_ALWAYS:
+					break;
+				case TRUNCATE_EXISTING:
+					openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+					break;
+				default:
+					throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
 			}
-
-			dokanyFileInfo.Context = fac.open(path, openOptions);
-			return err.getMask();
-		} catch (IOException e) {
-			LOG.error("IO error: ", e);
-			return NtStatus.UNSUCCESSFUL.getMask();
 		}
+
+		if (dokanyFileInfo.writeToEndOfFile()) {
+			openOptions.add(StandardOpenOption.APPEND);
+		}
+		if (Files.isRegularFile(path)) {
+			return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
+		} else {
+			return createDirectory(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
+		}
+	}
+
+
+	/**
+	 * TODO: should the alreadyExists check be atomical with respect to the function call ?
+	 * dokanyFileInfo.Context == 1
+	 *
+	 * @return
+	 */
+	private long createDirectory(Path path, CreationDisposition creationDisposition, Set<OpenOption> openOptions, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
+		final int mask = creationDisposition.getMask();
+		//createDirectory request
+		if (mask == CreationDisposition.CREATE_NEW.getMask() || mask == CreationDisposition.OPEN_ALWAYS.getMask()) {
+			try {
+				Files.createDirectory(path);
+			} catch (FileAlreadyExistsException e) {
+				if (mask == CreationDisposition.CREATE_NEW.getMask()) {
+					//we got create_new flag -> there should be nuthing, but there is somthin!
+					return ErrorCode.ERROR_ALREADY_EXISTS.getMask();
+				}
+			} catch (IOException e) {
+				//we dont know what the hell happened
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
+		//some otha flags were used
+		// so, assuming we did not set the isDirectory flag
+		if (Files.isRegularFile(path)) {
+			//then we try to open a file as a directory
+			//sh*t
+			return 0xC00000BAL;
+		} else {
+			// we open the directory in some kinda way
+			try {
+				setFileAttributes(path, rawFileAttributes);
+				dokanyFileInfo.Context = fac.open(path, openOptions);
+			} catch (IOException e) {
+				//TODO: fine grained error handling
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+
+			//it worked, hurray! but we must give a signal, that we opened it and not created it!
+			if (mask == CreationDisposition.OPEN_ALWAYS.getMask()) {
+				return ErrorCode.OBJECT_NAME_COLLISION.getMask();
+			} else {
+				return ErrorCode.SUCCESS.getMask();
+			}
+		}
+	}
+
+	private long createFile(Path path, CreationDisposition creationDisposition, Set<OpenOption> openOptions, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
+		final int mask = creationDisposition.getMask();
+		DosFileAttributes attr = null;
+		try {
+			attr = Files.getFileAttributeView(path, DosFileAttributeView.class).readAttributes();
+		} catch (IOException e) {
+			//TODO
+			e.printStackTrace();
+		}
+		//we want to create a file
+		//system or hidden file?
+		if (attr != null
+				&& (mask == CreationDisposition.TRUNCATE_EXISTING.getMask()
+				|| mask == CreationDisposition.CREATE_ALWAYS.getMask()
+		)
+				&& (((rawFileAttributes & FileAttribute.HIDDEN.getMask()) == 0 && attr.isHidden())
+				|| ((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem())
+		)
+				) {
+			//cannot overwrite hidden or system file
+			return NtStatus.ACCESS_DENIED.getMask();
+		}
+		//read-only?
+		else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0))
+				&& dokanyFileInfo.DeleteOnClose != 0
+				) {
+			//cannot delete file
+			return NtStatus.CANNOT_DELETE.getMask();
+
+		} else {
+			try {
+				dokanyFileInfo.Context = fac.open(path, openOptions);
+				setFileAttributes(path, rawFileAttributes);
+			} catch (FileAlreadyExistsException e) {
+				if (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
+					return NtStatus.OBJECT_NAME_COLLISION.getMask();
+				} else {
+					NtStatus.UNSUCCESSFUL.getMask();
+				}
+			} catch (IOException e) {
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+
+		}
+		return ErrorCode.SUCCESS.getMask();
 	}
 
 	/**
@@ -304,6 +378,10 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		Path path = getRootedPath(rawPath);
 		LOG.trace("setFileAttributes() is called for " + path.toString());
 		//TODO; is this check necessary? we already checked this in zwCreateFile (via the open()-call
+		return setFileAttributes(path, rawAttributes);
+	}
+
+	private long setFileAttributes(Path path, int rawAttributes) {
 		if (Files.exists(path)) {
 			for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
 				if (FileUtil.isFileAttributeSupported(attr)) {
