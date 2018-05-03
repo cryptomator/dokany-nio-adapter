@@ -88,17 +88,20 @@ class NativeMethods {
 
 	/**
 	 * Convert {@link DokanyOperations.ZwCreateFile} parameters to CreateFile parameters.
-	 *
+	 * @param desiredAccess
 	 * @param fileAttributes FileAttributes
 	 * @param createOptions CreateOptions
 	 * @param createDisposition CreateDisposition
+	 * @param genericDesiredAccess
 	 * @param outFileAttributesAndFlags
 	 * @param outCreationDisposition
 	 */
 	static native void DokanMapKernelToUserCreateFileFlags(
+			long desiredAccess,
 			long fileAttributes,
 			long createOptions,
 			long createDisposition,
+			IntByReference genericDesiredAccess,
 			IntByReference outFileAttributesAndFlags,
 			IntByReference outCreationDisposition);
 

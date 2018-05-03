@@ -1,13 +1,21 @@
 package com.dokany.java;
 
 
+import com.dokany.java.structure.DokanyFileInfo;
+import com.sun.jna.WString;
+import com.sun.jna.platform.win32.WinBase;
+import com.sun.jna.ptr.IntByReference;
+
 /**
  * Implementation of {@link com.dokany.java.DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
  */
 final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
+	private final DokanyFileSystem fileSystem;
+
 	DokanyOperationsProxy(final DokanyFileSystem fileSystem) {
-		super.ZwCreateFile = fileSystem::zwCreateFile;
+		this.fileSystem = fileSystem;
+		super.ZwCreateFile = new ZwCreateFileProxy();
 		super.CloseFile = fileSystem::closeFile;
 		super.Cleanup = fileSystem::cleanup;
 		super.ReadFile = fileSystem::readFile;
@@ -32,6 +40,18 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.GetFileSecurity = fileSystem::getFileSecurity;
 		super.SetFileSecurity = fileSystem::setFileSecurity;
 		super.FindStreams = fileSystem::findStreams;
+	}
+
+	class ZwCreateFileProxy implements ZwCreateFile{
+
+		@Override
+		public long callback(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
+			IntByReference createDisposition = new IntByReference();
+			IntByReference desiredAccess = new IntByReference();
+			IntByReference fileAttributeFlags = new IntByReference();
+			NativeMethods.DokanMapKernelToUserCreateFileFlags(rawDesiredAccess, rawFileAttributes,rawCreateOptions, rawCreateDisposition,desiredAccess, fileAttributeFlags, createDisposition);
+			return fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo );
+		}
 	}
 
 }
