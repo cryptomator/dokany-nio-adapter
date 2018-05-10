@@ -7,6 +7,7 @@ import com.dokany.java.constants.CreationDisposition;
 import com.dokany.java.constants.ErrorCode;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.constants.NtStatus;
+import com.dokany.java.constants.SecurityInformation;
 import com.dokany.java.structure.FullFileInfo;
 import com.dokany.java.structure.FreeSpace;
 import com.dokany.java.structure.VolumeInformation;
@@ -34,6 +35,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +52,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	protected final Path root;
 	protected final OpenFileFactory fac;
 	protected final FileStore fileStore;
+	protected final UserPrincipal user;
 
 	private final VolumeInformation volumeInformation;
 	private final FreeSpace freeSpace;
@@ -68,6 +71,15 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			fileStore1 = null;
 		}
 		this.fileStore = fileStore1;
+
+		UserPrincipal user1;
+		try {
+			user1 = root.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName(System.getProperty("user.name"));
+		} catch (IOException e) {
+			LOG.warn(("Could not get UserPrincipal"));
+			user1 = null;
+		}
+		user = user1;
 	}
 
 
@@ -147,7 +159,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		//createDirectory request
 		if (mask == CreationDisposition.CREATE_NEW.getMask() || mask == CreationDisposition.OPEN_ALWAYS.getMask()) {
 			try {
-				Files.createDirectory(path);
+				Files.createDirectory(path, FileUtil.getStandardAclPermissions(user));
 			} catch (FileAlreadyExistsException e) {
 				if (mask == CreationDisposition.CREATE_NEW.getMask()) {
 					//we got create_new flag -> there should be nuthing, but there is somthin!
@@ -168,7 +180,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			// we open the directory in some kinda way
 			try {
 				setFileAttributes(path, rawFileAttributes);
-				dokanyFileInfo.Context = fac.open(path, openOptions);
+				dokanyFileInfo.Context = fac.open(path, openOptions, FileUtil.getStandardAclPermissions(user));
 			} catch (IOException e) {
 				//TODO: fine grained error handling
 				return NtStatus.UNSUCCESSFUL.getMask();
@@ -214,7 +226,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 		} else {
 			try {
-				dokanyFileInfo.Context = fac.open(path, openOptions);
+				dokanyFileInfo.Context = fac.open(path, openOptions, FileUtil.getStandardAclPermissions(user));
 				setFileAttributes(path, rawFileAttributes);
 			} catch (FileAlreadyExistsException e) {
 				if (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
