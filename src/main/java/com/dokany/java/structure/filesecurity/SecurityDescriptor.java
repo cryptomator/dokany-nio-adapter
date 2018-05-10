@@ -91,7 +91,7 @@ public class SecurityDescriptor implements Byteable {
 		ByteBuffer buf = ByteBuffer.allocate(sizeOfByteArray());
 		buf.put(revision);
 		buf.put(sbz1);
-		buf.putShort((short) Integer.reverseBytes(control.toInt()));
+		buf.putShort(Short.reverseBytes((short) control.toInt()));
 		buf.putInt(Integer.reverseBytes(ownerSid.map(SecurityIdentifier::sizeOfByteArray).orElse(0)));
 		buf.putInt(Integer.reverseBytes(groupSid.map(SecurityIdentifier::sizeOfByteArray).orElse(0)));
 		buf.putInt(Integer.reverseBytes(sacl.map(AccessControlList::sizeOfByteArray).orElse(0)));
