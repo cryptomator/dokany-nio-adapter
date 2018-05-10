@@ -4,9 +4,9 @@ import com.dokany.java.structure.EnumIntegerSet;
 
 public abstract class AccessControlEntry implements Byteable {
 
-	private final AccessControlEntryType type;
+	protected final AccessControlEntryType type;
 
-	private final EnumIntegerSet<AccessControlEntryFlag> flags;
+	protected final EnumIntegerSet<AccessControlEntryFlag> flags;
 
 	protected AccessControlEntry(AccessControlEntryType type, EnumIntegerSet<AccessControlEntryFlag> flags) {
 		this.type = type;
