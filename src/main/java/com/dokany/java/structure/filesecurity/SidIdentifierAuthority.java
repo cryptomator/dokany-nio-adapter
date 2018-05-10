@@ -61,7 +61,7 @@ public enum SidIdentifierAuthority implements Byteable {
 
 	SidIdentifierAuthority(byte[] mask) {
 		if (mask.length != 6) {
-			//TODO: what should be?
+			//TODO: what should be? padding or truncating?
 		} else {
 			this.mask = Arrays.copyOf(mask, mask.length);
 		}

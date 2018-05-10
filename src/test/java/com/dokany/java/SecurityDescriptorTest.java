@@ -2,6 +2,8 @@ package com.dokany.java;
 
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.filesecurity.SecurityDescriptorControlFlag;
+import com.dokany.java.structure.filesecurity.SecurityIdentifier;
+import com.dokany.java.structure.filesecurity.SidIdentifierAuthority;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,6 +20,12 @@ public class SecurityDescriptorTest {
 		Assert.assertEquals(29360128, Integer.reverseBytes(control.toInt()));
 		Assert.assertEquals(448, Short.reverseBytes((short) control.toInt()));
 		Assert.assertArrayEquals(new byte[]{0x01, -64}, buf.putShort(Short.reverseBytes((short) control.toInt())).array());
+	}
+
+	@Test
+	public void testSidWithoutSubAuthorities() {
+		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
+		Assert.assertArrayEquals(new byte[]{0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, sid.toByteArray());
 	}
 
 	@Test

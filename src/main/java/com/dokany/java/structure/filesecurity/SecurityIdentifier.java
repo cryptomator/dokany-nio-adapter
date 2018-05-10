@@ -1,6 +1,12 @@
 package com.dokany.java.structure.filesecurity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,19 +15,49 @@ import java.util.List;
  */
 public class SecurityIdentifier implements Byteable {
 
+	private static final Logger LOG = LoggerFactory.getLogger(SecurityIdentifier.class);
+
 	private final byte revision = 0x01;
 
 	private SidIdentifierAuthority sidAuth;
 
-	private List<Integer> subAuthoritys;
+	private List<Integer> subAuthorities;
+
+	/**
+	 * Creates a SecurityIdentifier with the given Authority and Subauthorities.
+	 * The number of Subauthorities is bounded from above by 15 and if the List of subauthorities exceeds this limit only the first 15 will be taken.
+	 *
+	 * @param sidAuth
+	 * @param subAuthorities
+	 */
+	public SecurityIdentifier(SidIdentifierAuthority sidAuth, List<Integer> subAuthorities) {
+		this.sidAuth = sidAuth;
+		this.subAuthorities = new ArrayList<>(0);
+		if (subAuthorities != null) {
+			if (subAuthorities.size() <= 15) {
+				this.subAuthorities.addAll(subAuthorities);
+			} else {
+				LOG.warn("Number of subauthorities exceeds the limit of 15. Only taking the first 15 ones.");
+				int i = 0;
+				for (Integer subAuth : subAuthorities) {
+					this.subAuthorities.add(subAuth);
+					if (i >= 15) {
+						break;
+					}
+					i++;
+				}
+
+			}
+		}
+	}
 
 	@Override
 	public byte[] toByteArray() {
 		ByteBuffer buf = ByteBuffer.allocate(sizeOfByteArray());
 		buf.put(revision);
-		buf.put((byte) subAuthoritys.size()); //TODO: does this have to be reversed?
-		buf.put(sidAuth.toByteArray());
-		for (Integer subAuth : subAuthoritys) {
+		buf.put((byte) subAuthorities.size());
+		buf.put(reverse(sidAuth.toByteArray()));
+		for (Integer subAuth : subAuthorities) {
 			buf.putInt(Integer.reverseBytes(subAuth));
 		}
 		return buf.array();
@@ -31,7 +67,18 @@ public class SecurityIdentifier implements Byteable {
 	public int sizeOfByteArray() {
 		return 1 //revision
 				+ 1 //subauthority count
-				+ 6 //6 bytes of of the authority
-				+ 4 * subAuthoritys.size();//each subauthority consists of 4 bytes
+				+ 6 //6 bytes of of the id authority
+				+ 4 * subAuthorities.size();//each subauthority consists of 4 bytes
+	}
+
+	private byte[] reverse(byte[] array) {
+		byte a;
+		int length = array.length;
+		for (int i = 0; i < length / 2; i++) {
+			a = array[i];
+			array[i] = array[length - 1 - i];
+			array[length - 1 - i] = a;
+		}
+		return array;
 	}
 }
