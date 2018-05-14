@@ -1,13 +1,12 @@
 package com.dokany.java;
 
 import com.dokany.java.structure.EnumIntegerSet;
-import com.dokany.java.structure.filesecurity.SecurityDescriptorControlFlag;
-import com.dokany.java.structure.filesecurity.SecurityIdentifier;
-import com.dokany.java.structure.filesecurity.SidIdentifierAuthority;
+import com.dokany.java.structure.filesecurity.*;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 public class SecurityDescriptorTest {
 
@@ -30,7 +29,8 @@ public class SecurityDescriptorTest {
 
 	@Test
 	public void testACL() {
-
+		AccessControlList emptyAcl = AccessControlList.createDaclRevision2(new ArrayList<>(0));
+		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyAcl.toByteArray());
 	}
 
 	@Test
