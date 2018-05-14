@@ -12,9 +12,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class FileUtil {
@@ -105,17 +111,19 @@ public class FileUtil {
 		}
 	}
 
-	public static Set<OpenOption> accesRightsToOpenOptions(EnumIntegerSet<FileAccess> accessRights){
+	public static Set<OpenOption> accesRightsToOpenOptions(EnumIntegerSet<FileAccess> accessRights) {
 		Set<OpenOption> openOptions = Sets.newHashSet();
-		for(FileAccess acc: accessRights){
-			switch (acc){
+		for (FileAccess acc : accessRights) {
+			switch (acc) {
 				case DELETE:
 					openOptions.add(StandardOpenOption.DELETE_ON_CLOSE);
 					break;
-				case READ_DATA: case GENERIC_READ:
+				case READ_DATA:
+				case GENERIC_READ:
 					openOptions.add(StandardOpenOption.READ);
 					break;
-				case WRITE_DATA: case GENERIC_WRITE:
+				case WRITE_DATA:
+				case GENERIC_WRITE:
 					openOptions.add(StandardOpenOption.WRITE);
 					break;
 				case APPEND_DATA:
@@ -129,5 +137,18 @@ public class FileUtil {
 			}
 		}
 		return openOptions;
+	}
+
+	/**
+	 * currently all acl permissions are given the user
+	 *
+	 * @param user
+	 * @return
+	 */
+	public static AclAttribute getStandardAclPermissions(UserPrincipal user) {
+		List<AclEntry> aclEntryList = new ArrayList<AclEntry>();
+		AclEntry entry = AclEntry.newBuilder().setType(AclEntryType.ALLOW).setPrincipal(user).setPermissions(AclEntryPermission.values()).build();
+		aclEntryList.add(entry);
+		return new AclAttribute(aclEntryList);
 	}
 }
