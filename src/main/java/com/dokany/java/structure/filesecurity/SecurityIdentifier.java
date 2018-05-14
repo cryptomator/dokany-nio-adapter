@@ -5,13 +5,12 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Object-oriented implementation of the SID structure.
  * See also <a href=https://msdn.microsoft.com/en-us/library/gg465313.aspx> the microsoft doc</a>.
+ * TODO: implement add() method to add subAuthorities
  */
 public class SecurityIdentifier implements Byteable {
 

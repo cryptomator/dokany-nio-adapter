@@ -10,7 +10,7 @@ public class AccessAllowedACE extends AccessControlEntry {
 
 	SecurityIdentifier sid;
 
-	protected AccessAllowedACE(EnumIntegerSet<AccessControlEntryFlag> flags, SecurityIdentifier sid, EnumIntegerSet<AccessMask> rights) {
+	public AccessAllowedACE(EnumIntegerSet<AccessControlEntryFlag> flags, SecurityIdentifier sid, EnumIntegerSet<AccessMask> rights) {
 		super(AccessControlEntryType.ACCESS_ALLOWED_ACE_TYPE, flags);
 		this.rights = rights;
 		this.sid = sid;
@@ -20,7 +20,7 @@ public class AccessAllowedACE extends AccessControlEntry {
 	public byte[] toByteArray() {
 		ByteBuffer buf = ByteBuffer.allocate(sizeOfByteArray());
 		buf.put(type.toByteArray());
-		buf.putShort(Short.reverseBytes((short) flags.toInt()));
+		buf.put((byte) flags.toInt());
 		buf.putShort(Short.reverseBytes((short) sizeOfByteArray()));
 		buf.putInt(Integer.reverseBytes(rights.toInt()));
 		buf.put(sid.toByteArray());

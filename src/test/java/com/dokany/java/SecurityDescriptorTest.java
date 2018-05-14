@@ -28,9 +28,37 @@ public class SecurityDescriptorTest {
 	}
 
 	@Test
+	public void testAccessAllowedACE() {
+		//set the flag
+		EnumIntegerSet<AccessControlEntryFlag> flags = new EnumIntegerSet<AccessControlEntryFlag>(AccessControlEntryFlag.class);
+		flags.add(AccessControlEntryFlag.CONTAINER_INHERIT_ACE, AccessControlEntryFlag.OBJECT_INHERIT_ACE);
+		//set the mask
+		EnumIntegerSet<AccessMask> mask = new EnumIntegerSet<>(AccessMask.class);
+		mask.add(AccessMask.GA);
+		//set the sid to world sid resp. everyone
+		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
+		//create ace
+		AccessAllowedACE allowedACE = new AccessAllowedACE(flags, sid, mask);
+
+		//encoding of byte array: 1.ace type, 2. ace flags, 3.-4.ace size, 5.-8. access mask, 8.-14. sid (everything little endian!
+		Assert.assertArrayEquals(new byte[]{0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x10, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, allowedACE.toByteArray());
+	}
+
+	@Test
 	public void testACL() {
-		AccessControlList emptyAcl = AccessControlList.createDaclRevision2(new ArrayList<>(0));
-		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyAcl.toByteArray());
+		//test empty DACL rev2
+		AccessControlList emptyDaclRev2 = AccessControlList.createDaclRevision2(new ArrayList<>(0));
+		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev2.toByteArray());
+		//test empty DACL rev4
+		AccessControlList emptyDaclRev4 = AccessControlList.createDaclRevision2(new ArrayList<>(0));
+		Assert.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev4.toByteArray());
+		//test empty SACL rev2
+		AccessControlList emptySaclRev2 = AccessControlList.createSaclRevision2(new ArrayList<>(0));
+		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev2.toByteArray());
+		//test empty SACL rev4
+		AccessControlList emptySaclRev4 = AccessControlList.createSaclRevision4(new ArrayList<>(0));
+		Assert.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev4.toByteArray());
+
 	}
 
 	@Test

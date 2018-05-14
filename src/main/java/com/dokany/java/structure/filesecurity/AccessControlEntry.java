@@ -18,4 +18,5 @@ public abstract class AccessControlEntry implements Byteable {
 
 	@Override
 	public abstract int sizeOfByteArray();
+
 }

@@ -105,6 +105,6 @@ public enum AccessMask implements EnumInteger {
 
 	@Override
 	public int getMask() {
-		return 0;
+		return mask;
 	}
 }
