@@ -1,7 +1,7 @@
 package com.dokany.java.structure.filesecurity;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,6 +9,29 @@ import java.util.List;
  * For more information, please read the <a href="https://msdn.microsoft.com/en-us/library/cc230297.aspx">official Microsoft documentation</a>.
  */
 public class AccessControlList implements Byteable {
+
+	private enum ACLType {
+		DACL,
+		SACL;
+	}
+
+	private final ACLType aclType;
+
+	private static final AccessControlEntryType[] allowedACEsForDaclRev2 = new AccessControlEntryType[]{
+			AccessControlEntryType.ACCESS_ALLOWED_ACE_TYPE, AccessControlEntryType.ACCESS_DENIED_ACE_TYPE
+	};
+
+	private static final AccessControlEntryType[] allowedACEsForDaclRev4 = new AccessControlEntryType[]{
+			AccessControlEntryType.ACCESS_ALLOWED_COMPOUND_ACE_TYPE, AccessControlEntryType.ACCESS_ALLOWED_OBJECT_ACE_TYPE, AccessControlEntryType.ACCESS_DENIED_OBJECT_ACE_TYPE
+	};
+
+	private static final AccessControlEntryType[] allowedACEsForSaclRev2 = new AccessControlEntryType[]{
+			AccessControlEntryType.SYSTEM_AUDIT_ACE_TYPE, AccessControlEntryType.SYSTEM_ALARM_ACE_TYPE, AccessControlEntryType.SYSTEM_MANDATORY_LABEL_ACE_TYPE, AccessControlEntryType.SYSTEM_RESOURCE_ATTRIBUTE_ACE_TYPE, AccessControlEntryType.SYSTEM_SCOPED_POLICY_ID_ACE_TYPE
+	};
+
+	private static final AccessControlEntryType[] allowedACEsForSaclRev4 = new AccessControlEntryType[]{
+			AccessControlEntryType.SYSTEM_AUDIT_OBJECT_ACE_TYPE, AccessControlEntryType.SYSTEM_ALARM_OBJECT_ACE_TYPE, AccessControlEntryType.SYSTEM_MANDATORY_LABEL_ACE_TYPE
+	};
 
 	/**
 	 * AclRevision
@@ -33,11 +56,11 @@ public class AccessControlList implements Byteable {
 	 */
 	private List<AccessControlEntry> aces;
 
-	private AccessControlList(byte aclRevision, List<AccessControlEntry> aces) {
+	private AccessControlList(ACLType aclType, byte aclRevision, List<AccessControlEntry> aces) {
+		this.aclType = aclType;
 		this.aclRevision = aclRevision;
-		this.aces = Collections.emptyList();
+		this.aces = new ArrayList<>(15);
 		for (AccessControlEntry ace : aces) {
-			//check revision number!
 		}
 
 	}
@@ -67,12 +90,57 @@ public class AccessControlList implements Byteable {
 				+ aces.stream().reduce(0, (sum, ace) -> sum + ace.sizeOfByteArray(), (x, y) -> x + y);
 	}
 
-	//TODO: is it correct that the rev. number implicates a SACL or DACL?
-	public static AccessControlList createSacl(List<AccessControlEntry> aces) {
-		return new AccessControlList((byte) 0x04, aces);
+	public static AccessControlList createDaclRevision2(List<AccessControlEntry> aces) {
+		for (AccessControlEntry ace : aces) {
+			if (!isValidAce(ace.type, allowedACEsForDaclRev2)) {
+				//we found an invalid ace
+				//aborting
+				return null;
+			}
+		}
+		return new AccessControlList(ACLType.DACL, (byte) 0x02, aces);
 	}
 
-	public static AccessControlList createDacl(List<AccessControlEntry> aces) {
-		return new AccessControlList((byte) 0x02, aces);
+	public static AccessControlList createDaclRevision4(List<AccessControlEntry> aces) {
+		for (AccessControlEntry ace : aces) {
+			if (!isValidAce(ace.type, allowedACEsForDaclRev4)) {
+				//we found an invalid ace
+				//aborting
+				return null;
+			}
+		}
+		return new AccessControlList(ACLType.DACL, (byte) 0x04, aces);
 	}
+
+	public static AccessControlList createSaclRevision2(List<AccessControlEntry> aces) {
+		for (AccessControlEntry ace : aces) {
+			if (!isValidAce(ace.type, allowedACEsForSaclRev2)) {
+				//we found an invalid ace
+				//aborting
+				return null;
+			}
+		}
+		return new AccessControlList(ACLType.SACL, (byte) 0x02, aces);
+	}
+
+	public static AccessControlList createSaclRevision4(List<AccessControlEntry> aces) {
+		for (AccessControlEntry ace : aces) {
+			if (!isValidAce(ace.type, allowedACEsForSaclRev4)) {
+				//we found an invalid ace
+				//aborting
+				return null;
+			}
+		}
+		return new AccessControlList(ACLType.SACL, (byte) 0x04, aces);
+	}
+
+	private static boolean isValidAce(AccessControlEntryType aceType, AccessControlEntryType[] validACEs) {
+		for (AccessControlEntryType validAceType : validACEs) {
+			if (aceType.ordinal() == validAceType.ordinal()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

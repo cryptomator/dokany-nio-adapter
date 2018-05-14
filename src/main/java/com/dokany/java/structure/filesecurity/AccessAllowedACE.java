@@ -10,8 +10,10 @@ public class AccessAllowedACE extends AccessControlEntry {
 
 	SecurityIdentifier sid;
 
-	protected AccessAllowedACE(EnumIntegerSet<AccessControlEntryFlag> flags) {
+	protected AccessAllowedACE(EnumIntegerSet<AccessControlEntryFlag> flags, SecurityIdentifier sid, EnumIntegerSet<AccessMask> rights) {
 		super(AccessControlEntryType.ACCESS_ALLOWED_ACE_TYPE, flags);
+		this.rights = rights;
+		this.sid = sid;
 	}
 
 	@Override
