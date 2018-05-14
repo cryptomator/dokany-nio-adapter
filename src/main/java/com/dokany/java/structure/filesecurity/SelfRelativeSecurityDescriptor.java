@@ -82,7 +82,12 @@ public class SecurityDescriptor implements Byteable {
 	 */
 	private Optional<AccessControlList> dacl;
 
-	private SecurityDescriptor() {
+	/**
+	 * Creates an empty SecurtiyDescriptor.
+	 * @param control
+	 */
+	private SecurityDescriptor(EnumIntegerSet<SecurityDescriptorControlFlag> control) {
+
 	}
 
 	@Override
@@ -113,4 +118,15 @@ public class SecurityDescriptor implements Byteable {
 				+ sacl.map(AccessControlList::sizeOfByteArray).orElse(0)
 				+ dacl.map(AccessControlList::sizeOfByteArray).orElse(0);
 	}
+
+	public static SecurityDescriptor createEmptySD(EnumIntegerSet<SecurityDescriptorControlFlag> flags){
+		if((flags.toInt() & (SecurityDescriptorControlFlag.DP.getMask() | SecurityDescriptorControlFlag.SP.getMask())) != 0){
+
+		}
+		else {
+			//wrong sd, abort
+			return null;
+		}
+	}
+
 }
