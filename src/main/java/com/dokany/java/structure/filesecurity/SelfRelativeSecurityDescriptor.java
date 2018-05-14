@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
- * Class implementing the self-relative SecurityDescriptor structure described in the <a href="https://msdn.microsoft.com/en-us/library/cc230366.aspx">Microsoft documentation</a>. The following is a copy of the documentation:
+ * Class implementing the self-relative SelfRelativeSecurityDescriptor structure described in the <a href="https://msdn.microsoft.com/en-us/library/cc230366.aspx">Microsoft documentation</a>. The following is a copy of the documentation:
  * <p>
  * The SECURITY_DESCRIPTOR structure defines the security attributes of an object. These attributes specify who owns the object; who can access the object and what they can do with it; what level of audit logging can be applied to the object; and what kind of restrictions apply to the use of the security descriptor.
  * <p>
@@ -20,7 +20,7 @@ import java.util.Optional;
  * <p>
  * When a self-relative security descriptor is transmitted over a wire, it is sent in little-endian format and requires no padding.
  */
-public class SecurityDescriptor implements Byteable {
+public class SelfRelativeSecurityDescriptor implements Byteable {
 
 	private static final byte[] EMPTY = new byte[0];
 
@@ -84,10 +84,39 @@ public class SecurityDescriptor implements Byteable {
 
 	/**
 	 * Creates an empty SecurtiyDescriptor.
+	 *
 	 * @param control
 	 */
-	private SecurityDescriptor(EnumIntegerSet<SecurityDescriptorControlFlag> control) {
+	private SelfRelativeSecurityDescriptor(EnumIntegerSet<SecurityDescriptorControlFlag> control) {
+		this.control = control;
+		this.ownerSid = Optional.empty();
+		this.groupSid = Optional.empty();
+		this.sacl = Optional.empty();
+		this.dacl = Optional.empty();
+	}
 
+	private SelfRelativeSecurityDescriptor(EnumIntegerSet<SecurityDescriptorControlFlag> control, SecurityIdentifier ownerSid, SecurityIdentifier groupSid, AccessControlList sacl, AccessControlList dacl) {
+		this.control = control;
+		if (ownerSid != null) {
+			this.ownerSid = Optional.of(ownerSid);
+		} else {
+			this.ownerSid = Optional.empty();
+		}
+		if (groupSid != null) {
+			this.groupSid = Optional.of(groupSid);
+		} else {
+			this.groupSid = Optional.empty();
+		}
+		if (sacl != null) {
+			this.sacl = Optional.of(sacl);
+		} else {
+			this.sacl = Optional.empty();
+		}
+		if (dacl != null) {
+			this.dacl = Optional.of(dacl);
+		} else {
+			this.dacl = Optional.empty();
+		}
 	}
 
 	@Override
@@ -97,6 +126,7 @@ public class SecurityDescriptor implements Byteable {
 		buf.put(revision);
 		buf.put(sbz1);
 		buf.putShort(Short.reverseBytes((short) control.toInt()));
+		//TODO: here is something wrong! The offset is NOT the length of the given structure
 		buf.putInt(Integer.reverseBytes(ownerSid.map(SecurityIdentifier::sizeOfByteArray).orElse(0)));
 		buf.putInt(Integer.reverseBytes(groupSid.map(SecurityIdentifier::sizeOfByteArray).orElse(0)));
 		buf.putInt(Integer.reverseBytes(sacl.map(AccessControlList::sizeOfByteArray).orElse(0)));
@@ -119,14 +149,30 @@ public class SecurityDescriptor implements Byteable {
 				+ dacl.map(AccessControlList::sizeOfByteArray).orElse(0);
 	}
 
-	public static SecurityDescriptor createEmptySD(EnumIntegerSet<SecurityDescriptorControlFlag> flags){
-		if((flags.toInt() & (SecurityDescriptorControlFlag.DP.getMask() | SecurityDescriptorControlFlag.SP.getMask())) != 0){
-
-		}
-		else {
-			//wrong sd, abort
+	public static SelfRelativeSecurityDescriptor createEmptySD(EnumIntegerSet<SecurityDescriptorControlFlag> flags) {
+		if ((flags.toInt() & (SecurityDescriptorControlFlag.DP.getMask() | SecurityDescriptorControlFlag.SP.getMask())) == 0) {
+			flags.add(SecurityDescriptorControlFlag.SR);
+			return new SelfRelativeSecurityDescriptor(flags);
+		} else {
+			//wrong control flags, abort
 			return null;
 		}
+	}
+
+	public static SelfRelativeSecurityDescriptor createSD(EnumIntegerSet<SecurityDescriptorControlFlag> flags, SecurityIdentifier owner, SecurityIdentifier group, AccessControlList sacl, AccessControlList dacl) {
+		int controlMask = flags.toInt();
+		if ((controlMask & SecurityDescriptorControlFlag.DP.getMask()) != 0 && dacl == null) {
+			//abort
+			return null;
+		}
+		if ((controlMask & SecurityDescriptorControlFlag.SP.getMask()) != 0 && sacl == null) {
+			//abort
+			return null;
+		}
+		flags.add(SecurityDescriptorControlFlag.SR);
+		return new SelfRelativeSecurityDescriptor(flags, owner, group, sacl, dacl);
+
+
 	}
 
 }
