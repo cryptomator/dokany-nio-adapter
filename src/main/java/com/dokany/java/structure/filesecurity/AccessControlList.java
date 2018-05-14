@@ -56,13 +56,11 @@ public class AccessControlList implements Byteable {
 	 */
 	private List<AccessControlEntry> aces;
 
-	private AccessControlList(ACLType aclType, byte aclRevision, List<AccessControlEntry> aces) {
+	private AccessControlList(ACLType aclType, byte aclRevision, List<? extends AccessControlEntry> aces) {
 		this.aclType = aclType;
 		this.aclRevision = aclRevision;
 		this.aces = new ArrayList<>(15);
-		for (AccessControlEntry ace : aces) {
-		}
-
+		this.aces.addAll(aces);
 	}
 
 
@@ -90,7 +88,7 @@ public class AccessControlList implements Byteable {
 				+ aces.stream().reduce(0, (sum, ace) -> sum + ace.sizeOfByteArray(), (x, y) -> x + y);
 	}
 
-	public static AccessControlList createDaclRevision2(List<AccessControlEntry> aces) {
+	public static AccessControlList createDaclRevision2(List<? extends AccessControlEntry> aces) {
 		for (AccessControlEntry ace : aces) {
 			if (!isValidAce(ace.type, allowedACEsForDaclRev2)) {
 				//we found an invalid ace
@@ -101,7 +99,7 @@ public class AccessControlList implements Byteable {
 		return new AccessControlList(ACLType.DACL, (byte) 0x02, aces);
 	}
 
-	public static AccessControlList createDaclRevision4(List<AccessControlEntry> aces) {
+	public static AccessControlList createDaclRevision4(List<? extends AccessControlEntry> aces) {
 		for (AccessControlEntry ace : aces) {
 			if (!isValidAce(ace.type, allowedACEsForDaclRev4)) {
 				//we found an invalid ace
@@ -112,7 +110,7 @@ public class AccessControlList implements Byteable {
 		return new AccessControlList(ACLType.DACL, (byte) 0x04, aces);
 	}
 
-	public static AccessControlList createSaclRevision2(List<AccessControlEntry> aces) {
+	public static AccessControlList createSaclRevision2(List<? extends AccessControlEntry> aces) {
 		for (AccessControlEntry ace : aces) {
 			if (!isValidAce(ace.type, allowedACEsForSaclRev2)) {
 				//we found an invalid ace
@@ -123,7 +121,7 @@ public class AccessControlList implements Byteable {
 		return new AccessControlList(ACLType.SACL, (byte) 0x02, aces);
 	}
 
-	public static AccessControlList createSaclRevision4(List<AccessControlEntry> aces) {
+	public static AccessControlList createSaclRevision4(List<? extends AccessControlEntry> aces) {
 		for (AccessControlEntry ace : aces) {
 			if (!isValidAce(ace.type, allowedACEsForSaclRev4)) {
 				//we found an invalid ace

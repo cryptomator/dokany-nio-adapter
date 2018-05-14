@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class SecurityDescriptorTest {
 
@@ -50,7 +52,7 @@ public class SecurityDescriptorTest {
 		AccessControlList emptyDaclRev2 = AccessControlList.createDaclRevision2(new ArrayList<>(0));
 		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev2.toByteArray());
 		//test empty DACL rev4
-		AccessControlList emptyDaclRev4 = AccessControlList.createDaclRevision2(new ArrayList<>(0));
+		AccessControlList emptyDaclRev4 = AccessControlList.createDaclRevision4(new ArrayList<>(0));
 		Assert.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev4.toByteArray());
 		//test empty SACL rev2
 		AccessControlList emptySaclRev2 = AccessControlList.createSaclRevision2(new ArrayList<>(0));
@@ -59,6 +61,18 @@ public class SecurityDescriptorTest {
 		AccessControlList emptySaclRev4 = AccessControlList.createSaclRevision4(new ArrayList<>(0));
 		Assert.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev4.toByteArray());
 
+		//test DACL rev2 with accessAllowACE
+		EnumIntegerSet<AccessControlEntryFlag> flags = new EnumIntegerSet<AccessControlEntryFlag>(AccessControlEntryFlag.class);
+		flags.add(AccessControlEntryFlag.CONTAINER_INHERIT_ACE, AccessControlEntryFlag.OBJECT_INHERIT_ACE);
+		//set the mask
+		EnumIntegerSet<AccessMask> mask = new EnumIntegerSet<>(AccessMask.class);
+		mask.add(AccessMask.GA);
+		//set the sid to world sid resp. everyone
+		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
+		//create ace
+		AccessControlList daclRev2WithAccessAllow = AccessControlList.createDaclRevision2(Collections.singletonList(new AccessAllowedACE(flags, sid, mask)));
+
+		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x18, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x10, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, daclRev2WithAccessAllow.toByteArray());
 	}
 
 	@Test
