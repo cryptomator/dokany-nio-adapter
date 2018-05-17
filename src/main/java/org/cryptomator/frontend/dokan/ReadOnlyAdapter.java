@@ -31,6 +31,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
@@ -141,8 +142,10 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			openOptions.add(StandardOpenOption.APPEND);
 		}
 		if (Files.isRegularFile(path)) {
+			dokanyFileInfo.IsDirectory = 0;
 			return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 		} else {
+			dokanyFileInfo.IsDirectory = 1;
 			return createDirectory(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 		}
 	}
@@ -150,7 +153,6 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 
 	/**
 	 * TODO: should the alreadyExists check be atomical with respect to the function call ?
-	 * dokanyFileInfo.Context == 1
 	 *
 	 * @return
 	 */
@@ -181,6 +183,8 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 			try {
 				setFileAttributes(path, rawFileAttributes);
 				dokanyFileInfo.Context = fac.open(path, openOptions, FileUtil.getStandardAclPermissions(user));
+			} catch (AccessDeniedException e) {
+				return NtStatus.ACCESS_DENIED.getMask();
 			} catch (IOException e) {
 				//TODO: fine grained error handling
 				return NtStatus.UNSUCCESSFUL.getMask();
