@@ -211,12 +211,12 @@ public class DokanyUtils {
 
 	/**
 	 * Will return an
+	 * TODO: can be refactored to the EnumIntegerSet Class
 	 *
 	 * @param value
 	 * @param allEnumValues
 	 * @return
 	 */
-
 	public static <T extends Enum<T>> EnumIntegerSet<T> enumSetFromInt(final int value, final T[] allEnumValues) {
 		EnumIntegerSet<T> elements = new EnumIntegerSet<>(allEnumValues[0].getDeclaringClass());
 		int remainingValues = value;
@@ -232,9 +232,17 @@ public class DokanyUtils {
 	}
 
 
+	/**
+	 * TODO: can be refactored to the EnumIntegerSet Class
+	 *
+	 * @param value
+	 * @param enumValues
+	 * @param <T>
+	 * @return
+	 */
 	public static <T extends EnumInteger> T enumFromInt(final int value, final T[] enumValues) {
 		for (final T current : enumValues) {
-			if ((value & current.getMask()) == current.getMask()) {
+			if (value == current.getMask()) {
 				return current;
 			}
 		}
