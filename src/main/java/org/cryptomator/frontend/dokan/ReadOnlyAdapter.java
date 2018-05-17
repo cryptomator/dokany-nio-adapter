@@ -97,7 +97,7 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		Set<OpenOption> openOptions = Sets.newHashSet();
 		openOptions.add(StandardOpenOption.READ);
 		openOptions.add(StandardOpenOption.WRITE);
-		CreationDisposition creationDisposition = DokanyUtils.enumFromInt(rawCreateDisposition, CreationDisposition.values());
+		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
 		LOG.debug("Create Disposition flag is " + creationDisposition.name());
 		if (Files.exists(path)) {
 			switch (creationDisposition) {
