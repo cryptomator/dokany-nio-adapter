@@ -560,13 +560,13 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 	@Override
 	public long getFileSecurity(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, IntByReference rawSecurityDescriptorLengthNeeded, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
-		SecurityInformation securityInfo = DokanyUtils.enumFromInt(rawSecurityInformation, SecurityInformation.values());
-		LOG.debug("getFileSecurity() is called for {} {}", path.toString(), securityInfo.name());
+		//SecurityInformation securityInfo = DokanyUtils.enumFromInt(rawSecurityInformation, SecurityInformation.values());
+		//LOG.debug("getFileSecurity() is called for {} {}", path.toString(), securityInfo.name());
 		if (Files.exists(path)) {
-			byte[] emptySD = getEmptySecurityDescriptor();
-			rawSecurityDescriptorLengthNeeded.setValue(emptySD.length);
-			if (emptySD.length <= rawSecurityDescriptorLength) {
-				rawSecurityDescriptor.write(0L, emptySD, 0, emptySD.length);
+			byte[] securityDescriptor = FileUtil.getStandardSecurityDescriptor();
+			rawSecurityDescriptorLengthNeeded.setValue(securityDescriptor.length);
+			if (securityDescriptor.length <= rawSecurityDescriptorLength) {
+				rawSecurityDescriptor.write(0L, securityDescriptor, 0, securityDescriptor.length);
 				return ErrorCode.SUCCESS.getMask();
 			} else {
 				return NtStatus.BUFFER_OVERFLOW.getMask();
@@ -581,9 +581,9 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		Path path = getRootedPath(rawPath);
 		LOG.trace("setFileSecurity() is called for " + path.toString());
 		if (Files.exists(path)) {
-			byte[] emptySD = getEmptySecurityDescriptor();
-			if (emptySD.length <= rawSecurityDescriptorLength) {
-				rawSecurityDescriptor.write(0L, emptySD, 0, emptySD.length);
+			byte[] securityDescriptor = FileUtil.getStandardSecurityDescriptor();
+			if (securityDescriptor.length <= rawSecurityDescriptorLength) {
+				rawSecurityDescriptor.write(0L, securityDescriptor, 0, securityDescriptor.length);
 				return ErrorCode.SUCCESS.getMask();
 			} else {
 				return NtStatus.BUFFER_OVERFLOW.getMask();
@@ -616,32 +616,6 @@ public class ReadOnlyAdapter implements DokanyFileSystem {
 		} else {
 			return false;
 		}
-	}
-
-	public static byte[] getEmptySecurityDescriptor() {
-		return new byte[]{
-				0x01, //revision
-				0x00, //sbz1
-				0x01,
-				-64, //control flag indicating a self relative sec. desc. and setting the last two bits (owner and group default)
-				0x00,
-				0x00,
-				0x00,
-				0x00, //owner offset
-				0x00,
-				0x00,
-				0x00,
-				0x00, //group offset
-				0x00,
-				0x00,
-				0x00,
-				0x00, //sacl offset
-				0x00,
-				0x00,
-				0x00,
-				0x00, //dacl offset
-		};
-
 	}
 
 }
