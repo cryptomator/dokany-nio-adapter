@@ -48,6 +48,12 @@ public class SelfRelativeSecurityDescriptorTest {
 	}
 
 	@Test
+	public void testSidFromString() {
+		SecurityIdentifier sid = SecurityIdentifier.fromString("S-1-5-32-544");
+		Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00}, sid.toByteArray());
+	}
+
+	@Test
 	public void testAccessAllowedACE() {
 		//set the flag
 		EnumIntegerSet<AccessControlEntryFlag> flags = new EnumIntegerSet<AccessControlEntryFlag>(AccessControlEntryFlag.class);
@@ -56,7 +62,7 @@ public class SelfRelativeSecurityDescriptorTest {
 		EnumIntegerSet<AccessMask> mask = new EnumIntegerSet<>(AccessMask.class);
 		mask.add(AccessMask.GA);
 		//set the sid to world sid resp. everyone
-		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
+		SecurityIdentifier sid = SecurityIdentifier.fromString("S-1-1-0");// everyone sid
 		//create ace
 		AccessAllowedACE allowedACE = new AccessAllowedACE(flags, sid, mask);
 
@@ -163,7 +169,12 @@ public class SelfRelativeSecurityDescriptorTest {
 	}
 
 	private static byte[] getAllowedAccessACE() {
-		return new byte[]{0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x10, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+		return new byte[]{
+				0x00, // ace Type
+				0x03, //ace flags
+				0x14, 0x00, //ace size
+				0x00, 0x00, 0x00, 0x10, //access mask
+				0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
 	}
 
 	private static byte[] getAclWithAAAce() {

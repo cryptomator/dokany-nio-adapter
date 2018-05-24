@@ -72,14 +72,17 @@ public class SecurityIdentifier implements Byteable {
 				+ 4 * subAuthorities.size();//each subauthority consists of 4 bytes
 	}
 
-	private byte[] reverse(byte[] array) {
-		byte a;
-		int length = array.length;
-		for (int i = 0; i < length / 2; i++) {
-			a = array[i];
-			array[i] = array[length - 1 - i];
-			array[length - 1 - i] = a;
+	/**
+	 * @param stringSid
+	 * @return
+	 */
+	public static SecurityIdentifier fromString(String stringSid) {
+		String[] sidTokenized = stringSid.split("-");
+		List<Integer> subAuths = new ArrayList<>(sidTokenized.length - 3); // the first tokens are S-[Revision]-[IdAuthority]-...
+		SidIdentifierAuthority idAuth = SidIdentifierAuthority.fromInt(Integer.parseUnsignedInt(sidTokenized[2]));
+		for (int i = 3; i < sidTokenized.length; i++) {
+			subAuths.add(Integer.parseUnsignedInt(sidTokenized[i]));
 		}
-		return array;
+		return new SecurityIdentifier(idAuth, subAuths);
 	}
 }

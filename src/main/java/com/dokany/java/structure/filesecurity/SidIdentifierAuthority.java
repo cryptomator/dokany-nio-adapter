@@ -72,4 +72,19 @@ public enum SidIdentifierAuthority implements Byteable {
 	public int sizeOfByteArray() {
 		return 6;
 	}
+
+	/**
+	 * TODO: can be improved by exception handling
+	 *
+	 * @param id
+	 * @return
+	 */
+	public static SidIdentifierAuthority fromInt(int id) {
+		for (SidIdentifierAuthority idAuth : values()) {
+			if (idAuth.id == id) {
+				return idAuth;
+			}
+		}
+		return null;
+	}
 }
