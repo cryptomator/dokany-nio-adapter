@@ -121,16 +121,33 @@ public class SelfRelativeSecurityDescriptor implements Byteable {
 
 	@Override
 	public byte[] toByteArray() {
+		int offset = 16; // basic header offset: revision, sbz1, controlmask and the four offsets
+		int offsetOwner = 0, offsetGroup = 0, offsetSacl = 0, offsetDacl = 0;
+		if (ownerSid.isPresent()) {
+			offsetOwner = offset;
+			offset += ownerSid.get().sizeOfByteArray();
+		}
+		if (groupSid.isPresent()) {
+			offsetGroup = offset;
+			offset += groupSid.get().sizeOfByteArray();
+		}
+		if (sacl.isPresent()) {
+			offsetSacl = offset;
+			offset += sacl.get().sizeOfByteArray();
+		}
+		if (dacl.isPresent()) {
+			offsetDacl = offset;
+			offset += dacl.get().sizeOfByteArray(); // not really necessary
+		}
 		//do some computations of the size
 		ByteBuffer buf = ByteBuffer.allocate(sizeOfByteArray());
 		buf.put(revision);
 		buf.put(sbz1);
 		buf.putShort(Short.reverseBytes((short) control.toInt()));
-		//TODO: here is something wrong! The offset is NOT the length of the given structure
-		buf.putInt(Integer.reverseBytes(ownerSid.map(SecurityIdentifier::sizeOfByteArray).orElse(0)));
-		buf.putInt(Integer.reverseBytes(groupSid.map(SecurityIdentifier::sizeOfByteArray).orElse(0)));
-		buf.putInt(Integer.reverseBytes(sacl.map(AccessControlList::sizeOfByteArray).orElse(0)));
-		buf.putInt(Integer.reverseBytes(dacl.map(AccessControlList::sizeOfByteArray).orElse(0)));
+		buf.putInt(Integer.reverseBytes(offsetOwner));
+		buf.putInt(Integer.reverseBytes(offsetGroup));
+		buf.putInt(Integer.reverseBytes(offsetSacl));
+		buf.putInt(Integer.reverseBytes(offsetDacl));
 		buf.put(ownerSid.map(SecurityIdentifier::toByteArray).orElse(EMPTY));
 		buf.put(groupSid.map(SecurityIdentifier::toByteArray).orElse(EMPTY));
 		buf.put(sacl.map(AccessControlList::toByteArray).orElse(EMPTY));
