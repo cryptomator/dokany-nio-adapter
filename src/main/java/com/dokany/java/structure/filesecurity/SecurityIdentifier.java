@@ -55,8 +55,10 @@ public class SecurityIdentifier implements Byteable {
 		ByteBuffer buf = ByteBuffer.allocate(sizeOfByteArray());
 		buf.put(revision);
 		buf.put((byte) subAuthorities.size());
-		buf.put(reverse(sidAuth.toByteArray()));
+		//dont reverse the authority
+		buf.put(sidAuth.toByteArray());
 		for (Integer subAuth : subAuthorities) {
+			//but reverse the subauthorities
 			buf.putInt(Integer.reverseBytes(subAuth));
 		}
 		return buf.array();
