@@ -10,23 +10,41 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+/**
+ * TODO: ändere bei sid dass die kennung nicht umgedreht wird!
+ */
 public class SelfRelativeSecurityDescriptorTest {
 
 	@Test
 	public void testControlField() {
 		EnumIntegerSet<SecurityDescriptorControlFlag> control = new EnumIntegerSet<>(SecurityDescriptorControlFlag.class);
-		control.add(SecurityDescriptorControlFlag.SR, SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD);
+		control.add(SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD, SecurityDescriptorControlFlag.DD, SecurityDescriptorControlFlag.SD);
 		ByteBuffer buf = ByteBuffer.allocate(2);
 
-		Assert.assertEquals(29360128, Integer.reverseBytes(control.toInt()));
-		Assert.assertEquals(448, Short.reverseBytes((short) control.toInt()));
-		Assert.assertArrayEquals(new byte[]{0x01, -64}, buf.putShort(Short.reverseBytes((short) control.toInt())).array());
+		Assert.assertEquals((43 << 8 + 0) << 16, Integer.reverseBytes(control.toInt()));
+		Assert.assertEquals((43 << 8 + 0), Short.reverseBytes((short) control.toInt()));
+		Assert.assertArrayEquals(new byte[]{43, 0}, buf.putShort(Short.reverseBytes((short) control.toInt())).array());
 	}
 
 	@Test
 	public void testSidWithoutSubAuthorities() {
 		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
-		Assert.assertArrayEquals(new byte[]{0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, sid.toByteArray());
+		Assert.assertArrayEquals(new byte[]{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}, sid.toByteArray());
+	}
+
+	@Test
+	public void testValidEveryoneSid() {
+		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, Collections.singletonList(0));
+		Assert.assertArrayEquals(new byte[]{0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}, sid.toByteArray());
+	}
+
+	@Test
+	public void testValidBuiltinAdminitstratorsSid() {
+		ArrayList<Integer> subAuths = new ArrayList<>(2);
+		subAuths.add(32);
+		subAuths.add(544);
+		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.SECURITY_NT_AUTHORITY, subAuths);
+		Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00}, sid.toByteArray());
 	}
 
 	@Test
@@ -78,7 +96,7 @@ public class SelfRelativeSecurityDescriptorTest {
 	@Test
 	public void testEmptySecurityDescriptor() {
 		EnumIntegerSet<SecurityDescriptorControlFlag> flags = new EnumIntegerSet<>(SecurityDescriptorControlFlag.class);
-		flags.add(SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD);
+		flags.add(SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD, SecurityDescriptorControlFlag.DD, SecurityDescriptorControlFlag.SD);
 		Assert.assertArrayEquals(getEmptySecurityDescriptor(), SelfRelativeSecurityDescriptor.createEmptySD(flags).toByteArray());
 	}
 
@@ -119,8 +137,8 @@ public class SelfRelativeSecurityDescriptorTest {
 		return new byte[]{
 				0x01, //revision
 				0x00, //sbz1
-				0x01,// first half of control flag indicating a self relative sec. desc.
-				-64, //second half indicating owner and group default
+				43,// first half of control flag indicating  owner and group and dacl and sacl default
+				-128, //first half indicating a self relative sec. desc.
 				0x00,
 				0x00,
 				0x00,
