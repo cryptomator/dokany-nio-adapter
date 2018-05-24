@@ -121,7 +121,7 @@ public class SelfRelativeSecurityDescriptor implements Byteable {
 
 	@Override
 	public byte[] toByteArray() {
-		int offset = 16; // basic header offset: revision, sbz1, controlmask and the four offsets
+		int offset = 20; // basic header offset: revision, sbz1, controlmask and the four offsets
 		int offsetOwner = 0, offsetGroup = 0, offsetSacl = 0, offsetDacl = 0;
 		if (ownerSid.isPresent()) {
 			offsetOwner = offset;
