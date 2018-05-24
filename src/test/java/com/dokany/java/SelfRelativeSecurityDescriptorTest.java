@@ -11,7 +11,10 @@ import java.util.Arrays;
 import java.util.Collections;
 
 /**
- * TODO: ändere bei sid dass die kennung nicht umgedreht wird!
+ * TODO: the harcoded byte arrays are not directly bind to the methods, so changing some sid constant or something like this can lead to failures!
+ * TODO: combine the selection of sid/whatever and the hardcoded array in one method
+ * <p>
+ * TODO: refactor in suhc a way, that all test methods for a specific class has an own test class
  */
 public class SelfRelativeSecurityDescriptorTest {
 
@@ -29,13 +32,14 @@ public class SelfRelativeSecurityDescriptorTest {
 	@Test
 	public void testSidWithoutSubAuthorities() {
 		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
-		Assert.assertArrayEquals(new byte[]{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}, sid.toByteArray());
+		byte[] expected = new byte[]{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+		Assert.assertArrayEquals(expected, sid.toByteArray());
 	}
 
 	@Test
 	public void testValidEveryoneSid() {
 		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, Collections.singletonList(0));
-		Assert.assertArrayEquals(new byte[]{0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}, sid.toByteArray());
+		Assert.assertArrayEquals(getEveryoneSid(), sid.toByteArray());
 	}
 
 	@Test
@@ -101,20 +105,45 @@ public class SelfRelativeSecurityDescriptorTest {
 	public void testEmptySecurityDescriptor() {
 		EnumIntegerSet<SecurityDescriptorControlFlag> flags = new EnumIntegerSet<>(SecurityDescriptorControlFlag.class);
 		flags.add(SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD, SecurityDescriptorControlFlag.DD, SecurityDescriptorControlFlag.SD);
-		Assert.assertArrayEquals(getEmptySecurityDescriptor(), SelfRelativeSecurityDescriptor.createEmptySD(flags).toByteArray());
+		byte[] expected = getEmptySelfRelativeSecurityDescriptorWithEmptyFlags();
+		expected[2] = 43;
+		Assert.assertArrayEquals(expected, SelfRelativeSecurityDescriptor.createEmptySD(flags).toByteArray());
 	}
 
 	@Test
 	public void testOwnerAndGroupSD() {
 		//control
 		EnumIntegerSet<SecurityDescriptorControlFlag> control = new EnumIntegerSet<>(SecurityDescriptorControlFlag.class);
-		control.add(SecurityDescriptorControlFlag.SD, SecurityDescriptorControlFlag.DP);
+		control.add(SecurityDescriptorControlFlag.SR, SecurityDescriptorControlFlag.SD, SecurityDescriptorControlFlag.DD);
 		//owner
-		SecurityIdentifier oSid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
+		SecurityIdentifier oSid = SecurityIdentifier.fromString("S-1-1-0");
 		//group
-		SecurityIdentifier gSid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
+		SecurityIdentifier gSid = SecurityIdentifier.fromString("S-1-1-0");
+		//security descriptor
+		SelfRelativeSecurityDescriptor sd = SelfRelativeSecurityDescriptor.createSD(control, oSid, gSid, null, null);
 
-		EnumIntegerSet<AccessControlEntryFlag> flags = new EnumIntegerSet<AccessControlEntryFlag>(AccessControlEntryFlag.class);
+		//our expected stuff
+		byte[] emptySD = getEmptySelfRelativeSecurityDescriptorWithEmptyFlags();
+		emptySD[2] = 40; //we defaulting only sacl and dacl
+		emptySD[4] = 20; //offsets
+		emptySD[8] = 32;
+		byte[] sid = getEveryoneSid();
+		byte[] expected = concat(concat(emptySD, sid), sid);
+
+		Assert.assertArrayEquals(expected, sd.toByteArray());
+	}
+
+	@Test
+	public void testSDWithOwnerGroupAndDacl() {
+		//control
+		EnumIntegerSet<SecurityDescriptorControlFlag> control = new EnumIntegerSet<>(SecurityDescriptorControlFlag.class);
+		control.add(SecurityDescriptorControlFlag.SR, SecurityDescriptorControlFlag.DP, SecurityDescriptorControlFlag.SD);
+		//owner
+		SecurityIdentifier oSid = SecurityIdentifier.fromString("S-1-1-0");
+		SecurityIdentifier gSid = SecurityIdentifier.fromString("S-1-1-0");
+		//ace
+		//ace control
+		EnumIntegerSet<AccessControlEntryFlag> flags = new EnumIntegerSet<>(AccessControlEntryFlag.class);
 		flags.add(AccessControlEntryFlag.CONTAINER_INHERIT_ACE, AccessControlEntryFlag.OBJECT_INHERIT_ACE);
 		//set the mask
 		EnumIntegerSet<AccessMask> mask = new EnumIntegerSet<>(AccessMask.class);
@@ -124,24 +153,34 @@ public class SelfRelativeSecurityDescriptorTest {
 
 		SelfRelativeSecurityDescriptor sd = SelfRelativeSecurityDescriptor.createSD(control, oSid, gSid, null, daclRev2WithAccessAllow);
 
-		Assert.assertArrayEquals(getSDWithDaclWithAAAce(), sd.toByteArray());
+		//our expected stuff
+		byte[] emptySD = getEmptySelfRelativeSecurityDescriptorWithEmptyFlags();
+		emptySD[2] = 36; //we defaulting only sacl and dacl is present!
+		emptySD[4] = 20; //offsets
+		emptySD[8] = 32;
+		emptySD[16] = 44;
+		byte[] sid = getEveryoneSid();
+		byte[] acl = new byte[]{
+				0x02, //revision
+				0x00, //sbz1
+				0x1C,
+				0x00, //size
+				0x01, 0x00, //count
+				0x00, 0x00, //sbz2
+				0x00, // ace Type
+				0x03, //ace flags
+				0x14, 0x00, //ace size
+				0x00, 0x00, 0x00, 0x10, //access mask
+				0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
+		byte[] expected = concat(concat(concat(emptySD, sid), sid), acl);
+		Assert.assertArrayEquals(expected, sd.toByteArray());
 	}
 
-	@Test
-	public void testSaclAndDaclSD() {
-
-	}
-
-	@Test
-	public void testCompleteSD() {
-
-	}
-
-	private static byte[] getEmptySecurityDescriptor() {
+	private static byte[] getEmptySelfRelativeSecurityDescriptorWithEmptyFlags() {
 		return new byte[]{
 				0x01, //revision
 				0x00, //sbz1
-				43,// first half of control flag indicating  owner and group and dacl and sacl default
+				0x00,// second half of control flag
 				-128, //first half indicating a self relative sec. desc.
 				0x00,
 				0x00,
@@ -162,8 +201,8 @@ public class SelfRelativeSecurityDescriptorTest {
 		};
 	}
 
-	private static byte[] getSidWithoutSubAuth() {
-		return new byte[]{0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+	private static byte[] getEveryoneSid() {
+		return new byte[]{0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
 	}
 
 	private static byte[] getAllowedAccessACE() {
@@ -208,8 +247,8 @@ public class SelfRelativeSecurityDescriptorTest {
 				0x00,
 				0x00,
 				0x00, //dacl offset (header +owner +group = 16+8+8)
-		}, getSidWithoutSubAuth());
-		tmp = concat(tmp, getSidWithoutSubAuth());
+		}, getEveryoneSid());
+		tmp = concat(tmp, getEveryoneSid());
 		return concat(tmp, getAclWithAAAce());
 	}
 
