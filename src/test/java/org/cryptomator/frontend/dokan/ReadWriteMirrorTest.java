@@ -41,7 +41,7 @@ public class ReadWriteMirrorTest {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
 		FreeSpace freeSpace = new FreeSpace(200000, 200);
 
-		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"),volumeInfo,freeSpace);
+		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"), volumeInfo, freeSpace);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, myFs);
 
 		int res;
