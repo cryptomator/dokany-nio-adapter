@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  */
 public class ReadWriteAdapter implements DokanyFileSystem {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyAdapter.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 
 	protected final Path root;
 	protected final OpenHandleFactory fac;
