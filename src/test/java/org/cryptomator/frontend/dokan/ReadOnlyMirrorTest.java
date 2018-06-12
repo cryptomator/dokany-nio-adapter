@@ -26,7 +26,7 @@ public class ReadOnlyMirrorTest {
 		String mountPoint = "K:\\";
 		final short threadCount = 1;
 		EnumIntegerSet mountOptions = new EnumIntegerSet<>(MountOption.class);
-		mountOptions.add(MountOption.DEBUG_MODE, MountOption.STD_ERR_OUTPUT, MountOption.MOUNT_MANAGER);
+		mountOptions.add(MountOption.DEBUG_MODE, MountOption.STD_ERR_OUTPUT, MountOption.MOUNT_MANAGER, MountOption.WRITE_PROTECTION);
 		String uncName = "";
 		int timeout = 10000;
 		int allocationUnitSize = 4096;
@@ -41,7 +41,7 @@ public class ReadOnlyMirrorTest {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
 		FreeSpace freeSpace = new FreeSpace(200000, 200);
 
-		DokanyFileSystem myFs = new ReadOnlyAdapter(Paths.get("Y:\\test"),volumeInfo,freeSpace);
+		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"), volumeInfo, freeSpace);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, myFs);
 
 		int res;
