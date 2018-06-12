@@ -15,16 +15,15 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Set;
 
-public class OpenFile implements Closeable {
+public class OpenFile extends OpenHandle implements Closeable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFile.class);
 	private static final int BUFFER_SIZE = 4096;
 
-	private final Path path;
 	private final FileChannel channel;
 
 	public OpenFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		this.path = path;
+		super(path);
 		this.channel = FileChannel.open(path, options, attrs);
 	}
 
@@ -95,6 +94,11 @@ public class OpenFile implements Closeable {
 	@Override
 	public void close() throws IOException {
 		channel.close();
+	}
+
+	@Override
+	public boolean isRegularFile() {
+		return true;
 	}
 
 	public void flush() throws IOException {
