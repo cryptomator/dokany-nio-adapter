@@ -33,24 +33,24 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.MoveFile = fileSystem::moveFile;
 		super.SetEndOfFile = fileSystem::setEndOfFile;
 		super.SetAllocationSize = fileSystem::setAllocationSize;
-		super.LockFile = fileSystem::lockFile;
-		super.UnlockFile = fileSystem::unlockFile;
+		super.LockFile = null;//fileSystem::lockFile;
+		super.UnlockFile = null;//fileSystem::unlockFile;
 		super.Mounted = fileSystem::mounted;
 		super.Unmounted = fileSystem::unmounted;
-		super.GetFileSecurity = fileSystem::getFileSecurity;
-		super.SetFileSecurity = fileSystem::setFileSecurity;
-		super.FindStreams = fileSystem::findStreams;
+		super.GetFileSecurity = null; //fileSystem::getFileSecurity;
+		super.SetFileSecurity = null; //fileSystem::setFileSecurity;
+		super.FindStreams = null;//fileSystem::findStreams;
 	}
 
-	class ZwCreateFileProxy implements ZwCreateFile{
+	class ZwCreateFileProxy implements ZwCreateFile {
 
 		@Override
 		public long callback(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 			IntByReference createDisposition = new IntByReference();
 			IntByReference desiredAccess = new IntByReference();
 			IntByReference fileAttributeFlags = new IntByReference();
-			NativeMethods.DokanMapKernelToUserCreateFileFlags(rawDesiredAccess, rawFileAttributes,rawCreateOptions, rawCreateDisposition,desiredAccess, fileAttributeFlags, createDisposition);
-			return fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo );
+			NativeMethods.DokanMapKernelToUserCreateFileFlags(rawDesiredAccess, rawFileAttributes, rawCreateOptions, rawCreateDisposition, desiredAccess, fileAttributeFlags, createDisposition);
+			return fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo);
 		}
 	}
 
