@@ -97,13 +97,6 @@
 			<artifactId>commons-io</artifactId>
 			<version>${commons-io.version}</version>
 		</dependency>
-
-		<!-- unwanted xodus dependecy -->
-		<dependency>
-			<groupId>org.jetbrains.xodus</groupId>
-			<artifactId>xodus-vfs</artifactId>
-			<version>1.0.4</version>
-		</dependency>
 	</dependencies>
 
 	<build>

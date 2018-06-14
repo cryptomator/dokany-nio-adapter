@@ -127,7 +127,7 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	/**
 	 * Also sets lastAccessTime to same time.
 	 *
-	 * @param lastWriteTimeToSet
+	 * @param lastWriteTime
 	 * @return
 	 */
 	public void setLastWriteTime(final long lastWriteTime) {
@@ -138,7 +138,7 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	/**
 	 * Also sets lastAccessTime to same time.
 	 *
-	 * @param lastWriteTimeToSet
+	 * @param creationTime
 	 * @return
 	 */
 	public void setCreationTime(final long creationTime) {

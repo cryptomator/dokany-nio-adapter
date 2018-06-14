@@ -5,12 +5,6 @@ import com.dokany.java.DokanyUtils;
 import com.dokany.java.constants.FileAttribute;
 import com.sun.jna.platform.win32.WinBase.FILETIME;
 import com.sun.jna.platform.win32.WinBase.WIN32_FIND_DATA;
-import jetbrains.exodus.ArrayByteIterable;
-import jetbrains.exodus.ByteIterable;
-import jetbrains.exodus.ByteIterator;
-import jetbrains.exodus.bindings.IntegerBinding;
-import jetbrains.exodus.bindings.LongBinding;
-import jetbrains.exodus.util.LightOutputStream;
 
 import java.io.FileNotFoundException;
 import java.util.Objects;
@@ -57,54 +51,6 @@ public class FullFileInfo extends ByHandleFileInfo {
 		setAttributes(attributes);
 		dwVolumeSerialNumber = volumeSerialNumber;
 		log.trace(super.toString());
-	}
-
-	public FullFileInfo(final String path, final ByteIterable iterable) throws FileNotFoundException {
-		if (path == null) {
-			throw new NullPointerException("path");
-		}
-		if (iterable == null) {
-			throw new NullPointerException("iterable");
-		}
-		if (Objects.isNull(path) || Objects.isNull(iterable)) {
-			throw new FileNotFoundException("path or iterable was null and thus file info could not be created");
-		}
-		final ByteIterator iterator = iterable.iterator();
-		log.debug("Creating FullFileInfo from infoStore: {}", path);
-		filePath = path;
-		setSize(LongBinding.readCompressed(iterator), IntegerBinding.readCompressed(iterator), IntegerBinding.readCompressed(iterator));
-		setIndex(LongBinding.readCompressed(iterator), IntegerBinding.readCompressed(iterator), IntegerBinding.readCompressed(iterator));
-		dwFileAttributes = IntegerBinding.readCompressed(iterator);
-		setTimes(LongBinding.readCompressed(iterator), LongBinding.readCompressed(iterator), LongBinding.readCompressed(iterator));
-		// always needs to be at least 1 for the file to show up
-		dwNumberOfLinks = IntegerBinding.readCompressed(iterator);
-		if (dwNumberOfLinks == 0) {
-			dwNumberOfLinks = 1;
-		}
-		dwVolumeSerialNumber = IntegerBinding.readCompressed(iterator);
-		dwReserved0 = IntegerBinding.readCompressed(iterator);
-		dwReserved1 = IntegerBinding.readCompressed(iterator);
-	}
-
-	public ArrayByteIterable toByteIterable() {
-		final LightOutputStream output = new LightOutputStream();
-		LongBinding.writeCompressed(output, fileSize);
-		IntegerBinding.writeCompressed(output, nFileSizeHigh);
-		IntegerBinding.writeCompressed(output, nFileSizeLow);
-		LongBinding.writeCompressed(output, fileIndex);
-		IntegerBinding.writeCompressed(output, nFileIndexHigh);
-		IntegerBinding.writeCompressed(output, nFileIndexLow);
-		IntegerBinding.writeCompressed(output, dwFileAttributes);
-		LongBinding.writeCompressed(output, ftCreationTime.toTime());
-		LongBinding.writeCompressed(output, ftLastAccessTime.toTime());
-		LongBinding.writeCompressed(output, ftLastWriteTime.toTime());
-		IntegerBinding.writeCompressed(output, dwNumberOfLinks);
-		IntegerBinding.writeCompressed(output, dwVolumeSerialNumber);
-		IntegerBinding.writeCompressed(output, dwReserved0);
-		IntegerBinding.writeCompressed(output, dwReserved1);
-		// do not store char[] for cFileName and cAlternateFileName since they do not have native bindings and it seems to be as efficient to recalculate every time via the String
-		// path than to covert to store as a StringBinding and then back again
-		return output.asArrayByteIterable();
 	}
 
 	/**
