@@ -3,8 +3,17 @@ package org.cryptomator.frontend.dokan;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyOperations;
 import com.dokany.java.DokanyUtils;
-import com.dokany.java.constants.*;
-import com.dokany.java.structure.*;
+import com.dokany.java.constants.CreateOptions;
+import com.dokany.java.constants.CreationDisposition;
+import com.dokany.java.constants.ErrorCode;
+import com.dokany.java.constants.FileAttribute;
+import com.dokany.java.constants.NtStatus;
+import com.dokany.java.structure.ByHandleFileInfo;
+import com.dokany.java.structure.DokanyFileInfo;
+import com.dokany.java.structure.EnumIntegerSet;
+import com.dokany.java.structure.FreeSpace;
+import com.dokany.java.structure.FullFileInfo;
+import com.dokany.java.structure.VolumeInformation;
 import com.google.common.collect.Sets;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
@@ -15,8 +24,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipal;
@@ -198,7 +218,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		final int mask = creationDisposition.getMask();
 		DosFileAttributes attr = null;
 		try {
-			attr = Files.getFileAttributeView(path, DosFileAttributeView.class).readAttributes();
+			attr = Files.readAttributes(path, DosFileAttributes.class);
 		} catch (IOException e) {
 			LOG.trace("Could not read file attributes.");
 		}
@@ -388,7 +408,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	private FullFileInfo getFileInfo(Path p) throws IOException {
 		try {
-			DosFileAttributes attr = Files.getFileAttributeView(p, DosFileAttributeView.class).readAttributes();
+			DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class);
 			long index = 0;
 			if (attr.fileKey() != null) {
 				index = (long) attr.fileKey();
