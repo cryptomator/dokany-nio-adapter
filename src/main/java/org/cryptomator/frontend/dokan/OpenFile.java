@@ -5,7 +5,6 @@ import com.sun.jna.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -15,7 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Set;
 
-public class OpenFile extends OpenHandle implements Closeable {
+public class OpenFile extends OpenHandle {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OpenFile.class);
 	private static final int BUFFER_SIZE = 4096;

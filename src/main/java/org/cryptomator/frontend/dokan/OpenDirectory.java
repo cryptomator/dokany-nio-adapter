@@ -1,6 +1,5 @@
 package org.cryptomator.frontend.dokan;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 public class OpenDirectory extends OpenHandle {
@@ -10,9 +9,7 @@ public class OpenDirectory extends OpenHandle {
 	}
 
 	@Override
-	public void close() throws IOException {
-
-	}
+	public void close() {}
 
 	@Override
 	public boolean isRegularFile() {
