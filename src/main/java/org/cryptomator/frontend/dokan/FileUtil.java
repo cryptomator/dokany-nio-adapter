@@ -7,8 +7,13 @@ import com.sun.jna.platform.win32.WinBase;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.*;
-import java.util.ArrayList;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -16,17 +21,15 @@ public class FileUtil {
 
 	public static class AclAttribute implements java.nio.file.attribute.FileAttribute<List<AclEntry>> {
 
-		private String name;
 		private List<AclEntry> aclEntries;
 
-		public AclAttribute(List<AclEntry> aclEntries) {
-			this.name = "acl:acl";
-			this.aclEntries = new ArrayList<>(aclEntries);
+		AclAttribute(AclEntry aclEntry) {
+			this.aclEntries = Collections.singletonList(aclEntry);
 		}
 
 		@Override
 		public String name() {
-			return name;
+			return "acl:acl";
 		}
 
 		@Override
@@ -122,10 +125,8 @@ public class FileUtil {
 	 * @return
 	 */
 	public static AclAttribute getStandardAclPermissions(UserPrincipal user) {
-		List<AclEntry> aclEntryList = new ArrayList<AclEntry>();
 		AclEntry entry = AclEntry.newBuilder().setType(AclEntryType.ALLOW).setPrincipal(user).setPermissions(AclEntryPermission.values()).build();
-		aclEntryList.add(entry);
-		return new AclAttribute(aclEntryList);
+		return new AclAttribute(entry);
 	}
 
 }
