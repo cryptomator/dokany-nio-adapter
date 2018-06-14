@@ -14,6 +14,27 @@ import java.util.List;
 
 public class FileUtil {
 
+	public static class AclAttribute implements java.nio.file.attribute.FileAttribute<List<AclEntry>> {
+
+		private String name;
+		private List<AclEntry> aclEntries;
+
+		public AclAttribute(List<AclEntry> aclEntries) {
+			this.name = "acl:acl";
+			this.aclEntries = new ArrayList<>(aclEntries);
+		}
+
+		@Override
+		public String name() {
+			return name;
+		}
+
+		@Override
+		public List<AclEntry> value() {
+			return aclEntries;
+		}
+	}
+
 	/**
 	 * TODO: support for other attributes ?
 	 *
