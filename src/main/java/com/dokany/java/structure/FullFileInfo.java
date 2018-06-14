@@ -14,8 +14,6 @@ import java.util.Objects;
  */
 public class FullFileInfo extends ByHandleFileInfo {
 
-	@SuppressWarnings("all")
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FullFileInfo.class);
 	/**
 	 * If the dwFileAttributes member includes the FILE_ATTRIBUTE_REPARSE_POINT attribute, this member specifies the reparse point tag. Otherwise, this value is undefined and
 	 * should not be used. For more information see Reparse Point Tags.
@@ -41,7 +39,6 @@ public class FullFileInfo extends ByHandleFileInfo {
 		setIndex(index);
 		setAttributes(attributes);
 		dwVolumeSerialNumber = volumeSerialNumber;
-		log.trace(super.toString());
 	}
 
 	/**
