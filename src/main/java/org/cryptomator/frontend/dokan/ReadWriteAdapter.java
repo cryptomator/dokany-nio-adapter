@@ -191,12 +191,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	private long createFile(Path path, CreationDisposition creationDisposition, Set<OpenOption> openOptions, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
 		final int mask = creationDisposition.getMask();
-		//TODO: if the file does not exist, this is bullshit!
 		DosFileAttributes attr = null;
 		try {
 			attr = Files.getFileAttributeView(path, DosFileAttributeView.class).readAttributes();
 		} catch (IOException e) {
-			LOG.warn("Could not read file attributes.");
+			LOG.trace("Could not read file attributes.");
 		}
 		//we want to create a file
 		//system or hidden file?
@@ -226,9 +225,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				setFileAttributes(path, rawFileAttributes);
 			} catch (FileAlreadyExistsException e) {
 				LOG.info("Unable to open File.");
-				//TODO: correct error code?
 				return NtStatus.OBJECT_NAME_EXISTS.getMask();
+			} catch (NoSuchFileException e) {
+				LOG.info("File not found.");
+				return NtStatus.OBJECT_NAME_NOT_FOUND.getMask();
 			} catch (IOException e) {
+				LOG.warn("IO error occurred.");
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 			if (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
@@ -282,6 +284,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.warn("Invalid handle to object " + getRootedPath(rawPath).toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
+			//TODO: what if the handle is null? how can this happen and what to do?
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
 			if (handle.isRegularFile()) {
 				try {
@@ -302,7 +305,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	public long writeFile(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("writeFile() is called for " + getRootedPath(rawPath).toString());
 		if (dokanyFileInfo.Context == 0) {
-			LOG.warn("Invaldi handle to object " + getRootedPath(rawPath).toString());
+			LOG.warn("Invalid handle to object " + getRootedPath(rawPath).toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
