@@ -2,41 +2,16 @@ package org.cryptomator.frontend.dokan;
 
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.EnumIntegerSet;
-import com.sun.jna.platform.win32.WinBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryPermission;
-import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.UserPrincipal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 
 public class FileUtil {
 
-	public static class AclAttribute implements java.nio.file.attribute.FileAttribute<List<AclEntry>> {
-
-		private List<AclEntry> aclEntries;
-
-		AclAttribute(AclEntry aclEntry) {
-			this.aclEntries = Collections.singletonList(aclEntry);
-		}
-
-		@Override
-		public String name() {
-			return "acl:acl";
-		}
-
-		@Override
-		public List<AclEntry> value() {
-			return aclEntries;
-		}
-	}
+	private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
 
 	/**
 	 * TODO: support for other attributes ?
@@ -70,63 +45,23 @@ public class FileUtil {
 		return set;
 	}
 
-	public static WinBase.FILETIME javaFileTimeToWindowsFileTime(FileTime t) {
-		return new WinBase.FILETIME(new Date(t.toMillis()));
-	}
-
-	/**
-	 * Indicates whether if the given windows file attribute is supported
-	 *
-	 * @param attr
-	 * @return
-	 */
-	public static boolean isFileAttributeSupported(FileAttribute attr) {
+	public static void setAttribute(DosFileAttributeView attrView, FileAttribute attr) throws IOException {
 		switch (attr) {
 			case ARCHIVE:
-			case HIDDEN:
-			case READONLY:
-			case SYSTEM:
-			case DIRECTORY:
-			case NORMAL:
-			case REPARSE_POINT:
-				return true;
-			default:
-				return false;
-		}
-	}
-
-	/**
-	 * @param p
-	 * @param attr
-	 * @throws IOException
-	 */
-	public static void setAttribute(Path p, FileAttribute attr) throws IOException {
-		switch (attr) {
-			case ARCHIVE:
-			case HIDDEN:
-			case READONLY:
-			case SYSTEM:
-				Files.setAttribute(p, "dos:" + attr.name().toLowerCase(), true);
+				attrView.setArchive(true);
 				break;
-			case REPARSE_POINT:
-			case NORMAL:
-			case DIRECTORY:
-				//TODO: log message
+			case HIDDEN:
+				attrView.setHidden(true);
+				break;
+			case READONLY:
+				attrView.setReadOnly(true);
+				break;
+			case SYSTEM:
+				attrView.setSystem(true);
 				break;
 			default:
-				throw new IllegalArgumentException();
+				LOG.debug("Windows file attribute {} is currently not supported and thus will be ignored", attr.name());
 		}
-	}
-
-	/**
-	 * currently all acl permissions are given the user
-	 *
-	 * @param user
-	 * @return
-	 */
-	public static AclAttribute getStandardAclPermissions(UserPrincipal user) {
-		AclEntry entry = AclEntry.newBuilder().setType(AclEntryType.ALLOW).setPrincipal(user).setPermissions(AclEntryPermission.values()).build();
-		return new AclAttribute(entry);
 	}
 
 }

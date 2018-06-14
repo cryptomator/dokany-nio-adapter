@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipal;
@@ -189,7 +190,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		//createDirectory request
 		if (mask == CreationDisposition.CREATE_NEW.getMask() || mask == CreationDisposition.OPEN_ALWAYS.getMask()) {
 			try {
-				Files.createDirectory(path, FileUtil.getStandardAclPermissions(user));
+				Files.createDirectory(path);
 			} catch (FileAlreadyExistsException e) {
 				if (mask == CreationDisposition.CREATE_NEW.getMask()) {
 					//we got create_new flag -> there should be nuthing, but there is somthin!
@@ -251,7 +252,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.CANNOT_DELETE.getMask();
 		} else {
 			try {
-				dokanyFileInfo.Context = fac.openFile(path, openOptions, FileUtil.getStandardAclPermissions(user));
+				dokanyFileInfo.Context = fac.openFile(path, openOptions);
 				setFileAttributes(path, rawFileAttributes);
 			} catch (FileAlreadyExistsException e) {
 				LOG.info("Unable to open File.");
@@ -423,9 +424,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					index,
 					FileUtil.dosAttributesToEnumIntegerSet(attr),
 					0, //currently just a stub
-					FileUtil.javaFileTimeToWindowsFileTime(attr.creationTime()),
-					FileUtil.javaFileTimeToWindowsFileTime(attr.lastAccessTime()),
-					FileUtil.javaFileTimeToWindowsFileTime(attr.lastModifiedTime()));
+					DokanyUtils.getTime(attr.creationTime().toMillis()),
+					DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
+					DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
 			data.setSize(attr.size());
 			return data;
 		} catch (NoSuchFileException e) {
@@ -497,22 +498,19 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	}
 
 	private long setFileAttributes(Path path, int rawAttributes) {
-		if (Files.exists(path)) {
-			for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
-				if (FileUtil.isFileAttributeSupported(attr)) {
-					try {
-						FileUtil.setAttribute(path, attr);
-					} catch (IOException e) {
-						return ErrorCode.ERROR_WRITE_FAULT.getMask();
-					}
-				} else {
-					LOG.debug("Windows file attribute {} is currently not supported and thus will be ignored", attr.name());
-				}
-			}
-		} else {
+		if (Files.notExists(path)) {
 			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+		} else {
+			DosFileAttributeView attrView = Files.getFileAttributeView(path, DosFileAttributeView.class);
+			try {
+				for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
+					FileUtil.setAttribute(attrView, attr);
+				}
+			} catch (IOException e) {
+				return ErrorCode.ERROR_WRITE_FAULT.getMask();
+			}
+			return ErrorCode.SUCCESS.getMask();
 		}
-		return ErrorCode.SUCCESS.getMask();
 	}
 
 	@Override
