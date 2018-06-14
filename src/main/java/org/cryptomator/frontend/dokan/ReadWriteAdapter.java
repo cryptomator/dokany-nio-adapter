@@ -40,6 +40,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipal;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -95,12 +96,17 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		Path path = getRootedPath(rawPath);
 		LOG.trace("zwCreateFile() is called for: " + path.toString());
 
-		boolean fileExists = Files.exists(path);
+		Optional<BasicFileAttributes> attr;
+		try {
+			attr = Optional.of(Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS));
+		} catch (IOException e) {
+			attr = Optional.empty();
+		}
 
 		//is the file a directory and if yes, indicated as one?
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
 		EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
-		if (fileExists && Files.isDirectory(path)) {
+		if (attr.isPresent() && attr.get().isDirectory()) {
 			if ((rawCreateOptions & CreateOptions.FILE_NON_DIRECTORY_FILE.getMask()) == 0) {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
@@ -119,7 +125,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			openOptions.add(StandardOpenOption.WRITE);
 			LOG.debug("Create Disposition flag is " + creationDisposition.name());
 			//TODO: ca we leave this check out?
-			if (fileExists) {
+			if (attr.isPresent()) {
 				switch (creationDisposition) {
 					case CREATE_NEW:
 						//FAILS
