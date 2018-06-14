@@ -26,7 +26,7 @@ public class ReadWriteMirrorTest {
 		String mountPoint = "K:\\";
 		final short threadCount = 2;
 		EnumIntegerSet mountOptions = new EnumIntegerSet<>(MountOption.class);
-		mountOptions.add(MountOption.DEBUG_MODE, MountOption.STD_ERR_OUTPUT, MountOption.MOUNT_MANAGER);
+		mountOptions.add(MountOption.DEBUG_MODE, MountOption.STD_ERR_OUTPUT, MountOption.REMOVABLE_DRIVE, MountOption.CURRENT_SESSION);
 		String uncName = "";
 		int timeout = 10000;
 		int allocationUnitSize = 4096;
