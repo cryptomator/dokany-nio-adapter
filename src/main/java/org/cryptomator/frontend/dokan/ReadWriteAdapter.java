@@ -98,17 +98,20 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			//TODO: mantle this statement with an if-statement which checks for write protection!
 			openOptions.add(StandardOpenOption.WRITE);
 			LOG.debug("Create Disposition flag is " + creationDisposition.name());
+			//TODO: ca we leave this check out?
 			if (fileExists) {
 				switch (creationDisposition) {
 					case CREATE_NEW:
-						openOptions.add(StandardOpenOption.CREATE);
+						//FAILS
 						break;
 					case CREATE_ALWAYS:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
 						break;
 					case OPEN_EXISTING:
+						//SUCCESS
 						break;
 					case OPEN_ALWAYS:
+						openOptions.add(StandardOpenOption.CREATE);
 						break;
 					case TRUNCATE_EXISTING:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
@@ -125,8 +128,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 						openOptions.add(StandardOpenOption.CREATE);
 						break;
 					case OPEN_EXISTING:
+						//FAILS
+						//return sumthin
 						break;
 					case OPEN_ALWAYS:
+						openOptions.add(StandardOpenOption.CREATE);
 						break;
 					case TRUNCATE_EXISTING:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
@@ -157,7 +163,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		//createDirectory request
 		if (mask == CreationDisposition.CREATE_NEW.getMask() || mask == CreationDisposition.OPEN_ALWAYS.getMask()) {
 			try {
-				//TODO: change the standardACLPermissions
 				Files.createDirectory(path, FileUtil.getStandardAclPermissions(user));
 			} catch (FileAlreadyExistsException e) {
 				if (mask == CreationDisposition.CREATE_NEW.getMask()) {
@@ -220,7 +225,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.CANNOT_DELETE.getMask();
 		} else {
 			try {
-				//TODO: what permissions of ACl view?
 				dokanyFileInfo.Context = fac.openFile(path, openOptions, FileUtil.getStandardAclPermissions(user));
 				setFileAttributes(path, rawFileAttributes);
 			} catch (FileAlreadyExistsException e) {
