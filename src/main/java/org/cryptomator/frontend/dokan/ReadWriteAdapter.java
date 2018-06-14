@@ -248,20 +248,27 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		LOG.trace("cleanup() is called for " + getRootedPath(rawPath).toString());
-		try {
-			if (dokanyFileInfo.Context != 0) {
+		Path p = getRootedPath(rawPath);
+		LOG.trace("cleanup() is called for " + p.toString());
+		if (dokanyFileInfo.Context == 0) {
+			LOG.warn("Invalid handle to object " + p.toString());
+		} else {
+			try {
 				fac.close(dokanyFileInfo.Context);
-			}
-			if (dokanyFileInfo.deleteOnClose()) {
-				try {
-					Files.delete(getRootedPath(rawPath));
-				} catch (IOException e) {
-					LOG.warn("Unable to delete File: ", e);
+				if (dokanyFileInfo.deleteOnClose()) {
+					try {
+						Files.delete(p);
+						LOG.info("File " + p.toString() + " deleted.");
+						//TODO: more finegrained exception analysis!
+					} catch (DirectoryNotEmptyException e) {
+						LOG.info("Directory not empty.");
+					} catch (IOException e) {
+						LOG.warn("Unable to delete File: ", e);
+					}
 				}
+			} catch (IOException e) {
+				LOG.warn("Unable to close FileHandle: ", e);
 			}
-		} catch (IOException e) {
-			LOG.warn("Unable to close FileHandle: ", e);
 		}
 	}
 
