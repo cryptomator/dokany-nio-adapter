@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class OpenHandleFactory implements AutoCloseable {
 
-	private static final Logger LOG = LoggerFactory.getLogger(OpenFileFactory.class);
+	private static final Logger LOG = LoggerFactory.getLogger(OpenHandleFactory.class);
 
 	private final ConcurrentMap<Long, OpenHandle> openHandles = new ConcurrentHashMap<>();
 	private final AtomicLong handleGen = new AtomicLong(1);
