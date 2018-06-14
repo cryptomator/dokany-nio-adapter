@@ -33,20 +33,11 @@ public class FullFileInfo extends ByHandleFileInfo {
 	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber) throws FileNotFoundException {
 		// times automatically set to now by ByHandleFileInfo constructors
 		this(path, index, attributes, volumeSerialNumber, null, null, null);
-		if (path == null) {
-			throw new NullPointerException("path");
-		}
 	}
 
 	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber, final FILETIME creationTime, final FILETIME lastAccessTime, final FILETIME lastWriteTime) throws FileNotFoundException {
 		super(creationTime, lastAccessTime, lastWriteTime);
-		if (path == null) {
-			throw new NullPointerException("path");
-		}
-		if (Objects.isNull(path)) {
-			throw new FileNotFoundException("path was null and thus file info could not be created");
-		}
-		filePath = path;
+		filePath = Objects.requireNonNull(path);
 		setIndex(index);
 		setAttributes(attributes);
 		dwVolumeSerialNumber = volumeSerialNumber;
