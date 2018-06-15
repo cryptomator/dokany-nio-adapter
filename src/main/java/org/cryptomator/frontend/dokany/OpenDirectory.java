@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokan;
+package org.cryptomator.frontend.dokany;
 
 import java.nio.file.Path;
 

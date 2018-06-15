@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokan;
+package org.cryptomator.frontend.dokany;
 
 import com.google.common.base.MoreObjects;
 import com.sun.jna.Pointer;
