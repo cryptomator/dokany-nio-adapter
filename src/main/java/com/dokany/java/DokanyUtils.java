@@ -217,11 +217,11 @@ public class DokanyUtils {
 	 * @param allEnumValues
 	 * @return
 	 */
-	public static <T extends Enum<T>> EnumIntegerSet<T> enumSetFromInt(final int value, final T[] allEnumValues) {
+	public static <T extends Enum<T> & EnumInteger> EnumIntegerSet<T> enumSetFromInt(final int value, final T[] allEnumValues) {
 		EnumIntegerSet<T> elements = new EnumIntegerSet<>(allEnumValues[0].getDeclaringClass());
 		int remainingValues = value;
 		for (T current : allEnumValues) {
-			int mask = ((EnumInteger) current).getMask();
+			int mask = current.getMask();
 
 			if ((remainingValues & mask) == mask) {
 				elements.add(current);

@@ -12,7 +12,7 @@ import com.dokany.java.constants.EnumInteger;
  *
  * @param <T> Type of enum
  */
-public final class EnumIntegerSet<T extends Enum<T>> extends AbstractSet<T> {
+public final class EnumIntegerSet<T extends Enum<T> & EnumInteger> extends AbstractSet<T> {
 	private final EnumSet<T> elements;
 
 	public EnumIntegerSet(final Class<T> clazz) {
@@ -20,6 +20,10 @@ public final class EnumIntegerSet<T extends Enum<T>> extends AbstractSet<T> {
 			throw new IllegalArgumentException("Items must all implement EnumInteger");
 		}
 		elements = EnumSet.noneOf(clazz);
+	}
+
+	public EnumIntegerSet(T first, T... others) {
+		this.elements = EnumSet.of(first, others);
 	}
 
 	@SafeVarargs
