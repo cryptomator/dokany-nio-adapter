@@ -706,6 +706,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public long mounted(DokanyFileInfo dokanyFileInfo) {
+		LOG.info("Mounted successfully.");
 		return 0;
 	}
 

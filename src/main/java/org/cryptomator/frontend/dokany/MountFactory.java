@@ -9,6 +9,7 @@ import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.VolumeInformation;
 
 import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
 
 public class MountFactory {
 
@@ -27,13 +28,24 @@ public class MountFactory {
     private static final int ALLOC_UNIT_SIZE = 4096;
     private static final int SECTOR_SIZE = 4096;
 
+    private final ExecutorService executorService;
+
+    public MountFactory(ExecutorService executorService) {
+        this.executorService = executorService;
+    }
+
     public Mount mount(Path fileSystemRoot, char driveLetter, String volumeName, String fileSystemName) {
         String mountPoint = driveLetter + ":\\";
         DeviceOptions deviceOptions = new DeviceOptions(mountPoint, THREAD_COUNT, MOUNT_OPTIONS, UNC_NAME, TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
         VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
         DokanyFileSystem myFs = new ReadWriteAdapter(fileSystemRoot, volumeInfo);
         DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, myFs);
-        return new Mount(dokanyDriver);
+        return new Mount(executorService, driveLetter, dokanyDriver);
+    }
+
+    public static boolean isApplicable() {
+        return System.getProperty("os.name").toLowerCase().contains("windows")
+                && true; // TODO: check if dokan dll exists
     }
 
 }

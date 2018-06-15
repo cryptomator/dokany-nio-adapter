@@ -1,27 +1,71 @@
 package org.cryptomator.frontend.dokany;
 
 import com.dokany.java.DokanyDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class Mount implements AutoCloseable {
 
-    private final DokanyDriver driver;
-    private final  CompletableFuture<Void> driverJob;
+	private static final Logger LOG = LoggerFactory.getLogger(Mount.class);
+	private static final int REVEAL_TIMEOUT_MS = 5000;
+	private static final int UNMOUNT_TIMEOUT_MS = 5000;
 
-    public Mount(DokanyDriver driver) {
-        this.driver = driver;
-		this.driverJob = CompletableFuture.runAsync(driver::start);
-    }
+	private final DokanyDriver driver;
+	private char driveLetter;
+	private final Future<?> driverJob;
+	private final ProcessBuilder revealCommand;
 
-    @Override
-    public void close() {
-        try {
-            driver.shutdown();
-        } catch (Exception e) {
-        	e.printStackTrace();
+	public Mount(ExecutorService executorService, char driveLetter, DokanyDriver driver) {
+		LOG.debug("Mounting on drive {}: ...", driveLetter);
+		this.driver = driver;
+		this.driveLetter = driveLetter;
+		this.driverJob = executorService.submit(driver::start);
+		this.revealCommand = new ProcessBuilder("explorer", "/root,", driveLetter + ":\\");
+	}
+
+	public boolean reveal() {
+		try {
+			Process proc = revealCommand.start();
+			boolean finishedInTime = proc.waitFor(REVEAL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+			if (finishedInTime) {
+				return proc.exitValue() == 0;
+			} else {
+				proc.destroyForcibly();
+				return false;
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return false;
+		} catch (IOException e) {
+			LOG.error("Failed to reveal drive.", e);
+			return false;
 		}
-		// TODO: force quit?
-		// driverJob.cancel(true);
-    }
+	}
+
+	@Override
+	public void close() {
+		try {
+			LOG.debug("Unmounting drive {}: ...", driveLetter);
+			driver.shutdown();
+			driverJob.get(UNMOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+			LOG.debug("Unmounted drive {}: successfully.", driveLetter);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} catch (ExecutionException e) {
+			LOG.error("Dokany driver terminated abnormally.", e);
+		} catch (TimeoutException e) {
+			LOG.warn("Dokany driver will be canceled now...");
+		} finally {
+			if (driverJob.cancel(true)) {
+				LOG.warn("Dokany driver for drive {}: canceled.", driveLetter);
+			}
+		}
+	}
 }
