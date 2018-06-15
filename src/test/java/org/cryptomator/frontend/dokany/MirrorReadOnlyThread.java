@@ -40,9 +40,8 @@ public class MirrorReadOnlyThread implements Runnable {
 				FileSystemFeature.PERSISTENT_ACLS, FileSystemFeature.SUPPORTS_REMOTE_STORAGE, FileSystemFeature.UNICODE_ON_DISK);
 
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
-		FreeSpace freeSpace = new FreeSpace(200000, 200);
 
-		DokanyFileSystem myFs = new ReadWriteAdapter(dirToMirror, volumeInfo, freeSpace);
+		DokanyFileSystem myFs = new ReadWriteAdapter(dirToMirror, volumeInfo);
 		dokany = new DokanyDriver(devOps, myFs);
 	}
 
