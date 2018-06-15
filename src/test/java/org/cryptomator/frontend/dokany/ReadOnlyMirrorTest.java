@@ -6,7 +6,6 @@ import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.constants.MountOption;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
-import com.dokany.java.structure.FreeSpace;
 import com.dokany.java.structure.VolumeInformation;
 
 import java.io.IOException;
@@ -39,9 +38,8 @@ public class ReadOnlyMirrorTest {
 				FileSystemFeature.PERSISTENT_ACLS, FileSystemFeature.SUPPORTS_REMOTE_STORAGE, FileSystemFeature.UNICODE_ON_DISK);
 
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
-		FreeSpace freeSpace = new FreeSpace(200000, 200);
 
-		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"), volumeInfo, freeSpace);
+		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"), volumeInfo);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, myFs);
 
 		int res;

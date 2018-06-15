@@ -11,7 +11,6 @@ import com.dokany.java.constants.NtStatus;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
 import com.dokany.java.structure.EnumIntegerSet;
-import com.dokany.java.structure.FreeSpace;
 import com.dokany.java.structure.FullFileInfo;
 import com.dokany.java.structure.VolumeInformation;
 import com.google.common.collect.Sets;
@@ -60,12 +59,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 
 	private final VolumeInformation volumeInformation;
-	private final FreeSpace freeSpace;
 
-	public ReadWriteAdapter(Path root, VolumeInformation volumeInformation, FreeSpace freeSpace) {
+	public ReadWriteAdapter(Path root, VolumeInformation volumeInformation) {
 		this.root = root;
 		this.volumeInformation = volumeInformation;
-		this.freeSpace = freeSpace;
 		this.fac = new OpenHandleFactory();
 
 		FileStore fileStore1;
