@@ -18,12 +18,11 @@ public class Mount implements AutoCloseable {
 	private static final int UNMOUNT_TIMEOUT_MS = 5000;
 
 	private final DokanyDriver driver;
-	private char driveLetter;
+	private final char driveLetter;
 	private final Future<?> driverJob;
 	private final ProcessBuilder revealCommand;
 
 	public Mount(ExecutorService executorService, char driveLetter, DokanyDriver driver) {
-		LOG.debug("Mounting on drive {}: ...", driveLetter);
 		this.driver = driver;
 		this.driveLetter = driveLetter;
 		this.driverJob = executorService.submit(driver::start);

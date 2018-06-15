@@ -10,6 +10,7 @@ import com.dokany.java.structure.FreeSpace;
 import com.dokany.java.structure.VolumeInformation;
 
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 
 public class MirrorReadOnlyThread implements Runnable {
 
@@ -41,7 +42,7 @@ public class MirrorReadOnlyThread implements Runnable {
 
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
 
-		DokanyFileSystem myFs = new ReadWriteAdapter(dirToMirror, volumeInfo);
+		DokanyFileSystem myFs = new ReadWriteAdapter(dirToMirror, volumeInfo, new CompletableFuture());
 		dokany = new DokanyDriver(devOps, myFs);
 	}
 

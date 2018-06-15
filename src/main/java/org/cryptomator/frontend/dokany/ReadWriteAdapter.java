@@ -23,10 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
@@ -40,8 +42,10 @@ import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,38 +56,34 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 
-	protected final Path root;
-	protected final OpenHandleFactory fac;
-	protected final FileStore fileStore;
-	protected final UserPrincipal user;
-
-
+	private final Path root;
 	private final VolumeInformation volumeInformation;
+	private final CompletableFuture didMount;
+	private final OpenHandleFactory fac;
+	private final FileStore fileStore;
+	private final UserPrincipal user;
 
-	public ReadWriteAdapter(Path root, VolumeInformation volumeInformation) {
+	public ReadWriteAdapter(Path root, VolumeInformation volumeInformation, CompletableFuture<?> didMount) {
 		this.root = root;
 		this.volumeInformation = volumeInformation;
+		this.didMount = didMount;
 		this.fac = new OpenHandleFactory();
-
-		FileStore fileStore1;
 		try {
-			fileStore1 = Files.getFileStore(root);
+			this.fileStore = Files.getFileStore(root);
+			this.user = ReadWriteAdapter.getUserPrincipal(root.getFileSystem());
 		} catch (IOException e) {
-			LOG.warn("Could not detect FileStore: ", e);
-			fileStore1 = null;
+			throw new UncheckedIOException(e);
 		}
-		this.fileStore = fileStore1;
-
-		UserPrincipal user1;
-		try {
-			user1 = root.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName(System.getProperty("user.name"));
-		} catch (IOException e) {
-			LOG.warn(("Could not get UserPrincipal"));
-			user1 = null;
-		}
-		user = user1;
 	}
 
+	private static UserPrincipal getUserPrincipal(FileSystem fileSystem) throws IOException {
+		try {
+			return fileSystem.getUserPrincipalLookupService().lookupPrincipalByName(System.getProperty("user.name"));
+		} catch (UserPrincipalNotFoundException | UnsupportedOperationException e) {
+			LOG.warn("Could not get UserPrincipal.");
+			return null;
+		}
+	}
 
 	@Override
 	public long zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
@@ -706,7 +706,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public long mounted(DokanyFileInfo dokanyFileInfo) {
-		LOG.info("Mounted successfully.");
+		didMount.complete(null);
 		return 0;
 	}
 
