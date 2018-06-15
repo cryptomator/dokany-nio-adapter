@@ -55,7 +55,7 @@ public final class DokanyDriver {
 	}
 
 	/**
-	 * Calls {@link NativeMethods#DokanMain(DeviceOptions, Operations)}. Has {@link java.lang.Runtime#addShutdownHook(Thread)} which calls {@link #shutdown()}
+	 * Calls {@link NativeMethods#DokanMain(DeviceOptions, DokanyOperations)}. Has {@link java.lang.Runtime#addShutdownHook(Thread)} which calls {@link #shutdown()}
 	 */
 	public void start() {
 		try {

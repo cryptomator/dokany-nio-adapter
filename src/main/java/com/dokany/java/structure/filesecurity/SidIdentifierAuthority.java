@@ -1,7 +1,5 @@
 package com.dokany.java.structure.filesecurity;
 
-import java.util.Arrays;
-
 /**
  * Enumeration of Well known SidIdentifierAuthoritys
  */

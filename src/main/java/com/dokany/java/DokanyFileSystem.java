@@ -37,9 +37,9 @@ public interface DokanyFileSystem {
 	 * @param rawCreateOptions Specifies the options to apply when the driver creates or opens the file. (see also in the .NET API <a href="https://docs.microsoft.com/de-de/dotnet/api/system.io.fileoptions">System.IO.FileOptions</a>)
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return integer code of a {@link NtStatus}
-	 * @see Dokany documentation of <a href="https://dokan-dev.github.io/dokany-doc/html/struct_d_o_k_a_n___o_p_e_r_a_t_i_o_n_s.html#a40c2f61e1287237f5fd5c2690e795183">ZwCreateFile</a>
-	 * @see Microsoft documentation of <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/nf-ntifs-ntcreatefile">zwCreateFile</a>
-	 * @see Microsoft FileManagement documentation of <a href="https://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">CreateFile</a>
+	 * @see <a href="https://dokan-dev.github.io/dokany-doc/html/struct_d_o_k_a_n___o_p_e_r_a_t_i_o_n_s.html#a40c2f61e1287237f5fd5c2690e795183">Dokany documentation of ZwCreateFile</a>
+	 * @see <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/nf-ntifs-ntcreatefile">Microsoft documentation of zwCreateFile</a>
+	 * @see <a href="https://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">Microsoft FileManagement documentation of CreateFile</a>
 	 */
 	long zwCreateFile(
 			WString rawPath,
@@ -55,7 +55,7 @@ public interface DokanyFileSystem {
 	 * Receipt of this request indicates that the last handle for a file object that is associated with the target device object has been closed (but, due to outstanding I/O
 	 * requests, might not have been released).
 	 * <p>
-	 * Cleanup is requested before @{link {@link DokanyFileSystem.Close} is called.
+	 * Cleanup is requested before @{link {@link DokanyFileSystem#closeFile(WString, DokanyFileInfo)} is called.
 	 *
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
@@ -68,7 +68,7 @@ public interface DokanyFileSystem {
 	 * CloseFile is called at the end of the life of the context. Receipt of this request indicates that the last handle of the file object that is associated with the target
 	 * device object has been closed and released. All outstanding I/O requests have been completed or canceled.
 	 * <p>
-	 * CloseFile is requested after {@link DokanyFileSystem.Cleanup} is called. Anything remaining in {@link DokanyFileInfo#_context} has to be cleared
+	 * CloseFile is requested after {@link DokanyFileSystem#cleanup(WString, DokanyFileInfo)} is called. Anything remaining in {@link DokanyFileInfo#Context} has to be cleared
 	 * before return.
 	 *
 	 * @param rawPath
@@ -79,7 +79,7 @@ public interface DokanyFileSystem {
 			DokanyFileInfo dokanyFileInfo);
 
 	/**
-	 * ReadFile callback on the file previously opened in {@link DokanyFileSystem.Create}. It can be called by different thread at the same time, therefore the read has to be
+	 * ReadFile callback on the file previously opened in {@link DokanyFileSystem#zwCreateFile(WString, WinBase.SECURITY_ATTRIBUTES, int, int, int, int, int, DokanyFileInfo)}. It can be called by different thread at the same time, therefore the read has to be
 	 * thread safe.
 	 *
 	 * @param rawPath
@@ -99,7 +99,7 @@ public interface DokanyFileSystem {
 			DokanyFileInfo dokanyFileInfo);
 
 	/**
-	 * WriteFile callback on the file previously opened in {@link DokanyFileSystem.Create} It can be called by different thread at the same time, therefore the write/context has to
+	 * WriteFile callback on the file previously opened in {@link DokanyFileSystem#zwCreateFile(WString, WinBase.SECURITY_ATTRIBUTES, int, int, int, int, int, DokanyFileInfo)} It can be called by different thread at the same time, therefore the write/context has to
 	 * be thread safe.
 	 *
 	 * @param rawPath
@@ -157,7 +157,7 @@ public interface DokanyFileSystem {
 			DokanyFileInfo dokanyFileInfo);
 
 	/**
-	 * Same as {@link DokanyFileSystem.FindFiles} but with a search pattern to filter the result.
+	 * Same as {@link DokanyFileSystem#findFiles(WString, DokanyOperations.FillWin32FindData, DokanyFileInfo)} but with a search pattern to filter the result.
 	 *
 	 * @param fileName
 	 * @param searchPattern
@@ -204,19 +204,19 @@ public interface DokanyFileSystem {
 	/**
 	 * Check if it is possible to delete a file.
 	 * <p>
-	 * You should NOT delete the file in this method, but instead you must only check whether you can delete the file or not, and return {@link NtStatus#Success} (when you can
-	 * delete it) or appropriate error codes such as {@link NtStatus#ACCESS_DENIED}, {@link NtStatus#OBJECT_NO_LONGER_EXISTS}, {@link NtStatus#ObjectNameNotFound}.
+	 * You should NOT delete the file in this method, but instead you must only check whether you can delete the file or not, and return {@link NtStatus#SUCCESS} (when you can
+	 * delete it) or appropriate error codes such as {@link NtStatus#ACCESS_DENIED}, {@link NtStatus#OBJECT_NO_LONGER_EXISTS}, {@link NtStatus#OBJECT_NAME_NOT_FOUND}.
 	 * <p>
-	 * {@link DokanyFileSystem.DeleteFile} will also be called with {@link DokanyFileInfo#_deleteOnClose} set to <i>false</i> to notify the driver when the file is no longer
+	 * {@link DokanyFileSystem#deleteFile(WString, DokanyFileInfo)} will also be called with {@link DokanyFileInfo#DeleteOnClose} set to <i>false</i> to notify the driver when the file is no longer
 	 * requested to be deleted.
 	 * <p>
-	 * When you return {@link NtStatus#Success}, you get a {@link DokanyFileSystem.Cleanup}> call afterwards with {@link DokanyFileInfo#_deleteOnClose} set to <i>true</i> and only
+	 * When you return {@link NtStatus#SUCCESS}, you get a {@link DokanyFileSystem#cleanup(WString, DokanyFileInfo)}> call afterwards with {@link DokanyFileInfo#DeleteOnClose} set to <i>true</i> and only
 	 * then you have to actually delete the file being closed.
 	 *
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file.
 	 * @return {@link NtStatus}
-	 * @see {@link DokanyFileSystem.DeleteDirectory}
+	 * @see {@link DokanyFileSystem#deleteDirectory(WString, DokanyFileInfo)}
 	 */
 	long deleteFile(
 			WString rawPath,
@@ -228,7 +228,7 @@ public interface DokanyFileSystem {
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the directory.
 	 * @return {@link NtStatus}
-	 * @see {@link DokanyFileSystem.DeleteFile} for more specifics.
+	 * @see {@link DokanyFileSystem#deleteFile(WString, DokanyFileInfo)} for more specifics.
 	 */
 	long deleteDirectory(
 			WString rawPath,
@@ -309,8 +309,8 @@ public interface DokanyFileSystem {
 	 * Retrieves information about the amount of space that is available on a disk volume, which is the total amount of space, the total amount of free space, and the total amount
 	 * of free space available to the user that is associated with the calling thread.
 	 * <p>
-	 * Neither this method nor {@link DokanyFileSystem.GetVolumeInformation} save the {@link DokanyFileInfo#_context}. Before these methods are called,
-	 * {@link DokanyFileSystem.Create} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
+	 * Neither this method nor {@link DokanyFileSystem#getVolumeInformation(Pointer, int, IntByReference, IntByReference, IntByReference, Pointer, int, DokanyFileInfo)} save the {@link DokanyFileInfo#Context}. Before these methods are called,
+	 * {@link DokanyFileSystem#zwCreateFile(WString, WinBase.SECURITY_ATTRIBUTES, int, int, int, int, int, DokanyFileInfo)} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
 	 *
 	 * @param freeBytesAvailable
 	 * @param totalNumberOfBytes
@@ -327,8 +327,8 @@ public interface DokanyFileSystem {
 	/**
 	 * Retrieves information about the file system and volume associated with the specified root directory.
 	 * <p>
-	 * Neither this method nor {@link DokanyFileSystem.GetVolumeInformation} save the {@link DokanyFileInfo#_context}. Before these methods are called,
-	 * {@link DokanyFileSystem.Create} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
+	 * Neither this method nor {@link DokanyFileSystem#getVolumeInformation(Pointer, int, IntByReference, IntByReference, IntByReference, Pointer, int, DokanyFileInfo)} save the {@link DokanyFileInfo#Context}. Before these methods are called,
+	 * {@link DokanyFileSystem#zwCreateFile(WString, WinBase.SECURITY_ATTRIBUTES, int, int, int, int, int, DokanyFileInfo)} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
 	 *
 	 * @param rawVolumeNameBuffer
 	 * @param rawVolumeNameSize
@@ -342,7 +342,7 @@ public interface DokanyFileSystem {
 	 * @see {@link FileSystemFeature#READ_ONLY_VOLUME} is automatically added to the <paramref name="features"/> if <see cref="DokanOptions.WriteProtection"/> was specified when
 	 * the volume was mounted.
 	 * <p>
-	 * If {@link NtStatus#NotImplemented} is returned, the Dokany kernel driver use following settings by default:
+	 * If {@link NtStatus#NOT_IMPLEMENTED} is returned, the Dokany kernel driver use following settings by default:
 	 *
 	 * <ul>
 	 * <li>rawVolumeSerialNumber = 0x19831116</li>

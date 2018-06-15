@@ -9,8 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Native API to the kernel Dokany driver. This is an internal class and should not used directly by code outside com.dokany.java.
+ * Native API to the kernel Dokany driver. This is an internal class and should not be used directly by code outside com.dokany.java.
  */
+@SuppressWarnings("unused")
 class NativeMethods {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NativeMethods.class);
@@ -81,7 +82,7 @@ class NativeMethods {
 	/**
 	 * Get the handle to Access Token.
 	 *
-	 * @param rawFileInfo {@link com.dokany.java.structure.DokanyFileInfo} of the operation.
+	 * @param dokanyFileInfo {@link com.dokany.java.structure.DokanyFileInfo} of the operation.
 	 * @return A handle to the account token for the user on whose behalf the code is running.
 	 */
 	static native IntByReference DokanOpenRequestorToken(DokanyFileInfo dokanyFileInfo);
@@ -164,7 +165,7 @@ class NativeMethods {
 	/**
 	 * Get active Dokany mount points.
 	 *
-	 * @param list - Allocate array of DOKAN_CONTROL
+	 * @param fileAttributes - Allocate array of DOKAN_CONTROL
 	 * @param length - Number of DOKAN_CONTROL instance in list.
 	 * @param uncOnly - Get only instances that have UNC Name.
 	 * @param nbRead- Number of instances successfully retrieved
@@ -178,7 +179,7 @@ class NativeMethods {
 	 *
 	 * @param error - Win32 error to convert
 	 * @return NtStatus associated to the error
-	 * @see {@linkplain https://support.microsoft.com/en-us/kb/113996}
+	 * @see <a href="https://support.microsoft.com/en-us/kb/113996">kb113996</a>
 	 */
 	// TODO: Switch to NtStatus return type
 	static native long DokanNtStatusFromWin32(int error);

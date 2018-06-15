@@ -26,7 +26,7 @@ import com.sun.jna.ptr.LongByReference;
  *
  * If an error occurs, return {@link NtStatus}.
  *
- * All these callbacks can be set to <i>null</i> or return {@link NtStatus.NotImplemented} if you don't want to support one of them. Be aware that returning such a value to
+ * All these callbacks can be set to <i>null</i> or return {@link NtStatus#NOT_IMPLEMENTED} if you don't want to support one of them. Be aware that returning such a value to
  * important callbacks such as {@link DokanyOperations.ZwCreateFile} or {@link DokanyOperations.ReadFile} would make the file system not working or unstable.
  *
  * This is the same struct as <i>_DOKAN_OPERATIONS</i> (dokan.h) in the C++ version of Dokany.</remarks>
@@ -97,11 +97,11 @@ public class DokanyOperations extends Structure {
 	/**
 	 * CreateFile is called each time a request is made on a file system object.
 	 *
-	 * If the file is a directory, this method is also called. In this case, the method should return {@link NtStatus#Success} when that directory can be opened and
-	 * {@link com.dokany.java.structure.DokanyFileInfo#_isDirectory} has to be set to <i>true</i>. {@link com.dokany.java.structure.DokanyFileInfo#_context} can be used to store
+	 * If the file is a directory, this method is also called. In this case, the method should return {@link NtStatus#SUCCESS} when that directory can be opened and
+	 * {@link com.dokany.java.structure.DokanyFileInfo#IsDirectory} has to be set to <i>true</i>. {@link com.dokany.java.structure.DokanyFileInfo#Context} can be used to store
 	 * data FileStream that can be retrieved in all other request related to the context.
 	 *
-	 * @see {@linkplain https://msdn.microsoft.com/en-us/library/windows/hardware/ff566424(v=vs.85).aspx} for more information about the parameters of this callback.
+	 * @see <a href="https://msdn.microsoft.com/en-us/library/windows/hardware/ff566424(v=vs.85).aspx">MSDN for more information about the parameters of this callback.</a>
 	 */
 	@FunctionalInterface
 	interface ZwCreateFile extends Callback {
@@ -109,13 +109,11 @@ public class DokanyOperations extends Structure {
 		 * @param rawPath Path requested by the Kernel on the File System.
 		 * @param securityContext ??
 		 * @param rawDesiredAccess ?? Permissions for file or directory.
-		 * @param rawFileAttributes Provides attributes for files and directories. @see
-		 *            {@linkplain https://msdn.microsoft.com/en-us/library/system.io.fileattributes(v=vs.110).aspx}
+		 * @param rawFileAttributes Provides attributes for files and directories. See <a href="https://msdn.microsoft.com/en-us/library/system.io.fileattributes(v=vs.110).aspx">MSDN</a>
 		 * @param rawShareAccess Type of share access to other threads. Device and intermediate drivers usually set ShareAccess to zero, which gives the caller exclusive access to
 		 *            the open file.
 		 * @param rawCreateDisposition
-		 * @param rawCreateOptions Represents advanced options for creating a File object. @see
-		 *            {@linkplain https://msdn.microsoft.com/en-us/library/system.io.fileoptions(v=vs.110).aspx}
+		 * @param rawCreateOptions Represents advanced options for creating a File object. See <a href="https://msdn.microsoft.com/en-us/library/system.io.fileoptions(v=vs.110).aspx">MSDN</a>
 		 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 		 * @return {@link com.dokany.java.constants.NtStatus}
 		 */
@@ -134,7 +132,7 @@ public class DokanyOperations extends Structure {
 	 * Receipt of this request indicates that the last handle for a file object that is associated with the target device object has been closed (but, due to outstanding I/O
 	 * requests, might not have been released).
 	 *
-	 * Cleanup is requested before @{link {@link DokanyOperations.Close} is called.
+	 * Cleanup is requested before @{link {@link DokanyOperations#CloseFile} is called.
 	 *
 	 */
 	@FunctionalInterface
@@ -153,7 +151,7 @@ public class DokanyOperations extends Structure {
 	 * CloseFile is called at the end of the life of the context. Receipt of this request indicates that the last handle of the file object that is associated with the target
 	 * device object has been closed and released. All outstanding I/O requests have been completed or canceled.
 	 *
-	 * CloseFile is requested after {@link DokanyOperations.Cleanup} is called. Anything remaining in {@link com.dokany.java.structure.DokanyFileInfo#_context} has to be cleared
+	 * CloseFile is requested after {@link DokanyOperations.Cleanup} is called. Anything remaining in {@link com.dokany.java.structure.DokanyFileInfo#Context} has to be cleared
 	 * before return.
 	 *
 	 */
@@ -170,7 +168,7 @@ public class DokanyOperations extends Structure {
 	}
 
 	/**
-	 * ReadFile callback on the file previously opened in {@link DokanyOperations.Create}. It can be called by different thread at the same time, therefore the read has to be
+	 * ReadFile callback on the file previously opened in {@link DokanyOperations.ZwCreateFile}. It can be called by different thread at the same time, therefore the read has to be
 	 * thread safe.
 	 *
 	 */
@@ -195,7 +193,7 @@ public class DokanyOperations extends Structure {
 	}
 
 	/**
-	 * WriteFile callback on the file previously opened in {@link DokanyOperations.Create} It can be called by different thread at the same time, therefore the write/context has to
+	 * WriteFile callback on the file previously opened in {@link DokanyOperations.ZwCreateFile} It can be called by different thread at the same time, therefore the write/context has to
 	 * be thread safe.
 	 *
 	 */
@@ -345,13 +343,13 @@ public class DokanyOperations extends Structure {
 	 *
 	 * Check if it is possible to delete a file.
 	 *
-	 * You should NOT delete the file in this method, but instead you must only check whether you can delete the file or not, and return {@link NtStatus#Success} (when you can
-	 * delete it) or appropriate error codes such as {@link NtStatus#ACCESS_DENIED}, {@link NtStatus#OBJECT_NO_LONGER_EXISTS}, {@link NtStatus#ObjectNameNotFound}.
+	 * You should NOT delete the file in this method, but instead you must only check whether you can delete the file or not, and return {@link NtStatus#SUCCESS} (when you can
+	 * delete it) or appropriate error codes such as {@link NtStatus#ACCESS_DENIED}, {@link NtStatus#OBJECT_NO_LONGER_EXISTS}, {@link NtStatus#OBJECT_NAME_NOT_FOUND}.
 	 *
-	 * {@link DokanyOperations.DeleteFile} will also be called with {@link DokanyFileInfo#_deleteOnClose} set to <i>false</i> to notify the driver when the file is no longer
+	 * {@link DokanyOperations.DeleteFile} will also be called with {@link DokanyFileInfo#DeleteOnClose} set to <i>false</i> to notify the driver when the file is no longer
 	 * requested to be deleted.
 	 *
-	 * When you return {@link NtStatus#Success}, you get a {@link DokanyOperations.Cleanup}> call afterwards with {@link DokanyFileInfo#_deleteOnClose} set to <i>true</i> and only
+	 * When you return {@link NtStatus#SUCCESS}, you get a {@link DokanyOperations.Cleanup}> call afterwards with {@link DokanyFileInfo#DeleteOnClose} set to <i>true</i> and only
 	 * then you have to actually delete the file being closed.
 	 *
 	 * @see {@link DokanyOperations.DeleteDirectory}
@@ -495,8 +493,8 @@ public class DokanyOperations extends Structure {
 	 * Retrieves information about the amount of space that is available on a disk volume, which is the total amount of space, the total amount of free space, and the total amount
 	 * of free space available to the user that is associated with the calling thread.
 	 *
-	 * Neither this method nor {@link DokanyOperations.GetVolumeInformation} save the {@link com.dokany.java.structure.DokanyFileInfo#_context}. Before these methods are called,
-	 * {@link DokanyOperations.Create} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
+	 * Neither this method nor {@link DokanyOperations.GetVolumeInformation} save the {@link com.dokany.java.structure.DokanyFileInfo#Context}. Before these methods are called,
+	 * {@link DokanyOperations.ZwCreateFile} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
 	 *
 	 */
 	@FunctionalInterface
@@ -520,13 +518,13 @@ public class DokanyOperations extends Structure {
 	 *
 	 * Retrieves information about the file system and volume associated with the specified root directory.
 	 *
-	 * Neither this method nor {@link DokanyOperations.GetVolumeInformation} save the {@link com.dokany.java.structure.DokanyFileInfo#_context}. Before these methods are called,
-	 * {@link DokanyOperations.Create} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
+	 * Neither this method nor {@link DokanyOperations.GetVolumeInformation} save the {@link com.dokany.java.structure.DokanyFileInfo#Context}. Before these methods are called,
+	 * {@link DokanyOperations.ZwCreateFile} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
 	 *
 	 * @see {@link FileSystemFeature#READ_ONLY_VOLUME} is automatically added to the <paramref name="features"/> if <see cref="DokanOptions.WriteProtection"/> was specified when
 	 *      the volume was mounted.
 	 *
-	 *      If {@link NtStatus#NotImplemented} is returned, the Dokany kernel driver use following settings by default:
+	 *      If {@link NtStatus#NOT_IMPLEMENTED} is returned, the Dokany kernel driver use following settings by default:
 	 *
 	 *      <ul>
 	 *      <li>rawVolumeSerialNumber = 0x19831116</li>

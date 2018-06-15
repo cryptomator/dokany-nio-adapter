@@ -6,9 +6,7 @@ import java.util.List;
 import com.sun.jna.Structure;
 
 /**
- * From dokan.h
- *
- * @see {@link https://github.com/dokan-dev/dokany/blob/master/dokan/dokan.h}
+ * From <a href="https://github.com/dokan-dev/dokany/blob/master/dokan/dokan.h">dokan.h</a>
  */
 public class DokanyFileInfo extends Structure implements Structure.ByReference {
 	/**
