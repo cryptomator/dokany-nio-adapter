@@ -40,6 +40,13 @@
 			<organization>cryptomator.org</organization>
 			<organizationUrl>http://cryptomator.org</organizationUrl>
 		</developer>
+		<developer>
+			<name>Sebastian Stenzel</name>
+			<email>sebastian.stenzel@gmail.com</email>
+			<timezone>+1</timezone>
+			<organization>cryptomator.org</organization>
+			<organizationUrl>http://cryptomator.org</organizationUrl>
+		</developer>
 	</developers>
 
 	<dependencies>
@@ -50,12 +57,23 @@
 			<version>${guava.version}</version>
 		</dependency>
 
-		<!-- Testing via junit -->
+		<!-- JNA -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-			<scope>test</scope>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
+			<version>${jna.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+			<version>${jna-platform.version}</version>
+		</dependency>
+
+		<!-- Apache Commons -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons-io.version}</version>
 		</dependency>
 
 		<!-- Logging -->
@@ -71,23 +89,12 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!--jna stuff-->
+		<!-- Testing -->
 		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
-			<version>${jna.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna-platform</artifactId>
-			<version>${jna-platform.version}</version>
-		</dependency>
-
-		<!-- Util imports -->
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>${commons-io.version}</version>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -104,4 +111,94 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>dependency-check</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>3.2.1</version>
+						<configuration>
+							<cveValidForHours>24</cveValidForHours>
+							<failBuildOnCVSS>0</failBuildOnCVSS>
+							<skipTestScope>true</skipTestScope>
+							<detail>true</detail>
+							<suppressionFiles>
+								<suppressionFile>suppression.xml</suppressionFile>
+							</suppressionFiles>
+						</configuration>
+						<executions>
+							<execution>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>coverage</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<version>0.8.1</version>
+						<executions>
+							<execution>
+								<id>prepare-agent</id>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>release</id>
+			<distributionManagement>
+				<repository>
+					<id>bintray-jcenter</id>
+					<url>https://api.bintray.com/maven/cryptomator/maven/dokany-nio-adapter/;publish=1</url>
+				</repository>
+			</distributionManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
