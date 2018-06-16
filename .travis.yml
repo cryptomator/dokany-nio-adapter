@@ -1,0 +1,28 @@
+language: java
+sudo: false
+jdk:
+- oraclejdk8
+env:
+  global:
+  - secure: "opQxtMHiZtDEYtIH0uvt0VAXLO8Kqt/d+NMSfg5vIrlXfm2C2DtAsGMVA7WxsralAuF/bU2O04OtGkVIXxxnFUtuFZDhzHtgCsbBMV3oO+uOnOvdLQWr7DxKWOFRl7/AVVaSyLUoC2x4Ua8G73mlZKL9rVbhIrbR+Dgg661Y9wflE/++dhW5h4v2qL4y4hqf7P8icw4pOxoBLGwqi9m/6GmDm/KwqpkMle3r+RjsZFdbiB2j68btvK3AwpnmdKBa6rECcmZu1vPi8LP8uwAmHCKfr7Ub7TNnbZnM7N5qi38tgKvHnGdPSa4OmYbomRG9FPALikjgpf/n8UULjGfimEo36ny5lmeJV/H8El/3pX4GUIqKXGCHeSY/1sL+Y8XSl4jtvmrI3JZRd3i8EBF4SNvOMAcDmCt57UnWqws+vGg9Yotx6KqGcPtZOhL46yQb3yRPfGMd0liFOifeCjWnE/WbBpZQNarBqKcAGOcmu6Owne/8Ea9bOawkoXWTrdYiZIEzajzJAV4rOAwtlZKsTfv4w9jUBejKfbaq9OzlE+Lo/7QNA2XCb7ePTRvi6vaBmwzibbD4itiUirOG8bXXRYmwUx30HkTJKoE/KubhIj3OYCHTm0SnuGWIuXaWLdlAAN9HMD8ZPtDVHW3ENJ9yI9/y+HV0Jg/Rm/8+dh8JfDI=" # CODACY_PROJECT_TOKEN
+  - secure: "sy4s1Q2JAFSnUFgNoIYgbthuL0ghsMHKPEnCO8pgMmGgglA0ekicsfOXJ4gt8FyCIR14qPxyGu4avTIjO8j/9fJwZxIPHbvi7nJ98UEeUZHplXwiTF+VeBnxlmcWd3JZxXrIMenPYj9rYMNS1amCZ7bROd7VjXQj4d43ducmy1qnMWzwlvAySU51q4x9Uo/qZ26EkZt6Q8ALgDKWQeTd6UZb4Ewnlx1KYHqCFU9pl6DnK5tePZBdMtIk6B74n0Nuo/xVChs+mqPJQE+KGREbHkca05b113egueMszzcFhJAhPQNF2lzuDP/FvEevD92ACYtfTDz3TPNlS1gJheSxTzfwa6BKqoI0D7uN9Or0oJjfRTvObNK1/FwYMsIn2DwhfA3lcRasSWi/C0i5pVkaFiZsGmobbC+lkeUoakvhPFMht8YninN0FzEqroRrktgcJPaXnslc5vbRcrWYBT/02lHJq8OB/1Z50UICP+Elcb3fR966jeJIDgau+ItmEQPP28YmqrOPXyA4Umj7IQMCpA6OsPX0dejX3a/p5jm91/AkrcN0Ndri6Rx/3IaO5v0lZwVTqUtpgGBnhZMA8FOYkRkmLRalC4LjRuxc8Ef5sGYH9FJr8FmCNFJ5vL5aWd0Yak6zRSfr4kAB5FqvylXIKvG9s5+4UIvqgWbpGRNe2gA=" # BINTRAY_API_KEY
+install:
+- curl -o $HOME/.m2/settings.xml https://gist.githubusercontent.com/cryptobot/cf5fbd909c4782aaeeeb7c7f4a1a43da/raw/e60ee486e34ee0c79f89f947abe2c83b4290c6bb/settings.xml
+- mvn dependency:go-offline -Pdependency-check,coverage,release
+script:
+- mvn clean test jacoco:report verify -Dsurefire.useFile=false -Pcoverage
+after_success:
+- curl -o ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
+- $JAVA_HOME/bin/java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l Java -r target/site/jacoco/jacoco.xml
+cache:
+  directories:
+  - $HOME/.m2
+deploy:
+- provider: script # RELEASES
+  script: mvn clean versions:set -DnewVersion=${TRAVIS_TAG} deploy -DskipTests -Prelease
+  skip_cleanup: true
+  on:
+    repo: cryptomator/dokany-nio-adapter
+    tags: true
+after_deploy:
+  - "echo '{\"close\": \"1\"}' | curl -v -X POST -u cryptobot:${BINTRAY_API_KEY} https://api.bintray.com/maven_central_sync/cryptomator/maven/dokany-nio-adapter/versions/${TRAVIS_TAG}"
