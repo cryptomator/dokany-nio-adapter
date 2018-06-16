@@ -20,7 +20,7 @@ public interface DokanyFileSystem {
 	 *
 	 * CreateFile is called each time a request is made on a file system object.
 	 *
-	 * In case OPEN_ALWAYS & CREATE_ALWAYS are successfully opening an existing file, STATUS_OBJECT_NAME_COLLISION should be returned instead of STATUS_SUCCESS . This will inform Dokan that the file has been opened and not created during the request.
+	 * In case OPEN_ALWAYS &amp; CREATE_ALWAYS are successfully opening an existing file, STATUS_OBJECT_NAME_COLLISION should be returned instead of STATUS_SUCCESS . This will inform Dokan that the file has been opened and not created during the request.
 	 *
 	 * If the file is a directory, CreateFile is also called. In this case, CreateFile should return {@link NtStatus#SUCCESS} when that directory can be opened and {@link DokanyFileInfo#IsDirectory} has to be set to TRUE. On the other hand, if {@link DokanyFileInfo#IsDirectory} is set to TRUE but the path targets a file, {@link NtStatus#NOT_A_DIRECTORY} must be returned.
 	 *
@@ -210,13 +210,13 @@ public interface DokanyFileSystem {
 	 * {@link DokanyFileSystem#deleteFile(WString, DokanyFileInfo)} will also be called with {@link DokanyFileInfo#DeleteOnClose} set to <i>false</i> to notify the driver when the file is no longer
 	 * requested to be deleted.
 	 * <p>
-	 * When you return {@link NtStatus#SUCCESS}, you get a {@link DokanyFileSystem#cleanup(WString, DokanyFileInfo)}> call afterwards with {@link DokanyFileInfo#DeleteOnClose} set to <i>true</i> and only
+	 * When you return {@link NtStatus#SUCCESS}, you get a {@link DokanyFileSystem#cleanup(WString, DokanyFileInfo)} call afterwards with {@link DokanyFileInfo#DeleteOnClose} set to <i>true</i> and only
 	 * then you have to actually delete the file being closed.
 	 *
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file.
 	 * @return {@link NtStatus}
-	 * @see {@link DokanyFileSystem#deleteDirectory(WString, DokanyFileInfo)}
+	 * @see #deleteDirectory(WString, DokanyFileInfo)
 	 */
 	long deleteFile(
 			WString rawPath,
@@ -228,7 +228,7 @@ public interface DokanyFileSystem {
 	 * @param rawPath
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the directory.
 	 * @return {@link NtStatus}
-	 * @see {@link DokanyFileSystem#deleteFile(WString, DokanyFileInfo)} for more specifics.
+	 * @see #deleteFile(WString, DokanyFileInfo)
 	 */
 	long deleteDirectory(
 			WString rawPath,
@@ -330,17 +330,7 @@ public interface DokanyFileSystem {
 	 * Neither this method nor {@link DokanyFileSystem#getVolumeInformation(Pointer, int, IntByReference, IntByReference, IntByReference, Pointer, int, DokanyFileInfo)} save the {@link DokanyFileInfo#Context}. Before these methods are called,
 	 * {@link DokanyFileSystem#zwCreateFile(WString, WinBase.SECURITY_ATTRIBUTES, int, int, int, int, int, DokanyFileInfo)} may not be called. (ditto @{link DokanyOperations.CloseFile} and @{link DokanyOperations.Cleanup}).
 	 *
-	 * @param rawVolumeNameBuffer
-	 * @param rawVolumeNameSize
-	 * @param rawVolumeSerialNumber
-	 * @param rawMaximumComponentLength
-	 * @param rawFileSystemFlags
-	 * @param rawFileSystemNameBuffer
-	 * @param rawFileSystemNameSize
-	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
-	 * @return {@link NtStatus}
-	 * @see {@link FileSystemFeature#READ_ONLY_VOLUME} is automatically added to the <paramref name="features"/> if <see cref="DokanOptions.WriteProtection"/> was specified when
-	 * the volume was mounted.
+	 * {@link FileSystemFeature#READ_ONLY_VOLUME} is automatically added to the features if {@link com.dokany.java.constants.MountOption#WRITE_PROTECTION} was specified during mount.
 	 * <p>
 	 * If {@link NtStatus#NOT_IMPLEMENTED} is returned, the Dokany kernel driver use following settings by default:
 	 *
@@ -350,6 +340,16 @@ public interface DokanyFileSystem {
 	 * <li>rawFileSystemFlags = CaseSensitiveSearch, CasePreservedNames, SupportsRemoteStorage, UnicodeOnDisk</li>
 	 * <li>rawFileSystemNameBuffer = NTFS</li>
 	 * </ul>
+	 *
+	 * @param rawVolumeNameBuffer
+	 * @param rawVolumeNameSize
+	 * @param rawVolumeSerialNumber
+	 * @param rawMaximumComponentLength
+	 * @param rawFileSystemFlags
+	 * @param rawFileSystemNameBuffer
+	 * @param rawFileSystemNameSize
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return {@link NtStatus}
 	 */
 	long getVolumeInformation(
 			Pointer rawVolumeNameBuffer,
