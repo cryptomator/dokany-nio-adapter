@@ -48,7 +48,7 @@ public class MountFactory {
 
 	/**
 	 * Mounts a drive with the given drive letter containing contents of the given path.
-	 * This method blocks until the mount succeeded or the timeout of {@value MOUNT_TIMEOUT_MS}ms is reached.
+	 * This method blocks until the mount succeeds or times out.
 	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
 	 * @param driveLetter The drive letter of the mounted drive.
 	 * @param volumeName The name of the drive as shown to the user.

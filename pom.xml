@@ -196,6 +196,11 @@
 								</goals>
 							</execution>
 						</executions>
+						<configuration>
+							<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+							<doclint>none</doclint>
+							<excludePackageNames>com.dokany.java</excludePackageNames>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>
