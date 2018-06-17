@@ -96,6 +96,14 @@
 			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Test File System Backends -->
+		<dependency>
+			<groupId>org.cryptomator</groupId>
+			<artifactId>cryptofs</artifactId>
+			<version>1.5.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

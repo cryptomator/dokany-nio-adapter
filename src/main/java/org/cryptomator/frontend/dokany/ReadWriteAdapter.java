@@ -417,7 +417,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (attr.fileKey() != null) {
 				index = (long) attr.fileKey();
 			}
-			FullFileInfo data = new FullFileInfo(p.getFileName().toString(),
+			Path filename = p.getFileName();
+			FullFileInfo data = new FullFileInfo(filename != null ? filename.toString() : "",
 					index,
 					FileUtil.dosAttributesToEnumIntegerSet(attr),
 					0, //currently just a stub
@@ -764,7 +765,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	}
 
 	protected Path getRootedPath(WString rawPath) {
-		return Paths.get(root.toString(), rawPath.toString());
+		return root.resolve(rawPath.toString().replace('\\', '/'));
 	}
 
 	protected boolean isSkipFile(WString filepath) {
