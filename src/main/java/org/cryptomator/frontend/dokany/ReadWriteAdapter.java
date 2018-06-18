@@ -343,7 +343,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					return ErrorCode.SUCCESS.getMask();
 				} else {
 					LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path.toString());
-					return NtStatus.UNSUCCESSFUL.getMask();
+					return NtStatus.ACCESS_DENIED.getMask();
 				}
 			} catch (NullPointerException e) {
 				LOG.warn("({}) readFile(): Unable to find handle for {}.", dokanyFileInfo.Context, getRootedPath(rawPath).toString());
