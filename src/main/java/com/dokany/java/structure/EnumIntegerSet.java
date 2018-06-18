@@ -16,9 +16,6 @@ public final class EnumIntegerSet<T extends Enum<T> & EnumInteger> extends Abstr
 	private final EnumSet<T> elements;
 
 	public EnumIntegerSet(final Class<T> clazz) {
-		if (!EnumInteger.class.isAssignableFrom(clazz)) {
-			throw new IllegalArgumentException("Items must all implement EnumInteger");
-		}
 		elements = EnumSet.noneOf(clazz);
 	}
 
