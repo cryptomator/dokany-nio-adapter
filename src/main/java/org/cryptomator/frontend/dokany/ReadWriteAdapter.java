@@ -332,7 +332,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			//TODO: probably a race condition
 			try {
 				OpenHandle handle = fac.get(dokanyFileInfo.Context);
-				if (handle.isRegularFile()) {
+				if (!handle.isDirectory()) {
 					try {
 						rawReadLength.setValue(((OpenFile) handle).read(rawBuffer, rawBufferLength, rawOffset));
 					} catch (IOException e) {
@@ -361,7 +361,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (handle.isRegularFile()) {
+			if (!handle.isDirectory()) {
 				try {
 					rawNumberOfBytesWritten.setValue(((OpenFile) handle).write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
 				} catch (IOException e) {
@@ -386,7 +386,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (handle.isRegularFile()) {
+			if (!handle.isDirectory()) {
 				try {
 					((OpenFile) handle).flush();
 				} catch (IOException e) {
@@ -583,7 +583,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			//TODO: race condition with handle == null possible?
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
 			if (Files.exists(path)) {
-				if (handle.isRegularFile()) {
+				if (!handle.isDirectory()) {
 					//TODO: what is the best condition for the deletion? and is this case analysis correct?
 					if (((OpenFile) handle).canBeDeleted()) {
 						LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
@@ -614,7 +614,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			//TODO: check for directory existence
 			//TODO: race condition with handle == null possible?
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (!handle.isRegularFile()) {
+			if (handle.isDirectory()) {
 				try (DirectoryStream emptyCheck = Files.newDirectoryStream(path)) {
 					if (!emptyCheck.iterator().hasNext()) {
 						LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
@@ -674,7 +674,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (handle.isRegularFile()) {
+			if (!handle.isDirectory()) {
 				try {
 					((OpenFile) handle).truncate(rawByteOffset);
 					LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path.toString());
