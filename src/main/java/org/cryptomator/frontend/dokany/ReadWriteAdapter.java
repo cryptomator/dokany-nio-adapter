@@ -674,7 +674,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (!handle.isRegularFile()) {
+			if (handle.isRegularFile()) {
 				try {
 					((OpenFile) handle).truncate(rawByteOffset);
 					LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path.toString());
