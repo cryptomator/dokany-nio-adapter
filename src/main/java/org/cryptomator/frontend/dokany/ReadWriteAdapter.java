@@ -287,6 +287,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
+		if (isSkipFile(rawPath)) {
+			return;
+		}
 		Path path = getRootedPath(rawPath);
 		LOG.debug("({}) cleanup() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
