@@ -478,8 +478,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	}
 
 	/**
-	 * TODO: do we have to check if the handle is valid?
-	 *
 	 * @param fileName
 	 * @param handleFileInfo
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
@@ -901,7 +899,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	}
 
 	private Path getRootedPath(WString rawPath) {
-		//TODO: edit raw path to be  relative
 		return root.resolve(rawPath.toString().replace('\\', '/').replaceFirst("^/+", ""));
 	}
 
