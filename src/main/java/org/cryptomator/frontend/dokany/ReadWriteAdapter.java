@@ -820,12 +820,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		return 0;
 	}
 
-	protected Path getRootedPath(WString rawPath) {
+	private Path getRootedPath(WString rawPath) {
 		//TODO: edit raw path to be  relative
 		return root.resolve(rawPath.toString().replace('\\', '/').replaceFirst("^/+", ""));
 	}
 
-	protected boolean isSkipFile(WString filepath) {
+	private boolean isSkipFile(WString filepath) {
 		String pathLowerCase = filepath.toString().toLowerCase();
 		if (pathLowerCase.endsWith("desktop.ini")
 				|| pathLowerCase.endsWith("autorun.inf")) {
