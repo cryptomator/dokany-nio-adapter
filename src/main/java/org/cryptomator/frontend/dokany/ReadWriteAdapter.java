@@ -313,7 +313,17 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		if (isSkipFile(rawPath)) {
 			return;
 		}
-		LOG.debug("({}) closeFile() is called for {}.", dokanyFileInfo.Context, getRootedPath(rawPath).toString());
+		Path p = getRootedPath(rawPath);
+		LOG.debug("({}) closeFile() is called for {}.", dokanyFileInfo.Context, p.toString());
+		if (fac.exists(dokanyFileInfo.Context)) {
+			LOG.info("({}) Resource {} was not cleauped. Closing handle now.", dokanyFileInfo.Context, p.toString());
+			try {
+				fac.close(dokanyFileInfo.Context);
+			} catch (IOException e) {
+				LOG.warn("({}) closeFile(): Unable to close handle to resource {}. To close it please restart the adapter.", dokanyFileInfo.Context, p.toString());
+				LOG.warn("closeFile():", e);
+			}
+		}
 		dokanyFileInfo.Context = 0;
 	}
 
