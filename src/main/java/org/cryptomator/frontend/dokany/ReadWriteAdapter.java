@@ -196,6 +196,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				}
 			} catch (IOException e) {
 				//we dont know what the hell happened
+				LOG.info("zwCreateFile(): IO error occured during the creation of {}.", path.toString());
+				LOG.debug("zwCreateFile(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
@@ -266,6 +268,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return NtStatus.OBJECT_NAME_NOT_FOUND.getMask();
 			} catch (IOException e) {
 				LOG.info("zwCreateFile(): IO error occurred during creation of {}.", path.toString());
+				LOG.debug("zwCreateFile(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 			if (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
@@ -300,10 +303,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 						LOG.trace("({}) Directory {} not empty.", dokanyFileInfo.Context, path.toString());
 					} catch (IOException e) {
 						LOG.info("({}) cleanup(): IO error during deletion of {} ", dokanyFileInfo.Context, path.toString(), e);
+						LOG.debug("cleanup(): ", e);
 					}
 				}
 			} catch (IOException e) {
 				LOG.warn("({}) cleanup(): Unable to close handle to {}", dokanyFileInfo.Context, path.toString(), e);
+				LOG.debug("cleanup(): ", e);
 			}
 		}
 	}
@@ -321,7 +326,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				fac.close(dokanyFileInfo.Context);
 			} catch (IOException e) {
 				LOG.warn("({}) closeFile(): Unable to close handle to resource {}. To close it please restart the adapter.", dokanyFileInfo.Context, p.toString());
-				LOG.warn("closeFile():", e);
+				LOG.debug("closeFile():", e);
 			}
 		}
 		dokanyFileInfo.Context = 0;
@@ -346,7 +351,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					try {
 						rawReadLength.setValue(((OpenFile) handle).read(rawBuffer, rawBufferLength, rawOffset));
 					} catch (IOException e) {
-						LOG.info("({}) readFile(): Error while reading file {}.", dokanyFileInfo.Context, path.toString(), e);
+						LOG.info("({}) readFile(): IO error while reading file {}.", dokanyFileInfo.Context, path.toString(), e);
+						LOG.debug("readFile(): ", e);
 						return ErrorCode.ERROR_READ_FAULT.getMask();
 					}
 					LOG.trace("({}) Data successful read from {}.", dokanyFileInfo.Context, path.toString());
@@ -356,7 +362,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					return NtStatus.ACCESS_DENIED.getMask();
 				}
 			} catch (NullPointerException e) {
-				LOG.warn("({}) readFile(): Unable to find handle for {}.", dokanyFileInfo.Context, getRootedPath(rawPath).toString());
+				LOG.debug("({}) readFile(): Unable to find handle for {}. Already cleanuped?", dokanyFileInfo.Context, getRootedPath(rawPath).toString());
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
@@ -376,6 +382,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					rawNumberOfBytesWritten.setValue(((OpenFile) handle).write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
 				} catch (IOException e) {
 					LOG.info("({}) writeFile(): IO Error while writing to {} ", dokanyFileInfo.Context, path.toString(), e);
+					LOG.debug("writeFile(): ", e);
 					return ErrorCode.ERROR_WRITE_FAULT.getMask();
 				}
 				LOG.trace("({}) Data successful written to {}.", dokanyFileInfo.Context, path.toString());
@@ -401,6 +408,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					((OpenFile) handle).flush();
 				} catch (IOException e) {
 					LOG.info("({}) flushFileBuffers(): IO Error while flushing to {}.", dokanyFileInfo.Context, path.toString(), e);
+					LOG.debug("flushFileBuffers(): ", e);
 					return ErrorCode.ERROR_WRITE_FAULT.getMask();
 				}
 				LOG.trace("Flushed successful to {} with handle {}.", path.toString(), dokanyFileInfo.Context);
@@ -441,6 +449,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
 				LOG.info("({}) getFileInformation(): IO error occured in reading meta data from {}.", dokanyFileInfo.Context, path.toString(), e);
+				LOG.debug("getFileInformation(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
@@ -577,6 +586,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
 				LOG.info("({}) setFileTime(): IO error occurred accessing {}.", dokanyFileInfo.Context, path.toString(), e);
+				LOG.debug("setFileTime(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
@@ -636,6 +646,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 				} catch (IOException e) {
 					LOG.info("({}) deleteDirectory(): IO error occurred reading {}.", dokanyFileInfo.Context, path.toString());
+					LOG.debug("deleteDirectory(): ", e);
 					return NtStatus.UNSUCCESSFUL.getMask();
 				}
 			} else {
@@ -670,6 +681,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return NtStatus.DIRECTORY_NOT_EMPTY.getMask();
 			} catch (IOException e) {
 				LOG.info("({}) moveFile(): IO error occured while moving ressource {}.", dokanyFileInfo.Context, path.toString());
+				LOG.debug("moveFile(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
@@ -691,6 +703,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					return NtStatus.SUCCESS.getMask();
 				} catch (IOException e) {
 					LOG.info("({}) setEndOfFile(): IO error while truncating {}.", dokanyFileInfo.Context, path.toString());
+					LOG.debug("setEndOfFile(): ", e);
 					NtStatus.UNSUCCESSFUL.getMask();
 				}
 			} else {
