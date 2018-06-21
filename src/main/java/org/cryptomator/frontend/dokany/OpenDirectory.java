@@ -12,7 +12,7 @@ public class OpenDirectory extends OpenHandle {
 	public void close() {}
 
 	@Override
-	public boolean isRegularFile() {
-		return false;
+	public boolean isDirectory() {
+		return true;
 	}
 }

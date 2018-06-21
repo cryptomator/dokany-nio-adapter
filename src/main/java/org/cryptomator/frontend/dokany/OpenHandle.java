@@ -14,6 +14,7 @@ public abstract class OpenHandle implements Closeable {
 
 	public abstract void close() throws IOException;
 
-	public abstract boolean isRegularFile();
+	//TODO: rename method to avoid confusion with java isRegularFile
+	public abstract boolean isDirectory();
 
 }

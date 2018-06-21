@@ -96,8 +96,8 @@ public class OpenFile extends OpenHandle {
 	}
 
 	@Override
-	public boolean isRegularFile() {
-		return true;
+	public boolean isDirectory() {
+		return false;
 	}
 
 	public void flush() throws IOException {

@@ -69,6 +69,10 @@ public class OpenHandleFactory implements AutoCloseable {
 		return openHandles.get(fileHandle);
 	}
 
+	public boolean exists(Long handle) {
+		return openHandles.containsKey(handle);
+	}
+
 	/**
 	 * Closes the channel identified by the given fileHandle
 	 *
