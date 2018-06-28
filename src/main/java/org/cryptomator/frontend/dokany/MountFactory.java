@@ -74,6 +74,9 @@ public class MountFactory {
 		} catch (TimeoutException e) {
 			LOG.warn("Mounting timed out.");
 		} finally {
+			if(driveLetter == 65) {
+				LOG.error("Dokany does not support Drive letter \'A\' as mount point.");
+			}
 			return mount;
 		}
     }
