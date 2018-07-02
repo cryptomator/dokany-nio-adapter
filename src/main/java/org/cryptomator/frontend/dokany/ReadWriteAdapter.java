@@ -543,7 +543,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return ErrorCode.SUCCESS.getMask();
 		}
 		Path path = getRootedPath(fileName);
-		LOG.debug("({}) findFilesWithPattern() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.debug("({}) findFilesWithPattern() is called for {} with search pattern {}.", dokanyFileInfo.Context, path.toString(), searchPattern.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("findFilesWithPattern(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
@@ -555,7 +555,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					//we want to list all files
 					streamByPattern = stream;
 				} else {
-					streamByPattern = stream.filter(path1 -> path1.toString().contains(searchPattern));
+					streamByPattern = stream.filter(path1 -> path1.endsWith(searchPattern.toString()));
 				}
 				findings = streamByPattern.map(path2 -> {
 					try {
