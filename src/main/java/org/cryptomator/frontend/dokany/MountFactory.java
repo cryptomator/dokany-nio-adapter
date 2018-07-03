@@ -7,6 +7,8 @@ import com.dokany.java.constants.MountOption;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.VolumeInformation;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +59,8 @@ public class MountFactory {
 	 * @return The mount object, regardless if mount succeeded.
 	 */
 	public Mount mount(Path fileSystemRoot, char driveLetter, String volumeName, String fileSystemName) {
+		Preconditions.checkArgument(CharMatcher.inRange('B', 'Z').matches(driveLetter), "Invalid drive letter, expecting B-Z.");
+
 		String mountPoint = driveLetter + ":\\";
 		DeviceOptions deviceOptions = new DeviceOptions(mountPoint, THREAD_COUNT, MOUNT_OPTIONS, UNC_NAME, TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
@@ -74,12 +78,8 @@ public class MountFactory {
 			LOG.error("Mounting failed.", e);
 		} catch (TimeoutException e) {
 			LOG.warn("Mounting timed out.");
-		} finally {
-			if (driveLetter == 65) {
-				LOG.error("Dokany does not support Drive letter \'A\' as mount point.");
-			}
-			return mount;
 		}
+		return mount;
 	}
 
 	public static boolean isApplicable() {

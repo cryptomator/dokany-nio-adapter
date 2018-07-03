@@ -34,6 +34,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -46,7 +47,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -548,42 +548,38 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.info("findFilesWithPattern(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
-			Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
 			try (Stream<Path> stream = Files.list(path)) {
-				Stream<Path> streamByPattern;
+				Stream<Path> filteredStream;
 				if (searchPattern == null || searchPattern.toString().equals("*")) {
-					//we want to list all files
-					streamByPattern = stream;
+					// we want to list all files
+					filteredStream = stream;
 				} else {
-					streamByPattern = stream.filter(path1 -> path1.endsWith(searchPattern.toString()));
+					// we want to filter by glob
+					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + searchPattern.toString());
+					filteredStream = stream.filter(matcher::matches);
 				}
-				findings = streamByPattern.map(path2 -> {
+				filteredStream.map(p -> {
 					try {
-						return getFileInfo(path2).toWin32FindData();
-					} catch (NoSuchFileException e) {
-						LOG.debug("({}) FindFiles(): {} not found.", dokanyFileInfo.Context, path2.toString());
-						return new WinBase.WIN32_FIND_DATA();
+						return getFileInfo(p).toWin32FindData();
 					} catch (IOException e) {
-						LOG.debug("({}) FindFiles(): IO error accessing {}.", dokanyFileInfo.Context, path2.toString(), e);
-						return new WinBase.WIN32_FIND_DATA();
+						throw new UncheckedIOException("IO error accessing " + p, e);
 					}
-				}).collect(Collectors.toSet());
-			} catch (IOException e) {
-				LOG.debug("({}) Unable to list content of directory {}.", dokanyFileInfo.Context, path.toString(), e);
-			}
-			LOG.trace("({})Found {} paths", dokanyFileInfo.Context, findings.size());
-			try {
-				findings.forEach(file -> {
+				}).forEach(file -> {
 					LOG.trace("file in find: {}", file.getFileName());
-					//TODO: invalid memory access
-					rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+					try {
+						//TODO: invalid memory access
+						rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+					} catch (Error e) {
+						LOG.error("Error filling Win32FindData", e);
+						throw new UncheckedIOException(new IOException("", e));
+					}
 				});
-			} catch (Error e) {
-				//TODO: error??
-				LOG.warn("Error filling Win32FindData", e);
+				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path.toString());
+				return ErrorCode.SUCCESS.getMask();
+			} catch (UncheckedIOException | IOException e) {
+				LOG.error("({}) Unable to list content of directory {}.", dokanyFileInfo.Context, path.toString(), e);
+				return NtStatus.UNSUCCESSFUL.getMask();
 			}
-			LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path.toString());
-			return ErrorCode.SUCCESS.getMask();
 		}
 	}
 
@@ -815,7 +811,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param rawFileSystemFlags
 	 * @param rawFileSystemNameBuffer
 	 * @param rawFileSystemNameSize
-	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @param dokanyFileInfo            {@link DokanyFileInfo} with information about the file or directory.
 	 * @return
 	 */
 	@Override
