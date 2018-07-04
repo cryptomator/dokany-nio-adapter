@@ -176,8 +176,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 
 	/**
-	 * TODO: should the alreadyExists check be atomical with respect to the function call ?
-	 * TODO: currently we set the isDirectory flag, but never check it somewhere -> look into the mirror example how they handle it
 	 *
 	 * @return
 	 */
@@ -302,7 +300,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					try {
 						Files.delete(path);
 						LOG.trace("({}) {} successful deleted.", dokanyFileInfo.Context, path.toString());
-						//TODO: more finegrained exception analysis!
 					} catch (DirectoryNotEmptyException e) {
 						LOG.trace("({}) Directory {} not empty.", dokanyFileInfo.Context, path.toString());
 					} catch (IOException e) {
@@ -565,7 +562,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 						throw new UncheckedIOException("IO error accessing " + p, e);
 					}
 				}).forEach(file -> {
-					LOG.trace("file in find: {}", file.getFileName());
+					LOG.trace("({}) findFilesWithPattern(): file in find: {}", dokanyFileInfo.Context, file.getFileName());
 					try {
 						//TODO: invalid memory access
 						rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
@@ -811,7 +808,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param rawFileSystemFlags
 	 * @param rawFileSystemNameBuffer
 	 * @param rawFileSystemNameSize
-	 * @param dokanyFileInfo            {@link DokanyFileInfo} with information about the file or directory.
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return
 	 */
 	@Override
