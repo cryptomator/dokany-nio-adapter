@@ -555,7 +555,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					filteredStream = stream;
 				} else {
 					// we want to filter by glob
-					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + searchPattern.toString());
+					PathMatcher matcher = path.getFileSystem().getPathMatcher("regex:.*\\\\" + searchPattern.toString());
 					filteredStream = stream.filter(matcher::matches);
 				}
 				filteredStream.map(p -> {
