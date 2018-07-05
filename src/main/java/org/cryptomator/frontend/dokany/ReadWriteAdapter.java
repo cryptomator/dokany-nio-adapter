@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
@@ -637,9 +638,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			try {
-				Files.setAttribute(path, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
-				Files.setAttribute(path, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
-				Files.setLastModifiedTime(path, FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
+				FileTime lastModifiedTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				FileTime lastAccessTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				FileTime createdTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(lastModifiedTime, lastAccessTime, createdTime);
 				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path.toString());
 				return ErrorCode.SUCCESS.getMask();
 			} catch (NoSuchFileException e) {
