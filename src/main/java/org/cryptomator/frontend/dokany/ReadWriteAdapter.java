@@ -47,7 +47,6 @@ import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -538,38 +537,28 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + searchPattern.toString());
 					filteredStream = stream.map(Path::getFileName).filter(matcher::matches);
 				}
-				List<Exception> exceptions = Collections.emptyList();
-				List<Error> errors = Collections.emptyList();
-				Stream<WinBase.WIN32_FIND_DATA> empty = Stream.empty();
-				filteredStream.reduce(empty, (s, p) -> {
+				filteredStream.map(p -> {
 					try {
-						return Stream.concat(s, Stream.of(getFileInfo(path.resolve(p)).toWin32FindData()));
+						return getFileInfo(path.resolve(p)).toWin32FindData();
 					} catch (IOException e) {
-						LOG.error("({}) findFilesWithPatter(): IO error accessing {}.", dokanyFileInfo.Context, p.toString());
-						exceptions.add(new UncheckedIOException("IO error accessing " + p, e));
-						return Stream.empty();
+						LOG.warn("({}) findFilesWithPatter(): IO error accessing {}.", dokanyFileInfo.Context, p.toString());
+						return null;
 					}
-				}, Stream::concat)
-						.forEach(file -> {
+				}).forEach(file -> {
+					try {
+						if (file != null) {
 							LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
-							try {
-								rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-							} catch (Error e) {
-								//TODO: invalid memory access can happen, which is an Java.Lang.Error
-								LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName(), e);
-								errors.add(new Error("Error writing " + file.getFileName() + " to List of findings.", e));
-							}
-						});
-				if (exceptions.isEmpty() && errors.isEmpty()) {
-					LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path.toString());
-					return ErrorCode.SUCCESS.getMask();
-				} else {
-					LOG.error("({}) findFilesWithPattern(): Unable to list ALL content of directory {}. List of in accessible files with error follows.", dokanyFileInfo.Context, path.toString());
-					exceptions.forEach(e -> LOG.error("({}) findFilesWithPatter(): {}", e.getMessage()));
-					errors.forEach(e -> LOG.error("({}) findFilesWithPatter(): {}", e.getMessage()));
-					return NtStatus.UNSUCCESSFUL.getMask();
-				}
-			} catch (UncheckedIOException | IOException e) {
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+						}
+					} catch (Error e) {
+						//TODO: invalid memory access can happen, which is an Java.Lang.Error
+						LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName());
+						LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace:", e);
+					}
+				});
+				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path.toString());
+				return ErrorCode.SUCCESS.getMask();
+			} catch (IOException e) {
 				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}. Error is {}", dokanyFileInfo.Context, path.toString(), e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
