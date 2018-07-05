@@ -381,11 +381,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					}
 				}
 
-				if (!err.isPresent()) {
-					err = Optional.of(ErrorCode.SUCCESS.getMask());
-				}
-				return err.get();
-
+				return err.orElse(ErrorCode.SUCCESS.getMask());
 			} else {
 				LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path.toString());
 				return NtStatus.ACCESS_DENIED.getMask();
@@ -437,11 +433,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					}
 				}
 
-				if (!err.isPresent()) {
-					err = Optional.of(ErrorCode.SUCCESS.getMask());
-				}
-				return err.get();
-
+				return err.orElse(ErrorCode.SUCCESS.getMask());
 			} else {
 				LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
 				return NtStatus.ACCESS_DENIED.getMask();
