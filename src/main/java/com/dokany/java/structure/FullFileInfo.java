@@ -22,11 +22,11 @@ public class FullFileInfo extends ByHandleFileInfo {
 	 * IO_REPARSE_TAG_HSM2 (0x80000006) IO_REPARSE_TAG_MOUNT_POINT (0xA0000003) IO_REPARSE_TAG_NFS (0x80000014) IO_REPARSE_TAG_SIS (0x80000007) IO_REPARSE_TAG_SYMLINK (0xA000000C)
 	 * IO_REPARSE_TAG_WIM (0x80000008)
 	 */
-	private int dwReserved0;
+	private int dwReserved0 = 0;
 	/**
 	 * Reserved for future use.
 	 */
-	private int dwReserved1;
+	private int dwReserved1 = 0;
 
 	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber) throws FileNotFoundException {
 		// times automatically set to now by ByHandleFileInfo constructors
@@ -57,7 +57,7 @@ public class FullFileInfo extends ByHandleFileInfo {
 
 	public WIN32_FIND_DATA toWin32FindData() {
 		final char[] cFileName = DokanyUtils.trimFrontSeparator(DokanyUtils.trimStrToSize(filePath, 260)).toCharArray();
-		final char[] cAlternateFileName = new char[1];
+		final char[] cAlternateFileName = new char[14];
 		// val cAlternateFileName = Utils.trimFrontSlash(Utils.trimStrToSize(path, 14)).toCharArray();
 		// TODO: Why does setting alternate name cause file name to show up twice??
 		return new WIN32_FIND_DATA(dwFileAttributes, ftCreationTime, ftLastAccessTime, ftLastWriteTime, nFileSizeHigh, nFileSizeLow, dwReserved0, dwReserved1, cFileName, cAlternateFileName);

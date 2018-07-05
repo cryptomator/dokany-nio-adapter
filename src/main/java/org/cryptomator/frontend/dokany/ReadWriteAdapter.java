@@ -13,6 +13,7 @@ import com.dokany.java.structure.DokanyFileInfo;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.FullFileInfo;
 import com.dokany.java.structure.VolumeInformation;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
@@ -34,8 +35,10 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
@@ -46,7 +49,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -61,7 +63,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	private final CompletableFuture didMount;
 	private final OpenHandleFactory fac;
 	private final FileStore fileStore;
-	private final UserPrincipal user;
 
 	public ReadWriteAdapter(Path root, VolumeInformation volumeInformation, CompletableFuture<?> didMount) {
 		this.root = root;
@@ -70,18 +71,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		this.fac = new OpenHandleFactory();
 		try {
 			this.fileStore = Files.getFileStore(root);
-			this.user = ReadWriteAdapter.getUserPrincipal(root.getFileSystem());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
-		}
-	}
-
-	private static UserPrincipal getUserPrincipal(FileSystem fileSystem) throws IOException {
-		try {
-			return fileSystem.getUserPrincipalLookupService().lookupPrincipalByName(System.getProperty("user.name"));
-		} catch (UserPrincipalNotFoundException | UnsupportedOperationException e) {
-			LOG.info("Unable to get UserPrincipal.");
-			return null;
 		}
 	}
 
@@ -176,9 +167,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 
 	/**
-	 * TODO: should the alreadyExists check be atomical with respect to the function call ?
-	 * TODO: currently we set the isDirectory flag, but never check it somewhere -> look into the mirror example how they handle it
-	 *
 	 * @return
 	 */
 	private long createDirectory(Path path, CreationDisposition creationDisposition, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
@@ -186,6 +174,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		final int mask = creationDisposition.getMask();
 		//createDirectory request
 		if (mask == CreationDisposition.CREATE_NEW.getMask() || mask == CreationDisposition.OPEN_ALWAYS.getMask()) {
+			// TODO: rename current method "createDirectory" to "openDirectory" and extract following part to new private method "createDirectory"
 			try {
 				Files.createDirectory(path);
 				LOG.trace("Directory {} successful created ", path.toString());
@@ -261,6 +250,13 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				dokanyFileInfo.Context = fac.openFile(path, openOptions);
 				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path.toString(), dokanyFileInfo.Context);
 				setFileAttributes(path, rawFileAttributes);
+				if (attr != null && (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask())) {
+					// required by contract, if successfully opening an already-existing file.
+					return NtStatus.OBJECT_NAME_COLLISION.getMask();
+				} else {
+					LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path.toString(), dokanyFileInfo.Context);
+					return ErrorCode.SUCCESS.getMask();
+				}
 			} catch (FileAlreadyExistsException e) {
 				LOG.trace("Unable to open {}.", path.toString());
 				return NtStatus.OBJECT_NAME_EXISTS.getMask();
@@ -272,12 +268,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.debug("zwCreateFile(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
-			if (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
-				return NtStatus.OBJECT_NAME_COLLISION.getMask();
-			}
 		}
-		LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path.toString(), dokanyFileInfo.Context);
-		return ErrorCode.SUCCESS.getMask();
 	}
 
 	/**
@@ -302,7 +293,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					try {
 						Files.delete(path);
 						LOG.trace("({}) {} successful deleted.", dokanyFileInfo.Context, path.toString());
-						//TODO: more finegrained exception analysis!
 					} catch (DirectoryNotEmptyException e) {
 						LOG.trace("({}) Directory {} not empty.", dokanyFileInfo.Context, path.toString());
 					} catch (IOException e) {
@@ -342,55 +332,46 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return ErrorCode.SUCCESS.getMask();
 		}
 		Path path = getRootedPath(rawPath);
-		LOG.debug("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.trace("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("readFile(): Invalid handle to {} ", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
-		} else {
-			if (!dokanyFileInfo.isDirectory()) {
-				long handleID = dokanyFileInfo.Context;
-				boolean reopened = false;
-				OpenFile handle = (OpenFile) fac.get(handleID);
-				if (handle == null) {
-					LOG.debug("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
-					try {
-						handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
-						handle = (OpenFile) fac.get(handleID);
-						LOG.debug("readFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
-						reopened = true;
-					} catch (IOException e1) {
-						LOG.debug("readFile(): Reopen of {} failed. Aborting.", path.toString());
-						return NtStatus.UNSUCCESSFUL.getMask();
-					}
-				}
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
+		}
 
-				Optional<Integer> err = Optional.empty();
+		long handleID = dokanyFileInfo.Context;
+		boolean reopened = false;
+		OpenFile handle = (OpenFile) fac.get(handleID);
+		if (handle == null) {
+			LOG.trace("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
+			try {
+				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
+				handle = (OpenFile) fac.get(handleID);
+				LOG.trace("readFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
+				reopened = true;
+			} catch (IOException e1) {
+				LOG.debug("readFile(): Reopen of {} failed. Aborting.", path.toString());
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
+
+		try {
+			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
+			LOG.trace("({}) Data successful read from {}.", handleID, path.toString());
+			return ErrorCode.SUCCESS.getMask();
+		} catch (IOException e) {
+			LOG.info("({}) readFile(): IO error while reading file {}.", handleID, path.toString(), e);
+			return ErrorCode.ERROR_READ_FAULT.getMask();
+		} finally {
+			if (reopened) {
 				try {
-					rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
-					LOG.trace("({}) Data successful read from {}.", handleID, path.toString());
+					handle.close();
+					LOG.trace("({}) readFile(): Successful closed REOPENED file {}.", handleID, path.toString());
 				} catch (IOException e) {
-					LOG.info("({}) readFile(): IO error while reading file {}.", handleID, path.toString(), e);
-					LOG.debug("readFile(): ", e);
-					err = Optional.of(ErrorCode.ERROR_READ_FAULT.getMask());
+					LOG.info("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
 				}
-
-				if (reopened) {
-					try {
-						handle.close();
-						LOG.debug("({}) readFile(): Successful closed REOPENED file {}.", handleID, path.toString());
-					} catch (IOException e) {
-						LOG.info("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
-					}
-				}
-
-				if (!err.isPresent()) {
-					err = Optional.of(ErrorCode.SUCCESS.getMask());
-				}
-				return err.get();
-
-			} else {
-				LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
 			}
 		}
 	}
@@ -398,55 +379,46 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public long writeFile(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
-		LOG.debug("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.trace("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("writeFile(): Invalid handle to {}", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
-		} else {
-			if (!dokanyFileInfo.isDirectory()) {
-				long handleID = dokanyFileInfo.Context;
-				boolean reopened = false;
-				OpenFile handle = (OpenFile) fac.get(handleID);
-				if (handle == null) {
-					LOG.debug("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
-					try {
-						handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
-						handle = (OpenFile) fac.get(handleID);
-						LOG.debug("writeFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
-						reopened = true;
-					} catch (IOException e1) {
-						LOG.debug("writeFile(): Reopen of {} failed. Aborting.", path.toString());
-						return NtStatus.UNSUCCESSFUL.getMask();
-					}
-				}
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
+		}
 
-				Optional<Integer> err = Optional.empty();
+		long handleID = dokanyFileInfo.Context;
+		boolean reopened = false;
+		OpenFile handle = (OpenFile) fac.get(handleID);
+		if (handle == null) {
+			LOG.trace("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
+			try {
+				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
+				handle = (OpenFile) fac.get(handleID);
+				LOG.trace("writeFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
+				reopened = true;
+			} catch (IOException e1) {
+				LOG.debug("writeFile(): Reopen of {} failed. Aborting.", path.toString());
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
+
+		try {
+			rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
+			LOG.trace("({}) Data successful written to {}.", handleID, path.toString());
+			return ErrorCode.SUCCESS.getMask();
+		} catch (IOException e) {
+			LOG.info("({}) writeFile(): IO Error while writing to {} ", handleID, path.toString(), e);
+			return ErrorCode.ERROR_WRITE_FAULT.getMask();
+		} finally {
+			if (reopened) {
 				try {
-					rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
-					LOG.trace("({}) Data successful written to {}.", handleID, path.toString());
+					handle.close();
+					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", handleID, path.toString());
 				} catch (IOException e) {
-					LOG.info("({}) writeFile(): IO Error while writing to {} ", handleID, path.toString(), e);
-					LOG.debug("writeFile(): ", e);
-					err = Optional.of(ErrorCode.ERROR_WRITE_FAULT.getMask());
+					LOG.info("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
 				}
-
-				if (reopened) {
-					try {
-						handle.close();
-						LOG.debug("({}) writeFile(): Successful closed REOPENED file {}.", handleID, path.toString());
-					} catch (IOException e) {
-						LOG.info("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
-					}
-				}
-
-				if (!err.isPresent()) {
-					err = Optional.of(ErrorCode.SUCCESS.getMask());
-				}
-				return err.get();
-
-			} else {
-				LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
 			}
 		}
 	}
@@ -458,22 +430,20 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("flushFileBuffers(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (!handle.isDirectory()) {
-				try {
-					((OpenFile) handle).flush();
-				} catch (IOException e) {
-					LOG.info("({}) flushFileBuffers(): IO Error while flushing to {}.", dokanyFileInfo.Context, path.toString(), e);
-					LOG.debug("flushFileBuffers(): ", e);
-					return ErrorCode.ERROR_WRITE_FAULT.getMask();
-				}
-				LOG.trace("Flushed successful to {} with handle {}.", path.toString(), dokanyFileInfo.Context);
-				return ErrorCode.SUCCESS.getMask();
-			} else {
-				LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
+			try {
+				((OpenFile) handle).flush();
+			} catch (IOException e) {
+				LOG.info("({}) flushFileBuffers(): IO Error while flushing to {}.", dokanyFileInfo.Context, path.toString(), e);
+				LOG.debug("flushFileBuffers(): ", e);
+				return ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
+			LOG.trace("Flushed successful to {} with handle {}.", path.toString(), dokanyFileInfo.Context);
+			return ErrorCode.SUCCESS.getMask();
 		}
 	}
 
@@ -543,47 +513,46 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return ErrorCode.SUCCESS.getMask();
 		}
 		Path path = getRootedPath(fileName);
-		LOG.debug("({}) findFilesWithPattern() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.debug("({}) findFilesWithPattern() is called for {} with search pattern {}.", dokanyFileInfo.Context, path.toString(), searchPattern.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("findFilesWithPattern(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
-			Set<WinBase.WIN32_FIND_DATA> findings = Sets.newHashSet();
 			try (Stream<Path> stream = Files.list(path)) {
-				Stream<Path> streamByPattern;
+				Stream<Path> filteredStream;
 				if (searchPattern == null || searchPattern.toString().equals("*")) {
-					//we want to list all files
-					streamByPattern = stream;
+					// we want to list all files
+					filteredStream = stream;
 				} else {
-					streamByPattern = stream.filter(path1 -> path1.toString().contains(searchPattern));
+					// we want to filter by glob
+					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + searchPattern.toString());
+					filteredStream = stream.map(Path::getFileName).filter(matcher::matches);
 				}
-				findings = streamByPattern.map(path2 -> {
+				filteredStream.map(p -> {
 					try {
-						return getFileInfo(path2).toWin32FindData();
-					} catch (NoSuchFileException e) {
-						LOG.debug("({}) FindFiles(): {} not found.", dokanyFileInfo.Context, path2.toString());
-						return new WinBase.WIN32_FIND_DATA();
+						return getFileInfo(path.resolve(p)).toWin32FindData();
 					} catch (IOException e) {
-						LOG.debug("({}) FindFiles(): IO error accessing {}.", dokanyFileInfo.Context, path2.toString(), e);
-						return new WinBase.WIN32_FIND_DATA();
+						LOG.warn("({}) findFilesWithPatter(): IO error accessing {}.", dokanyFileInfo.Context, p.toString());
+						return null;
 					}
-				}).collect(Collectors.toSet());
-			} catch (IOException e) {
-				LOG.debug("({}) Unable to list content of directory {}.", dokanyFileInfo.Context, path.toString(), e);
-			}
-			LOG.trace("({})Found {} paths", dokanyFileInfo.Context, findings.size());
-			try {
-				findings.forEach(file -> {
-					LOG.trace("file in find: {}", file.getFileName());
-					//TODO: invalid memory access
-					rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+				}).forEach(file -> {
+					try {
+						if (file != null) {
+							LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+						}
+					} catch (Error e) {
+						//TODO: invalid memory access can happen, which is an Java.Lang.Error
+						LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName());
+						LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace:", e);
+					}
 				});
-			} catch (Error e) {
-				//TODO: error??
-				LOG.warn("Error filling Win32FindData", e);
+				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path.toString());
+				return ErrorCode.SUCCESS.getMask();
+			} catch (IOException e) {
+				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}. Error is {}", dokanyFileInfo.Context, path.toString(), e);
+				return NtStatus.UNSUCCESSFUL.getMask();
 			}
-			LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path.toString());
-			return ErrorCode.SUCCESS.getMask();
 		}
 	}
 
@@ -631,9 +600,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			try {
-				Files.setAttribute(path, "basic:creationTime", FileTime.fromMillis(rawCreationTime.toDate().getTime()));
-				Files.setAttribute(path, "basic:lastAccessTime", FileTime.fromMillis(rawLastAccessTime.toDate().getTime()));
-				Files.setLastModifiedTime(path, FileTime.fromMillis(rawLastWriteTime.toDate().getTime()));
+				FileTime lastModifiedTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				FileTime lastAccessTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				FileTime createdTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(lastModifiedTime, lastAccessTime, createdTime);
 				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path.toString());
 				return ErrorCode.SUCCESS.getMask();
 			} catch (NoSuchFileException e) {
@@ -654,22 +624,20 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("deleteFile(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.warn("({}) {} is a directory. Unable to delete via deleteFile()", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
 		} else {
 			//TODO: race condition with handle == null possible?
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
 			if (Files.exists(path)) {
-				if (!handle.isDirectory()) {
-					//TODO: what is the best condition for the deletion? and is this case analysis correct?
-					if (((OpenFile) handle).canBeDeleted()) {
-						LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
-						return NtStatus.SUCCESS.getMask();
-					} else {
-						LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
-						return NtStatus.CANNOT_DELETE.getMask();
-					}
+				//TODO: what is the best condition for the deletion? and is this case analysis correct?
+				if (((OpenFile) handle).canBeDeleted()) {
+					LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
+					return NtStatus.SUCCESS.getMask();
 				} else {
-					LOG.warn("({}) {} is a directory. Unable to delete via deleteFile()", dokanyFileInfo.Context, path.toString());
-					return NtStatus.ACCESS_DENIED.getMask();
+					LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
+					return NtStatus.CANNOT_DELETE.getMask();
 				}
 			} else {
 				LOG.trace("({}) {} not found.", dokanyFileInfo.Context, path.toString());
@@ -685,28 +653,24 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("deleteDirectory(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
+		} else if (!dokanyFileInfo.isDirectory()) {
+			LOG.warn("({}) {} is a file. Unable to delete via deleteDirectory()", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
 		} else {
 			//TODO: check for directory existence
 			//TODO: race condition with handle == null possible?
-			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (handle.isDirectory()) {
-				try (DirectoryStream emptyCheck = Files.newDirectoryStream(path)) {
-					if (!emptyCheck.iterator().hasNext()) {
-						LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
-						return ErrorCode.SUCCESS.getMask();
-					} else {
-						LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
-						return NtStatus.DIRECTORY_NOT_EMPTY.getMask();
-					}
-
-				} catch (IOException e) {
-					LOG.info("({}) deleteDirectory(): IO error occurred reading {}.", dokanyFileInfo.Context, path.toString());
-					LOG.debug("deleteDirectory(): ", e);
-					return NtStatus.UNSUCCESSFUL.getMask();
+			try (DirectoryStream emptyCheck = Files.newDirectoryStream(path)) {
+				if (emptyCheck.iterator().hasNext()) {
+					LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
+					return NtStatus.DIRECTORY_NOT_EMPTY.getMask();
+				} else {
+					LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
+					return ErrorCode.SUCCESS.getMask();
 				}
-			} else {
-				LOG.warn("({}) {} is a file. Unable to delete via deleteDirectory()", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
+			} catch (IOException e) {
+				LOG.info("({}) deleteDirectory(): IO error occurred reading {}.", dokanyFileInfo.Context, path.toString());
+				LOG.debug("deleteDirectory(): ", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
 	}
@@ -732,7 +696,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Ressource {} already exists at {}.", dokanyFileInfo.Context, path.toString(), newPath);
 				return ErrorCode.ERROR_FILE_EXISTS.getMask();
 			} catch (DirectoryNotEmptyException e) {
-				LOG.trace("({}) Directoy {} is not emtpy.", dokanyFileInfo.Context, path.toString());
+				LOG.trace("({}) Target directoy {} is not emtpy.", dokanyFileInfo.Context, path.toString());
 				return NtStatus.DIRECTORY_NOT_EMPTY.getMask();
 			} catch (IOException e) {
 				LOG.info("({}) moveFile(): IO error occured while moving ressource {}.", dokanyFileInfo.Context, path.toString());
@@ -749,23 +713,20 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("setEndOfFile(): Invalid handle to {}.", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.warn("({}) setEndOfFile(): {} is a directory. Unable to truncate.", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
 		} else {
-			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (!handle.isDirectory()) {
-				try {
-					((OpenFile) handle).truncate(rawByteOffset);
-					LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path.toString());
-					return NtStatus.SUCCESS.getMask();
-				} catch (IOException e) {
-					LOG.info("({}) setEndOfFile(): IO error while truncating {}.", dokanyFileInfo.Context, path.toString());
-					LOG.debug("setEndOfFile(): ", e);
-					NtStatus.UNSUCCESSFUL.getMask();
-				}
-			} else {
-				LOG.warn("({}) setEndOfFile(): {} is a directory. Unable to truncate.", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
+			try {
+				OpenHandle handle = fac.get(dokanyFileInfo.Context);
+				((OpenFile) handle).truncate(rawByteOffset);
+				LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path.toString());
+				return NtStatus.SUCCESS.getMask();
+			} catch (IOException e) {
+				LOG.info("({}) setEndOfFile(): IO error while truncating {}.", dokanyFileInfo.Context, path.toString());
+				LOG.debug("setEndOfFile(): ", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
 			}
-			return 0;
 		}
 	}
 
@@ -789,18 +750,13 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public long getDiskFreeSpace(LongByReference freeBytesAvailable, LongByReference totalNumberOfBytes, LongByReference totalNumberOfFreeBytes, DokanyFileInfo dokanyFileInfo) {
 		LOG.debug("getFreeDiskSpace() is called.");
-		if (fileStore != null) {
-			try {
-				totalNumberOfBytes.setValue(fileStore.getTotalSpace());
-				freeBytesAvailable.setValue(fileStore.getUsableSpace());
-				totalNumberOfFreeBytes.setValue(fileStore.getUnallocatedSpace());
-				return ErrorCode.SUCCESS.getMask();
-			} catch (IOException e) {
-				LOG.info("({}) getFreeDiskSpace(): Unable to detect disk space status.", dokanyFileInfo.Context, e);
-				return NtStatus.UNSUCCESSFUL.getMask();
-			}
-		} else {
-			LOG.trace("({}) Information about disk space not available.", dokanyFileInfo.Context);
+		try {
+			totalNumberOfBytes.setValue(fileStore.getTotalSpace());
+			freeBytesAvailable.setValue(fileStore.getUsableSpace());
+			totalNumberOfFreeBytes.setValue(fileStore.getUnallocatedSpace());
+			return ErrorCode.SUCCESS.getMask();
+		} catch (IOException e) {
+			LOG.info("({}) getFreeDiskSpace(): Unable to detect disk space status.", dokanyFileInfo.Context, e);
 			return NtStatus.UNSUCCESSFUL.getMask();
 		}
 	}
@@ -822,17 +778,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	public long getVolumeInformation(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
 		try {
 			rawVolumeNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getName(), rawVolumeNameSize));
-
 			rawVolumeSerialNumber.setValue(volumeInformation.getSerialNumber());
-
 			rawMaximumComponentLength.setValue(volumeInformation.getMaxComponentLength());
-
 			rawFileSystemFlags.setValue(volumeInformation.getFileSystemFeatures().toInt());
-
 			rawFileSystemNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getFileSystemName(), rawFileSystemNameSize));
-
 			return ErrorCode.SUCCESS.getMask();
-		} catch (final Throwable t) {
+		} catch (Throwable t) {
 			return DokanyUtils.exceptionToErrorCode(t);
 		}
 	}
@@ -899,7 +850,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	}
 
 	private Path getRootedPath(WString rawPath) {
-		return root.resolve(rawPath.toString().replace('\\', '/').replaceFirst("^/+", ""));
+		String unixPath = rawPath.toString().replace('\\', '/');
+		String relativeUnixPath = CharMatcher.is('/').trimLeadingFrom(unixPath);
+		return root.resolve(relativeUnixPath);
 	}
 
 	private boolean isSkipFile(WString filepath) {
