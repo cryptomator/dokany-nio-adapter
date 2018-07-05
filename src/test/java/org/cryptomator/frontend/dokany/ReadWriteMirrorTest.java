@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
 public class ReadWriteMirrorTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
 		System.setProperty(SimpleLogger.LOG_FILE_KEY, "System.out");
 		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
