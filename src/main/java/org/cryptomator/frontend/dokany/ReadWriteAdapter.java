@@ -340,51 +340,46 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return ErrorCode.SUCCESS.getMask();
 		}
 		Path path = getRootedPath(rawPath);
-		LOG.debug("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.trace("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("readFile(): Invalid handle to {} ", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
-		} else {
-			if (!dokanyFileInfo.isDirectory()) {
-				long handleID = dokanyFileInfo.Context;
-				boolean reopened = false;
-				OpenFile handle = (OpenFile) fac.get(handleID);
-				if (handle == null) {
-					LOG.debug("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
-					try {
-						handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
-						handle = (OpenFile) fac.get(handleID);
-						LOG.debug("readFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
-						reopened = true;
-					} catch (IOException e1) {
-						LOG.debug("readFile(): Reopen of {} failed. Aborting.", path.toString());
-						return NtStatus.UNSUCCESSFUL.getMask();
-					}
-				}
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
+		}
 
-				Optional<Integer> err = Optional.empty();
+		long handleID = dokanyFileInfo.Context;
+		boolean reopened = false;
+		OpenFile handle = (OpenFile) fac.get(handleID);
+		if (handle == null) {
+			LOG.trace("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
+			try {
+				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
+				handle = (OpenFile) fac.get(handleID);
+				LOG.trace("readFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
+				reopened = true;
+			} catch (IOException e1) {
+				LOG.debug("readFile(): Reopen of {} failed. Aborting.", path.toString());
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
+
+		try {
+			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
+			LOG.trace("({}) Data successful read from {}.", handleID, path.toString());
+			return ErrorCode.SUCCESS.getMask();
+		} catch (IOException e) {
+			LOG.info("({}) readFile(): IO error while reading file {}.", handleID, path.toString(), e);
+			return ErrorCode.ERROR_READ_FAULT.getMask();
+		} finally {
+			if (reopened) {
 				try {
-					rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
-					LOG.trace("({}) Data successful read from {}.", handleID, path.toString());
+					handle.close();
+					LOG.trace("({}) readFile(): Successful closed REOPENED file {}.", handleID, path.toString());
 				} catch (IOException e) {
-					LOG.info("({}) readFile(): IO error while reading file {}.", handleID, path.toString(), e);
-					LOG.debug("readFile(): ", e);
-					err = Optional.of(ErrorCode.ERROR_READ_FAULT.getMask());
+					LOG.info("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
 				}
-
-				if (reopened) {
-					try {
-						handle.close();
-						LOG.debug("({}) readFile(): Successful closed REOPENED file {}.", handleID, path.toString());
-					} catch (IOException e) {
-						LOG.info("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
-					}
-				}
-
-				return err.orElse(ErrorCode.SUCCESS.getMask());
-			} else {
-				LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
 			}
 		}
 	}
@@ -392,51 +387,46 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public long writeFile(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
-		LOG.debug("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.trace("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("writeFile(): Invalid handle to {}", path.toString());
 			return NtStatus.UNSUCCESSFUL.getMask();
-		} else {
-			if (!dokanyFileInfo.isDirectory()) {
-				long handleID = dokanyFileInfo.Context;
-				boolean reopened = false;
-				OpenFile handle = (OpenFile) fac.get(handleID);
-				if (handle == null) {
-					LOG.debug("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
-					try {
-						handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
-						handle = (OpenFile) fac.get(handleID);
-						LOG.debug("writeFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
-						reopened = true;
-					} catch (IOException e1) {
-						LOG.debug("writeFile(): Reopen of {} failed. Aborting.", path.toString());
-						return NtStatus.UNSUCCESSFUL.getMask();
-					}
-				}
+		} else if (dokanyFileInfo.isDirectory()) {
+			LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
+			return NtStatus.ACCESS_DENIED.getMask();
+		}
 
-				Optional<Integer> err = Optional.empty();
+		long handleID = dokanyFileInfo.Context;
+		boolean reopened = false;
+		OpenFile handle = (OpenFile) fac.get(handleID);
+		if (handle == null) {
+			LOG.trace("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath).toString());
+			try {
+				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
+				handle = (OpenFile) fac.get(handleID);
+				LOG.trace("writeFile(): Successful reopened {} with handle {}.", path.toString(), handleID);
+				reopened = true;
+			} catch (IOException e1) {
+				LOG.debug("writeFile(): Reopen of {} failed. Aborting.", path.toString());
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
+		}
+
+		try {
+			rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
+			LOG.trace("({}) Data successful written to {}.", handleID, path.toString());
+			return ErrorCode.SUCCESS.getMask();
+		} catch (IOException e) {
+			LOG.info("({}) writeFile(): IO Error while writing to {} ", handleID, path.toString(), e);
+			return ErrorCode.ERROR_WRITE_FAULT.getMask();
+		} finally {
+			if (reopened) {
 				try {
-					rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
-					LOG.trace("({}) Data successful written to {}.", handleID, path.toString());
+					handle.close();
+					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", handleID, path.toString());
 				} catch (IOException e) {
-					LOG.info("({}) writeFile(): IO Error while writing to {} ", handleID, path.toString(), e);
-					LOG.debug("writeFile(): ", e);
-					err = Optional.of(ErrorCode.ERROR_WRITE_FAULT.getMask());
+					LOG.info("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
 				}
-
-				if (reopened) {
-					try {
-						handle.close();
-						LOG.debug("({}) writeFile(): Successful closed REOPENED file {}.", handleID, path.toString());
-					} catch (IOException e) {
-						LOG.info("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path.toString());
-					}
-				}
-
-				return err.orElse(ErrorCode.SUCCESS.getMask());
-			} else {
-				LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path.toString());
-				return NtStatus.ACCESS_DENIED.getMask();
 			}
 		}
 	}
