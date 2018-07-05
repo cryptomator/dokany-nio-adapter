@@ -552,12 +552,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					filteredStream = stream;
 				} else {
 					// we want to filter by glob
-					PathMatcher matcher = path.getFileSystem().getPathMatcher("regex:.*\\\\" + searchPattern.toString());
-					filteredStream = stream.filter(matcher::matches);
+					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + searchPattern.toString());
+					filteredStream = stream.map(Path::getFileName).filter(matcher::matches);
 				}
 				filteredStream.map(p -> {
 					try {
-						return getFileInfo(p).toWin32FindData();
+						return getFileInfo(path.resolve(p)).toWin32FindData();
 					} catch (IOException e) {
 						throw new UncheckedIOException("IO error accessing " + p, e);
 					}
