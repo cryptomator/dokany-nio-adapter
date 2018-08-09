@@ -46,9 +46,8 @@ public class OpenHandleFactory implements AutoCloseable {
 		return this.openFile(path, Sets.newHashSet(options));
 	}
 
-
 	/**
-	 * Creates an Openfile with the given path  and options &amp; attributes and assigns a fileHandle != 0 to it
+	 * Creates an OpenFile with the given path  and options &amp; attributes and assigns a fileHandle != 0 to it
 	 *
 	 * @param path path of the file to open
 	 * @param options file open options

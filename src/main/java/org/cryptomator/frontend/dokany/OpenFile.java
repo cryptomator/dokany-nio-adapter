@@ -101,11 +101,6 @@ public class OpenFile extends OpenHandle {
 		channel.close();
 	}
 
-	@Override
-	public boolean isDirectory() {
-		return false;
-	}
-
 	public void flush() throws IOException {
 		channel.force(false);
 	}

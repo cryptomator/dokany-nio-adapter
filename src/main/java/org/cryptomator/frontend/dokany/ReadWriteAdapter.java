@@ -318,7 +318,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		Path p = getRootedPath(rawPath);
 		LOG.debug("({}) closeFile() is called for {}.", dokanyFileInfo.Context, p.toString());
 		if (fac.exists(dokanyFileInfo.Context)) {
-			LOG.info("({}) Resource {} was not cleauped. Closing handle now.", dokanyFileInfo.Context, p.toString());
+			LOG.info("({}) Resource {} was not cleanuped. Closing handle now.", dokanyFileInfo.Context, p.toString());
 			try {
 				fac.close(dokanyFileInfo.Context);
 			} catch (IOException e) {
@@ -476,7 +476,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.debug("({}) Resource {} not found.", dokanyFileInfo.Context, path.toString());
 				return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
-				LOG.info("({}) getFileInformation(): IO error occured in reading meta data from {}.", dokanyFileInfo.Context, path.toString(), e);
+				LOG.info("({}) getFileInformation(): IO error occurred reading meta data from {}.", dokanyFileInfo.Context, path.toString(), e);
 				LOG.debug("getFileInformation(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
