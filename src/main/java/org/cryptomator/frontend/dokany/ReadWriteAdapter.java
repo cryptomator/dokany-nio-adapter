@@ -264,6 +264,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.info("zwCreateFile(): IO error occurred during creation of {}.", path.toString());
 				LOG.debug("zwCreateFile(): ", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
+			} catch (IllegalArgumentException e) {
+				LOG.warn("createFile(): Exception occured:", e);
+				LOG.warn("{} seems to be modified by another source.", path.toString());
+				dokanyFileInfo.Context = fac.openRestrictedFile(path);
+				LOG.warn("({}) {} opended in restricted mode with handle {}.", dokanyFileInfo.Context, path.toString(), dokanyFileInfo.Context);
+				return NtStatus.SUCCESS.getMask();
 			}
 		}
 	}
@@ -462,7 +468,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return NtStatus.UNSUCCESSFUL.getMask();
 		} else {
 			try {
-				FullFileInfo data = getFileInfo(path);
+				FullFileInfo data = getFileInformation(path, dokanyFileInfo);
 				data.copyTo(handleFileInfo);
 				LOG.trace("({}) File Information successful read from {}.", dokanyFileInfo.Context, path.toString());
 				return ErrorCode.SUCCESS.getMask();
@@ -477,21 +483,26 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		}
 	}
 
-	private FullFileInfo getFileInfo(Path p) throws IOException {
+	private FullFileInfo getFileInformation(Path p, DokanyFileInfo dokanyFileInfo) throws IOException {
 		DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class);
 		long index = 0;
 		if (attr.fileKey() != null) {
 			index = (long) attr.fileKey();
 		}
 		Path filename = p.getFileName();
-		FullFileInfo data = new FullFileInfo(filename != null ? filename.toString() : "",
+		FullFileInfo data = new FullFileInfo(filename != null ? filename.toString() : "", //case distinction necessary, because the root has no name!
 				index,
 				FileUtil.dosAttributesToEnumIntegerSet(attr),
 				0, //currently just a stub
 				DokanyUtils.getTime(attr.creationTime().toMillis()),
 				DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
 				DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
-		data.setSize(attr.size());
+		try {
+			data.setSize(attr.size());
+		} catch (IllegalArgumentException e) {
+			LOG.warn("({}) getFileInformation(): Wrong ciphertext filesize of {} . Cleartext file size is set to zero.", dokanyFileInfo.Context, p.toString());
+			data.setSize(0);
+		}
 		return data;
 	}
 
@@ -527,9 +538,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				}
 				filteredStream.map(p -> {
 					try {
-						return getFileInfo(path.resolve(p)).toWin32FindData();
+						return getFileInformation(path.resolve(p), dokanyFileInfo).toWin32FindData();
 					} catch (IOException e) {
-						LOG.warn("({}) findFilesWithPatter(): IO error accessing {}.", dokanyFileInfo.Context, p.toString());
+						LOG.warn("({}) findFilesWithPatter(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p.toString());
 						return null;
 					}
 				}).forEach(file -> {

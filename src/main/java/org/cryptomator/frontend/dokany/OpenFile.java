@@ -21,6 +21,12 @@ public class OpenFile extends OpenHandle {
 
 	private final FileChannel channel;
 
+
+	protected OpenFile(Path path) {
+		super(path);
+		this.channel = null;
+	}
+
 	public OpenFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		super(path);
 		this.channel = FileChannel.open(path, options, attrs);

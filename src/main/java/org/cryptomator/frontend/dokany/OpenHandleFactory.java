@@ -65,6 +65,22 @@ public class OpenHandleFactory implements AutoCloseable {
 		return fileHandle;
 	}
 
+	/**
+	 * Creates an OpenRestrictedFile with the given path and assigns a fileHandle != 0 to it.
+	 *
+	 * @param path path of the file to open
+	 * @return file handle used to identify and close open files.
+	 * @throws IOException
+	 */
+	public long openRestrictedFile(Path path) {
+		long fileHandle = handleGen.getAndIncrement();
+		if (fileHandle == 0) {
+			fileHandle = handleGen.getAndIncrement();
+		}
+		openHandles.put(fileHandle, new OpenRestrictedFile(path));
+		return fileHandle;
+	}
+
 	public OpenHandle get(Long fileHandle) {
 		return openHandles.get(fileHandle);
 	}
