@@ -41,7 +41,7 @@ public interface DokanyFileSystem {
 	 * @see <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/nf-ntifs-ntcreatefile">Microsoft documentation of zwCreateFile</a>
 	 * @see <a href="https://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">Microsoft FileManagement documentation of CreateFile</a>
 	 */
-	long zwCreateFile(
+	int zwCreateFile(
 			WString rawPath,
 			WinBase.SECURITY_ATTRIBUTES securityContext,
 			int rawDesiredAccess,
@@ -90,7 +90,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long readFile(
+	int readFile(
 			WString rawPath,
 			Pointer rawBuffer,
 			int rawBufferLength,
@@ -110,7 +110,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long writeFile(
+	int writeFile(
 			WString rawPath,
 			Pointer rawBuffer,
 			int rawNumberOfBytesToWrite,
@@ -126,7 +126,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long flushFileBuffers(
+	int flushFileBuffers(
 			WString rawPath,
 			DokanyFileInfo dokanyFileInfo);
 
@@ -138,7 +138,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long getFileInformation(
+	int getFileInformation(
 			WString fileName,
 			ByHandleFileInfo handleFileInfo,
 			DokanyFileInfo dokanyFileInfo);
@@ -151,7 +151,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long findFiles(
+	int findFiles(
 			WString rawPath,
 			DokanyOperations.FillWin32FindData rawFillFindData,
 			DokanyFileInfo dokanyFileInfo);
@@ -165,7 +165,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long findFilesWithPattern(
+	int findFilesWithPattern(
 			WString fileName,
 			WString searchPattern,
 			DokanyOperations.FillWin32FindData rawFillFindData,
@@ -179,7 +179,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long setFileAttributes(
+	int setFileAttributes(
 			WString rawPath,
 			int rawAttributes,
 			DokanyFileInfo dokanyFileInfo);
@@ -194,7 +194,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long setFileTime(
+	int setFileTime(
 			WString rawPath,
 			FILETIME rawCreationTime,
 			FILETIME rawLastAccessTime,
@@ -218,7 +218,7 @@ public interface DokanyFileSystem {
 	 * @return {@link NtStatus}
 	 * @see #deleteDirectory(WString, DokanyFileInfo)
 	 */
-	long deleteFile(
+	int deleteFile(
 			WString rawPath,
 			DokanyFileInfo dokanyFileInfo);
 
@@ -230,7 +230,7 @@ public interface DokanyFileSystem {
 	 * @return {@link NtStatus}
 	 * @see #deleteFile(WString, DokanyFileInfo)
 	 */
-	long deleteDirectory(
+	int deleteDirectory(
 			WString rawPath,
 			DokanyFileInfo dokanyFileInfo);
 
@@ -243,7 +243,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long moveFile(
+	int moveFile(
 			WString rawPath,
 			WString rawNewFileName,
 			boolean rawReplaceIfExisting,
@@ -257,7 +257,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long setEndOfFile(
+	int setEndOfFile(
 			WString rawPath,
 			long rawByteOffset,
 			DokanyFileInfo dokanyFileInfo);
@@ -270,7 +270,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long setAllocationSize(
+	int setAllocationSize(
 			WString rawPath,
 			long rawLength,
 			DokanyFileInfo dokanyFileInfo);
@@ -284,7 +284,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long lockFile(
+	int lockFile(
 			WString rawPath,
 			long rawByteOffset,
 			long rawLength,
@@ -299,7 +299,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long unlockFile(
+	int unlockFile(
 			WString rawPath,
 			long rawByteOffset,
 			long rawLength,
@@ -318,7 +318,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long getDiskFreeSpace(
+	int getDiskFreeSpace(
 			LongByReference freeBytesAvailable,
 			LongByReference totalNumberOfBytes,
 			LongByReference totalNumberOfFreeBytes,
@@ -351,7 +351,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long getVolumeInformation(
+	int getVolumeInformation(
 			Pointer rawVolumeNameBuffer,
 			int rawVolumeNameSize,
 			IntByReference rawVolumeSerialNumber,
@@ -364,13 +364,13 @@ public interface DokanyFileSystem {
 	/**
 	 * Is called when Dokany succeeded mounting the volume.
 	 */
-	long mounted(
+	int mounted(
 			DokanyFileInfo dokanyFileInfo);
 
 	/**
 	 * Is called when Dokany succeeded unmounting the volume.
 	 */
-	long unmounted(
+	int unmounted(
 			final DokanyFileInfo dokanyFileInfo);
 
 	/**
@@ -386,7 +386,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long getFileSecurity(
+	int getFileSecurity(
 			WString rawPath,
 			int /* SecurityInformation */ rawSecurityInformation,
 			Pointer rawSecurityDescriptor,
@@ -406,7 +406,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long setFileSecurity(
+	int setFileSecurity(
 			WString rawPath,
 			int rawSecurityInformation,
 			// @TODO: This is a pointer??
@@ -430,7 +430,7 @@ public interface DokanyFileSystem {
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return {@link NtStatus}
 	 */
-	long findStreams(
+	int findStreams(
 			WString rawPath,
 			DokanyOperations.FillWin32FindStreamData rawFillFindData,
 			DokanyFileInfo dokanyFileInfo);
