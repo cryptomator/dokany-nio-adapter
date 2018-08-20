@@ -98,7 +98,7 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 			throw new IllegalStateException("infoToReceive cannot be null");
 		}
 		infoToReceive.filePath = filePath;
-		infoToReceive.setSize(fileSize, nFileSizeHigh, nFileSizeLow);
+		infoToReceive.setSizesExplicit(fileSize, nFileSizeHigh, nFileSizeLow);
 		infoToReceive.setIndex(fileIndex, nFileIndexHigh, nFileIndexLow);
 		infoToReceive.dwFileAttributes = dwFileAttributes;
 		infoToReceive.setTimes(ftCreationTime, ftLastAccessTime, ftLastWriteTime);
@@ -146,14 +146,16 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	}
 
 	public void setSize(final long sizeToSet) {
-		setSize(sizeToSet, (int) (sizeToSet >> 32), (int) sizeToSet);
-	}
-
-	final void setSize(final long size, final int sizeHigh, final int sizeLow) {
-		this.fileSize = size;
-		final WinNT.LARGE_INTEGER largeInt = new WinNT.LARGE_INTEGER(size);//DokanyUtils.getLargeInt(size, sizeHigh, sizeLow);
+		this.fileSize = sizeToSet;
+		final WinNT.LARGE_INTEGER largeInt = new WinNT.LARGE_INTEGER(sizeToSet);
 		this.nFileSizeHigh = largeInt.getHigh().intValue();
 		this.nFileSizeLow = largeInt.getLow().intValue();
+	}
+
+	protected final void setSizesExplicit(final long size, final int sizeHigh, final int sizeLow) {
+		this.fileSize = size;
+		this.nFileSizeHigh = sizeHigh;
+		this.nFileSizeLow = sizeLow;
 	}
 
 	public final long getSize() {
