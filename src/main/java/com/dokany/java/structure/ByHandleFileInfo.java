@@ -146,14 +146,14 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	}
 
 	public void setSize(final long sizeToSet) {
-		setSize(sizeToSet, 0, 0);
+		setSize(sizeToSet, (int) (sizeToSet >> 32), (int) sizeToSet);
 	}
 
 	final void setSize(final long size, final int sizeHigh, final int sizeLow) {
-		fileSize = size;
-		final WinNT.LARGE_INTEGER largeInt = DokanyUtils.getLargeInt(size, sizeHigh, sizeLow);
-		nFileSizeHigh = ((size != 0) && (sizeHigh == 0)) ? largeInt.getHigh().intValue() : (int) size;
-		nFileSizeLow = ((size != 0) && (sizeLow == 0)) ? largeInt.getLow().intValue() : (int) size;
+		this.fileSize = size;
+		final WinNT.LARGE_INTEGER largeInt = new WinNT.LARGE_INTEGER(size);//DokanyUtils.getLargeInt(size, sizeHigh, sizeLow);
+		this.nFileSizeHigh = largeInt.getHigh().intValue();
+		this.nFileSizeLow = largeInt.getLow().intValue();
 	}
 
 	public final long getSize() {
@@ -164,14 +164,14 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 		if (indexToSet == 0) {
 			counter.getAndIncrement();
 		}
-		setIndex(indexToSet, 0, 0);
+		setIndex(indexToSet, (int) (indexToSet >> 32), (int) indexToSet);
 	}
 
 	final void setIndex(final long index, final int indexHigh, final int indexLow) {
-		fileIndex = index;
-		final WinNT.LARGE_INTEGER largeInt = DokanyUtils.getLargeInt(index, indexHigh, indexLow);
-		nFileIndexHigh = ((index != 0) && (indexHigh == 0)) ? largeInt.getHigh().intValue() : (int) index;
-		nFileIndexLow = ((index != 0) && (indexLow == 0)) ? largeInt.getLow().intValue() : (int) index;
+		this.fileIndex = index;
+		final WinNT.LARGE_INTEGER largeInt = new WinNT.LARGE_INTEGER(index);
+		this.nFileIndexHigh = largeInt.getHigh().intValue();
+		this.nFileIndexLow = largeInt.getLow().intValue();
 	}
 
 	@Override
