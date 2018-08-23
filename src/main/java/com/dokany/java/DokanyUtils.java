@@ -180,20 +180,6 @@ public class DokanyUtils {
 	}
 
 	/**
-	 * @param val
-	 * @param high
-	 * @param low
-	 * @return
-	 */
-	public static LARGE_INTEGER getLargeInt(final long val, final int high, final int low) {
-		LARGE_INTEGER largeInt = null;
-		if ((val != 0) && ((high == 0) || (low == 0))) {
-			largeInt = new LARGE_INTEGER(val);
-		}
-		return largeInt;
-	}
-
-	/**
 	 * @param path
 	 * @return
 	 */

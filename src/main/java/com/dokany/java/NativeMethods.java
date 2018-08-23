@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Native API to the kernel Dokany driver. This is an internal class and should not be used directly by code outside com.dokany.java.
  */
-@SuppressWarnings("unused")
 class NativeMethods {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NativeMethods.class);
@@ -89,6 +88,7 @@ class NativeMethods {
 
 	/**
 	 * Convert {@link DokanyOperations.ZwCreateFile} parameters to CreateFile parameters.
+	 *
 	 * @param desiredAccess
 	 * @param fileAttributes FileAttributes
 	 * @param createOptions CreateOptions

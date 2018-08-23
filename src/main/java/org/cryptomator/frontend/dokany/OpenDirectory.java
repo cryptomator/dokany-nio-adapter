@@ -9,10 +9,7 @@ public class OpenDirectory extends OpenHandle {
 	}
 
 	@Override
-	public void close() {}
-
-	@Override
-	public boolean isDirectory() {
-		return true;
+	public void close() {
 	}
+
 }

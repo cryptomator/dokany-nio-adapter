@@ -34,7 +34,8 @@ public class Mount implements AutoCloseable {
 			Process proc = revealCommand.start();
 			boolean finishedInTime = proc.waitFor(REVEAL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 			if (finishedInTime) {
-				return proc.exitValue() == 0;
+				// The check proc.exitValue() == 0 is always false since Windows explorer return every time an exit value of 1
+				return true;
 			} else {
 				proc.destroyForcibly();
 				return false;
