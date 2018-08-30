@@ -503,7 +503,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		try {
 			data.setSize(attr.size());
 		} catch (IllegalArgumentException e) {
-			LOG.warn("({}) getFileInformation(): Wrong ciphertext filesize of {} . Cleartext file size is set to zero.", dokanyFileInfo.Context, p.toString());
+			LOG.warn("({}) getFileInformation(): Wrong ciphertext file size of {} . Displayed cleartext file size is set to zero.", dokanyFileInfo.Context, p.toString());
 			data.setSize(0);
 		}
 		return data;
