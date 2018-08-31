@@ -29,7 +29,7 @@ public class MountFactory {
 	private static final EnumIntegerSet<MountOption> MOUNT_OPTIONS = new EnumIntegerSet<>( //
 			// MountOption.DEBUG_MODE, //
 			// MountOption.STD_ERR_OUTPUT, //
-			MountOption.REMOVABLE_DRIVE, //
+			// MountOption.REMOVABLE_DRIVE, //
 			MountOption.CURRENT_SESSION);
 	private static final EnumIntegerSet<FileSystemFeature> FILE_SYSTEM_FEATURES = new EnumIntegerSet<>( //
 			FileSystemFeature.CASE_PRESERVED_NAMES, //
