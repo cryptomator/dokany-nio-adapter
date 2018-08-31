@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -18,15 +19,15 @@ public class Mount implements AutoCloseable {
 	private static final int UNMOUNT_TIMEOUT_MS = 5000;
 
 	private final DokanyDriver driver;
-	private final char driveLetter;
+	private final Path mountPoint;
 	private final ProcessBuilder revealCommand;
 
 	private Future<?> driverJob;
 
-	public Mount(char driveLetter, DokanyDriver driver) {
+	public Mount(Path mountPoint, DokanyDriver driver) {
 		this.driver = driver;
-		this.driveLetter = driveLetter;
-		this.revealCommand = new ProcessBuilder("explorer", "/root,", driveLetter + ":\\");
+		this.mountPoint = mountPoint;
+		this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
 	}
 
 	public void mount(ExecutorService executorService) throws ExecutionException, InterruptedException {
@@ -61,10 +62,10 @@ public class Mount implements AutoCloseable {
 	@Override
 	public void close() {
 		try {
-			LOG.debug("Unmounting drive {}: ...", driveLetter);
+			LOG.debug("Unmounting drive {}: ...", mountPoint);
 			driver.shutdown();
 			driverJob.get(UNMOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-			LOG.debug("Unmounted drive {}: successfully.", driveLetter);
+			LOG.debug("Unmounted drive {}: successfully.", mountPoint);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 		} catch (ExecutionException e) {
@@ -73,7 +74,7 @@ public class Mount implements AutoCloseable {
 			LOG.warn("Dokany driver will be canceled now...");
 		} finally {
 			if (driverJob.cancel(true)) {
-				LOG.warn("Dokany driver for drive {}: canceled.", driveLetter);
+				LOG.warn("Dokany driver for drive {}: canceled.", mountPoint);
 			}
 		}
 	}

@@ -23,8 +23,9 @@ public class ReadWriteMirrorTest {
 		}
 
 		Path path = Paths.get("C:\\Users\\Sebastian\\Desktop\\Dev\\TestVaultOrig");
+		Path mountPoint = Paths.get("D:\\tmp");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(path, 'T', "1&1 Tresor", "Cryptomator FS")) {
+		try (Mount mount = mountFactory.mount(path, mountPoint, "Test", "Cryptomator FS")) {
 			mount.reveal();
 			System.in.read();
 		}
