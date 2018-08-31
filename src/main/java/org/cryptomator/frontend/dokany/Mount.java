@@ -19,14 +19,23 @@ public class Mount implements AutoCloseable {
 
 	private final DokanyDriver driver;
 	private final char driveLetter;
-	private final Future<?> driverJob;
 	private final ProcessBuilder revealCommand;
 
-	public Mount(ExecutorService executorService, char driveLetter, DokanyDriver driver) {
+	private Future<?> driverJob;
+
+	public Mount(char driveLetter, DokanyDriver driver) {
 		this.driver = driver;
 		this.driveLetter = driveLetter;
-		this.driverJob = executorService.submit(driver::start);
 		this.revealCommand = new ProcessBuilder("explorer", "/root,", driveLetter + ":\\");
+	}
+
+	public void mount(ExecutorService executorService) throws ExecutionException, InterruptedException {
+		this.driverJob = executorService.submit(driver::start);
+		try {
+			driverJob.get(3000, TimeUnit.MILLISECONDS);
+		} catch (TimeoutException e) {
+			LOG.trace("Mounting still in progress.");
+		}
 	}
 
 	public boolean reveal() {

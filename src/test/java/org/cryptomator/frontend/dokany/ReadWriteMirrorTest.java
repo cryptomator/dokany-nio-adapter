@@ -16,7 +16,7 @@ public class ReadWriteMirrorTest {
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, MountFailedException {
 		if (!MountFactory.isApplicable()) {
 			System.err.println("Dokany not installed.");
 			return;

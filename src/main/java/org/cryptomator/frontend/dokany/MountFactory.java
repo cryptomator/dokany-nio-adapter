@@ -58,7 +58,7 @@ public class MountFactory {
 	 * @param fileSystemName The technical file system name shown in the drive properties window.
 	 * @return The mount object, regardless if mount succeeded.
 	 */
-	public Mount mount(Path fileSystemRoot, char driveLetter, String volumeName, String fileSystemName) {
+	public Mount mount(Path fileSystemRoot, char driveLetter, String volumeName, String fileSystemName) throws MountFailedException {
 		Preconditions.checkArgument(CharMatcher.inRange('B', 'Z').matches(driveLetter), "Invalid drive letter, expecting B-Z.");
 
 		String mountPoint = driveLetter + ":\\";
@@ -68,14 +68,16 @@ public class MountFactory {
 		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, volumeInfo, mountDidSucceed);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
 		LOG.debug("Mounting on drive {}: ...", driveLetter);
-		Mount mount = new Mount(executorService, driveLetter, dokanyDriver);
+		Mount mount = new Mount(driveLetter, dokanyDriver);
 		try {
+			mount.mount(executorService);
 			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 			LOG.debug("Mounted drive {}: successfully.", driveLetter);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 		} catch (ExecutionException e) {
 			LOG.error("Mounting failed.", e);
+			throw new MountFailedException(e);
 		} catch (TimeoutException e) {
 			LOG.warn("Mounting timed out.");
 		}

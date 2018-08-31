@@ -71,9 +71,12 @@ public final class DokanyDriver {
 					shutdown();
 				}
 			});
-		} catch (final Throwable t) {
-			LOG.warn("Error mounting", t);
-			throw t;
+		} catch (UnsatisfiedLinkError err) {
+			LOG.error("Unable to find dokany driver.", err);
+			throw new LibraryNotFoundException(err.getMessage());
+		} catch (Throwable e) {
+			LOG.warn("Error while mounting", e);
+			throw e;
 		}
 	}
 
