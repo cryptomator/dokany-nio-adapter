@@ -19,7 +19,7 @@ public class ReadWriteCryptoFsTest {
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, MountFailedException {
 		if (!MountFactory.isApplicable()) {
 			System.err.println("Dokany not installed.");
 			return;
@@ -29,8 +29,9 @@ public class ReadWriteCryptoFsTest {
 		CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase("asd").withMasterkeyFilename("masterkey.cryptomator").build();
 		CryptoFileSystem cfs = CryptoFileSystemProvider.newFileSystem(pathToVault, props);
 		Path path = cfs.getPath("/");
+		Path mountPoint = Paths.get("T:\\");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(path, 'T', "1&1 Tresor", "Cryptomator FS")) {
+		try (Mount mount = mountFactory.mount(path, mountPoint, "1&1 Tresor", "NTFS")) {
 			mount.reveal();
 			System.in.read();
 		}
