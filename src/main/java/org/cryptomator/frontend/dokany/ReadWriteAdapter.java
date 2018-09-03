@@ -114,6 +114,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				switch (creationDisposition) {
 					case CREATE_NEW:
 						//FAILS
+						openOptions.add(StandardOpenOption.CREATE_NEW);
 						break;
 					case CREATE_ALWAYS:
 						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
