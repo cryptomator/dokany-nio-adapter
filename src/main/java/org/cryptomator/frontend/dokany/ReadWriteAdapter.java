@@ -338,7 +338,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		}
 		Path path = getRootedPath(rawPath);
-		LOG.trace("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.debug("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("readFile(): Invalid handle to {} ", path.toString());
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
@@ -386,7 +386,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public int writeFile(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(rawPath);
-		LOG.trace("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path.toString());
+		LOG.debug("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
 			LOG.info("writeFile(): Invalid handle to {}", path.toString());
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
