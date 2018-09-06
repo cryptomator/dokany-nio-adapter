@@ -613,8 +613,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			try {
 				FileTime lastModifiedTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
-				FileTime lastAccessTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
-				FileTime createdTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
+				FileTime lastAccessTime = FileTime.fromMillis(rawLastAccessTime.toDate().getTime());
+				FileTime createdTime = FileTime.fromMillis(rawCreationTime.toDate().getTime());
 				Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(lastModifiedTime, lastAccessTime, createdTime);
 				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path.toString());
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
