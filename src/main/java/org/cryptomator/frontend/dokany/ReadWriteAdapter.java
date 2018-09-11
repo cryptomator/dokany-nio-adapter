@@ -74,10 +74,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
-		//TODO: this should be removed in later versions
-		if (isSkipFile(rawPath)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
 		Path path = getRootedPath(rawPath);
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
 		LOG.debug("zwCreateFile() is called for {} with CreationDisposition {}.", path.toString(), creationDisposition.name());
@@ -285,9 +281,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public void cleanup(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(rawPath)) {
-			return;
-		}
 		Path path = getRootedPath(rawPath);
 		LOG.debug("({}) cleanup() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
@@ -315,9 +308,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public void closeFile(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(rawPath)) {
-			return;
-		}
 		Path p = getRootedPath(rawPath);
 		LOG.debug("({}) closeFile() is called for {}.", dokanyFileInfo.Context, p.toString());
 		if (fac.exists(dokanyFileInfo.Context)) {
@@ -334,9 +324,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int readFile(WString rawPath, Pointer rawBuffer, int rawBufferLength, IntByReference rawReadLength, long rawOffset, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(rawPath)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
 		Path path = getRootedPath(rawPath);
 		LOG.debug("({}) readFile() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
@@ -462,9 +449,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 */
 	@Override
 	public int getFileInformation(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(fileName)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
 		Path path = getRootedPath(fileName);
 		LOG.debug("({}) getFileInformation() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
@@ -512,18 +496,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int findFiles(WString rawPath, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(rawPath)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
 		LOG.debug("({}) findFiles() is called for {}.", dokanyFileInfo.Context, getRootedPath(rawPath).toString());
 		return findFilesWithPattern(rawPath, new WString("*"), rawFillFindData, dokanyFileInfo);
 	}
 
 	@Override
 	public int findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(fileName)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
 		Path path = getRootedPath(fileName);
 		LOG.debug("({}) findFilesWithPattern() is called for {} with search pattern {}.", dokanyFileInfo.Context, path.toString(), searchPattern.toString());
 		if (dokanyFileInfo.Context == 0) {
@@ -570,10 +548,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int setFileAttributes(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(rawPath)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
-
 		Path path = getRootedPath(rawPath);
 		LOG.debug("({}) setFileAttributes() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
@@ -602,9 +576,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int setFileTime(WString rawPath, WinBase.FILETIME rawCreationTime, WinBase.FILETIME rawLastAccessTime, WinBase.FILETIME rawLastWriteTime, DokanyFileInfo dokanyFileInfo) {
-		if (isSkipFile(rawPath)) {
-			return Win32ErrorCode.ERROR_SUCCESS.getMask();
-		}
 		Path path = getRootedPath(rawPath);
 		LOG.debug("({}) setFileTime() is called for {}.", dokanyFileInfo.Context, path.toString());
 		if (dokanyFileInfo.Context == 0) {
@@ -867,14 +838,4 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		return root.resolve(relativeUnixPath);
 	}
 
-	private boolean isSkipFile(WString filepath) {
-		String pathLowerCase = filepath.toString().toLowerCase();
-		if (pathLowerCase.endsWith("desktop.ini")
-				|| pathLowerCase.endsWith("autorun.inf")) {
-			LOG.trace("Skipping file: " + getRootedPath(filepath));
-			return true;
-		} else {
-			return false;
-		}
-	}
 }
