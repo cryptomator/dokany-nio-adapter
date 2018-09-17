@@ -2,16 +2,24 @@ package org.cryptomator.frontend.dokany;
 
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.EnumIntegerSet;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 public class FileUtil {
 
 	private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
+	private static final Set<Character> globOperatorsToEscape;
+
+	static {
+		globOperatorsToEscape = Sets.newHashSet('[', ']', '{', '}');
+	}
 
 	/**
 	 * TODO: support for other attributes ?
@@ -62,6 +70,16 @@ public class FileUtil {
 			default:
 				LOG.debug("Windows file attribute {} is currently not supported and thus will be ignored", attr.name());
 		}
+	}
+
+	public static String addEscapeSequencesForPathPattern(String rawPattern) {
+		return rawPattern.chars().flatMap(c -> {
+			if (globOperatorsToEscape.contains(c)) {
+				return IntStream.of('\\', c);
+			} else {
+				return IntStream.of(c);
+			}
+		}).toString();
 	}
 
 }
