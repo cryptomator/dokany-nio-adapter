@@ -263,11 +263,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
 				}
 			} catch (IllegalArgumentException e) {
-				LOG.warn("createFile(): Exception occured:", e);
-				LOG.warn("{} seems to be modified by another source.", path.toString());
+				LOG.warn("createFile(): Exception occurred:", e);
+				LOG.warn("{} seems to be modified on disk.", path.toString());
 				dokanyFileInfo.Context = fac.openRestrictedFile(path);
-				LOG.warn("({}) {} opended in restricted mode with handle {}.", dokanyFileInfo.Context, path.toString(), dokanyFileInfo.Context);
-				//TODO: is this correct?
+				LOG.warn("({}) {} opened in restricted mode with handle {}.", dokanyFileInfo.Context, path.toString(), dokanyFileInfo.Context);
 				return Win32ErrorCode.ERROR_FILE_CORRUPT.getMask();
 			}
 		}
