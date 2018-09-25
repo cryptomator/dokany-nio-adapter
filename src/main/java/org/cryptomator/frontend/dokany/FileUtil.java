@@ -72,6 +72,13 @@ public class FileUtil {
 		}
 	}
 
+	/**
+	 * Method for preprocessing a string containing glob patterns for a {@link java.nio.file.PathMatcher}. These characters must be escaped to not cause a different matching expression.
+	 * This method escapes the characters defined in {@link FileUtil#globOperatorsToEscape}.
+	 *
+	 * @param rawPattern a string possibly containing unwanted glob operators
+	 * @return a String where some glob operators are escaped
+	 */
 	public static String addEscapeSequencesForPathPattern(String rawPattern) {
 		return rawPattern.chars().flatMap(c -> {
 			if (globOperatorsToEscape.contains(c)) {
