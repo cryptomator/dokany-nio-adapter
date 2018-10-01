@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
@@ -257,6 +258,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			} catch (NoSuchFileException e) {
 				LOG.trace("{} not found.", path.toString());
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+			} catch (AccessDeniedException e) {
+				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
+				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (IOException e) {
 				if (attr != null) {
 					LOG.info("zwCreateFile(): IO error occurred during opening handle to {}.", path.toString());
