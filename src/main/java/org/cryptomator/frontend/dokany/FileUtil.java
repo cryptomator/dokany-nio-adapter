@@ -15,10 +15,14 @@ import java.util.stream.IntStream;
 public class FileUtil {
 
 	private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
-	private static final Set<Character> globOperatorsToEscape;
+	private static final Set<Integer> globOperatorsToEscapeCodePoints;
 
 	static {
-		globOperatorsToEscape = Sets.newHashSet('[', ']', '{', '}');
+		char[] globOperatorsToEscape = new char[]{'[', ']', '{', '}'};
+		globOperatorsToEscapeCodePoints = Sets.newHashSet();
+		for (int i = 0; i < globOperatorsToEscape.length; i++) {
+			globOperatorsToEscapeCodePoints.add(Character.codePointAt(globOperatorsToEscape, i));
+		}
 	}
 
 	/**
@@ -74,19 +78,21 @@ public class FileUtil {
 
 	/**
 	 * Method for preprocessing a string containing glob patterns for a {@link java.nio.file.PathMatcher}. These characters must be escaped to not cause a different matching expression.
-	 * This method escapes the characters defined in {@link FileUtil#globOperatorsToEscape}.
+	 * This method escapes the characters defined in {@link FileUtil#globOperatorsToEscapeCodePoints}.
 	 *
 	 * @param rawPattern a string possibly containing unwanted glob operators
 	 * @return a String where some glob operators are escaped
 	 */
 	public static String addEscapeSequencesForPathPattern(String rawPattern) {
-		return rawPattern.codePoints().flatMap(c -> {
-			if (globOperatorsToEscape.contains(c)) {
-				return IntStream.of('\\', c);
+		String tmp = rawPattern.codePoints().flatMap(c -> {
+			if (Character.isBmpCodePoint(c) && globOperatorsToEscapeCodePoints.contains(c)) {
+				return IntStream.of((int) '\\', c);
 			} else {
 				return IntStream.of(c);
 			}
 		}).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+		LOG.trace("Escaped sequence is now {}.", tmp);
+		return tmp;
 	}
 
 }
