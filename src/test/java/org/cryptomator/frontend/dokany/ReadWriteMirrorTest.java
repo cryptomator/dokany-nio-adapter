@@ -22,8 +22,8 @@ public class ReadWriteMirrorTest {
 			return;
 		}
 
-		Path path = Paths.get("C:\\Users\\Sebastian\\Desktop\\Dev\\TestVaultOrig");
-		Path mountPoint = Paths.get("D:\\tmp");
+		Path path = Paths.get("Y:\\test\\");
+		Path mountPoint = Paths.get("T:\\");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(path, mountPoint, "Test", "Cryptomator FS")) {
 			mount.reveal();

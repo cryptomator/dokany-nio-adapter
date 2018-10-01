@@ -7,6 +7,7 @@ import com.dokany.java.constants.MountOption;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.VolumeInformation;
+import org.cryptomator.frontend.dokany.locks.LockManager;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -39,7 +40,7 @@ public class ReadOnlyMirrorTest {
 
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
 
-		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"), volumeInfo, new CompletableFuture());
+		DokanyFileSystem myFs = new ReadWriteAdapter(Paths.get("Y:\\test"), new LockManager(), volumeInfo, new CompletableFuture());
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, myFs);
 
 		int res;

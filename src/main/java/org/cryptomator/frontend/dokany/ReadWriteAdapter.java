@@ -19,6 +19,9 @@ import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
+import org.cryptomator.frontend.dokany.locks.DataLock;
+import org.cryptomator.frontend.dokany.locks.LockManager;
+import org.cryptomator.frontend.dokany.locks.PathLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,13 +58,15 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
 
 	private final Path root;
+	private final LockManager lockManager;
 	private final VolumeInformation volumeInformation;
 	private final CompletableFuture didMount;
 	private final OpenHandleFactory fac;
 	private final FileStore fileStore;
 
-	public ReadWriteAdapter(Path root, VolumeInformation volumeInformation, CompletableFuture<?> didMount) {
+	public ReadWriteAdapter(Path root, LockManager lockManager, VolumeInformation volumeInformation, CompletableFuture<?> didMount) {
 		this.root = root;
+		this.lockManager = lockManager;
 		this.volumeInformation = volumeInformation;
 		this.didMount = didMount;
 		this.fac = new OpenHandleFactory();
@@ -98,65 +103,65 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 		}
 
-		if (dokanyFileInfo.isDirectory()) {
-			return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
-		} else {
-			Set<OpenOption> openOptions = Sets.newHashSet();
-			openOptions.add(StandardOpenOption.READ);
-			//TODO: mantle this statement with an if-statement which checks for write protection!
-			openOptions.add(StandardOpenOption.WRITE);
-			//TODO: ca we leave this check out?
-			if (attr.isPresent()) {
-				switch (creationDisposition) {
-					case CREATE_NEW:
-						//FAILS
-						openOptions.add(StandardOpenOption.CREATE_NEW);
-						break;
-					case CREATE_ALWAYS:
-						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						break;
-					case OPEN_EXISTING:
-						//SUCCESS
-						break;
-					case OPEN_ALWAYS:
-						openOptions.add(StandardOpenOption.CREATE);
-						break;
-					case TRUNCATE_EXISTING:
-						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						break;
-					default:
-						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-				}
+		try(PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
+				DataLock dataLock = pathLock.lockDataForWriting()){
+			if (dokanyFileInfo.isDirectory()) {
+				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
-				switch (creationDisposition) {
-					case CREATE_NEW:
-						openOptions.add(StandardOpenOption.CREATE_NEW);
-						break;
-					case CREATE_ALWAYS:
-						openOptions.add(StandardOpenOption.CREATE);
-						break;
-					case OPEN_EXISTING:
-						//FAILS
-						//return
-						break;
-					case OPEN_ALWAYS:
-						openOptions.add(StandardOpenOption.CREATE);
-						break;
-					case TRUNCATE_EXISTING:
-						openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-						break;
-					default:
-						throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
+				Set<OpenOption> openOptions = Sets.newHashSet();
+				openOptions.add(StandardOpenOption.READ);
+				//TODO: mantle this statement with an if-statement which checks for write protection!
+				openOptions.add(StandardOpenOption.WRITE);
+				//TODO: ca we leave this check out?
+				if (attr.isPresent()) {
+					switch (creationDisposition) {
+						case CREATE_NEW:
+							//FAILS
+							openOptions.add(StandardOpenOption.CREATE_NEW);
+							break;
+						case CREATE_ALWAYS:
+							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+							break;
+						case OPEN_EXISTING:
+							//SUCCESS
+							break;
+						case OPEN_ALWAYS:
+							openOptions.add(StandardOpenOption.CREATE);
+							break;
+						case TRUNCATE_EXISTING:
+							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+							break;
+						default:
+							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
+					}
+				} else {
+					switch (creationDisposition) {
+						case CREATE_NEW:
+							openOptions.add(StandardOpenOption.CREATE_NEW);
+							break;
+						case CREATE_ALWAYS:
+							openOptions.add(StandardOpenOption.CREATE);
+							break;
+						case OPEN_EXISTING:
+							//FAILS
+							//return
+							break;
+						case OPEN_ALWAYS:
+							openOptions.add(StandardOpenOption.CREATE);
+							break;
+						case TRUNCATE_EXISTING:
+							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+							break;
+						default:
+							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
+					}
 				}
+				if (dokanyFileInfo.writeToEndOfFile()) {
+					openOptions.add(StandardOpenOption.APPEND);
+				}
+				return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 			}
-
-			if (dokanyFileInfo.writeToEndOfFile()) {
-				openOptions.add(StandardOpenOption.APPEND);
-			}
-			return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 		}
-
-
 	}
 
 
@@ -288,7 +293,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			try {
 				fac.close(dokanyFileInfo.Context);
 				if (dokanyFileInfo.deleteOnClose()) {
-					try {
+					try(PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
+						DataLock dataLock = pathLock.lockDataForWriting()) {
 						Files.delete(path);
 						LOG.trace("({}) {} successful deleted.", dokanyFileInfo.Context, path.toString());
 					} catch (DirectoryNotEmptyException e) {
@@ -349,7 +355,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 		}
 
-		try {
+		try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+			DataLock dataLock = pathLock.lockDataForReading()) {
 			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
 			LOG.trace("({}) Data successful read from {}.", handleID, path.toString());
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
@@ -397,7 +404,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 		}
 
-		try {
+		try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+			DataLock dataLock = pathLock.lockDataForWriting()) {
 			rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
 			LOG.trace("({}) Data successful written to {}.", handleID, path.toString());
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
@@ -454,7 +462,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.info("getFileInformation(): Invalid handle to {}.", path.toString());
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else {
-			try {
+			try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+				DataLock dataLock = pathLock.lockDataForReading()) {
 				FullFileInfo data = getFileInformation(path, dokanyFileInfo);
 				data.copyTo(handleFileInfo);
 				LOG.trace("({}) File Information successful read from {}.", dokanyFileInfo.Context, path.toString());
@@ -513,7 +522,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					filteredStream = stream.map(Path::getFileName).filter(matcher::matches);
 				}
 				filteredStream.map(p -> {
-					try {
+					try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+						DataLock dataLock = pathLock.lockDataForReading()) {
 						return getFileInformation(path.resolve(p), dokanyFileInfo).toWin32FindData();
 					} catch (IOException e) {
 						LOG.warn("({}) findFilesWithPatter(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p.toString());
@@ -548,7 +558,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.info("setFileAttribute(): Invalid handle to {}.", path.toString());
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else {
-			return setFileAttributes(path, rawAttributes);
+			try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+						DataLock dataLock = pathLock.lockDataForWriting()){
+				return setFileAttributes(path, rawAttributes);
+			}
 		}
 	}
 
@@ -576,7 +589,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.info("setFileTime(): Invalid handle to {}.", path.toString());
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else {
-			try {
+			try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+						DataLock dataLock = pathLock.lockDataForWriting()) {
 				FileTime lastModifiedTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
 				FileTime lastAccessTime = FileTime.fromMillis(rawLastAccessTime.toDate().getTime());
 				FileTime createdTime = FileTime.fromMillis(rawCreationTime.toDate().getTime());
@@ -605,20 +619,23 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.warn("({}) {} is a directory. Unable to delete via deleteFile()", dokanyFileInfo.Context, path.toString());
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
-			//TODO: race condition with handle == null possible?
-			OpenHandle handle = fac.get(dokanyFileInfo.Context);
-			if (Files.exists(path)) {
-				//TODO: what is the best condition for the deletion? and is this case analysis correct?
-				if (((OpenFile) handle).canBeDeleted()) {
-					LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
-					return Win32ErrorCode.ERROR_SUCCESS.getMask();
+			try(PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
+						DataLock dataLock = pathLock.lockDataForWriting()) {
+				//TODO: race condition with handle == null possible?
+				OpenHandle handle = fac.get(dokanyFileInfo.Context);
+				if (Files.exists(path)) {
+					//TODO: what is the best condition for the deletion? and is this case analysis correct?
+					if (((OpenFile) handle).canBeDeleted()) {
+						LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
+						return Win32ErrorCode.ERROR_SUCCESS.getMask();
+					} else {
+						LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
+						return Win32ErrorCode.ERROR_BUSY.getMask();
+					}
 				} else {
-					LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
-					return Win32ErrorCode.ERROR_BUSY.getMask();
+					LOG.trace("({}) {} not found.", dokanyFileInfo.Context, path.toString());
+					return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 				}
-			} else {
-				LOG.trace("({}) {} not found.", dokanyFileInfo.Context, path.toString());
-				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			}
 		}
 	}
@@ -634,20 +651,23 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.warn("({}) {} is a file. Unable to delete via deleteDirectory()", dokanyFileInfo.Context, path.toString());
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
-			//TODO: check for directory existence
-			//TODO: race condition with handle == null possible?
-			try (DirectoryStream emptyCheck = Files.newDirectoryStream(path)) {
-				if (emptyCheck.iterator().hasNext()) {
-					LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
-					return Win32ErrorCode.ERROR_DIR_NOT_EMPTY.getMask();
-				} else {
-					LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
-					return Win32ErrorCode.ERROR_SUCCESS.getMask();
+			try(PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
+				DataLock dataLock = pathLock.lockDataForWriting()) {
+				//TODO: check for directory existence
+				//TODO: race condition with handle == null possible?
+				try (DirectoryStream emptyCheck = Files.newDirectoryStream(path)) {
+					if (emptyCheck.iterator().hasNext()) {
+						LOG.trace("({}) Deletion of {} not possible.", dokanyFileInfo.Context, path.toString());
+						return Win32ErrorCode.ERROR_DIR_NOT_EMPTY.getMask();
+					} else {
+						LOG.trace("({}) Deletion of {} possible.", dokanyFileInfo.Context, path.toString());
+						return Win32ErrorCode.ERROR_SUCCESS.getMask();
+					}
+				} catch (IOException e) {
+					LOG.info("({}) deleteDirectory(): IO error occurred reading {}.", dokanyFileInfo.Context, path.toString());
+					LOG.debug("deleteDirectory(): ", e);
+					return Win32ErrorCode.ERROR_CURRENT_DIRECTORY.getMask();
 				}
-			} catch (IOException e) {
-				LOG.info("({}) deleteDirectory(): IO error occurred reading {}.", dokanyFileInfo.Context, path.toString());
-				LOG.debug("deleteDirectory(): ", e);
-				return Win32ErrorCode.ERROR_CURRENT_DIRECTORY.getMask();
 			}
 		}
 	}
@@ -661,7 +681,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.info("moveFile(): Invalid handle to {}.", path.toString());
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else {
-			try {
+			try (PathLock oldPathLock = lockManager.createPathLock(path.toString()).forWriting();
+					 DataLock oldDataLock = oldPathLock.lockDataForWriting();
+					 PathLock newPathLock = lockManager.createPathLock(newPath.toString()).forWriting();
+					 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 				if (rawReplaceIfExisting) {
 					Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
 				} else {
@@ -694,7 +717,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.warn("({}) setEndOfFile(): {} is a directory. Unable to truncate.", dokanyFileInfo.Context, path.toString());
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
-			try {
+			try(PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+				DataLock dataLock = pathLock.lockDataForWriting()) {
 				OpenHandle handle = fac.get(dokanyFileInfo.Context);
 				((OpenFile) handle).truncate(rawByteOffset);
 				LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path.toString());
