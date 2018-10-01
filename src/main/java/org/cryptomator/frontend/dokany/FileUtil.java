@@ -84,15 +84,13 @@ public class FileUtil {
 	 * @return a String where some glob operators are escaped
 	 */
 	public static String addEscapeSequencesForPathPattern(String rawPattern) {
-		String tmp = rawPattern.codePoints().flatMap(c -> {
+		return rawPattern.codePoints().flatMap(c -> {
 			if (Character.isBmpCodePoint(c) && globOperatorsToEscapeCodePoints.contains(c)) {
 				return IntStream.of((int) '\\', c);
 			} else {
 				return IntStream.of(c);
 			}
 		}).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
-		LOG.trace("Escaped sequence is now {}.", tmp);
-		return tmp;
 	}
 
 }
