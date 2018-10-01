@@ -484,12 +484,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				DokanyUtils.getTime(attr.creationTime().toMillis()),
 				DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
 				DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
-		try {
-			data.setSize(attr.size());
-		} catch (IllegalArgumentException e) {
-			LOG.warn("({}) getFileInformation(): Wrong ciphertext file size of {} . Displayed cleartext file size is set to zero.", dokanyFileInfo.Context, p.toString());
-			data.setSize(0);
-		}
+		data.setSize(attr.size());
 		return data;
 	}
 
