@@ -9,6 +9,7 @@ import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.VolumeInformation;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
+import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,8 @@ public class MountFactory {
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, MOUNT_OPTIONS, UNC_NAME, TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
-		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, volumeInfo, mountDidSucceed);
+		LockManager lockManager = new LockManager();
+		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
 		LOG.debug("Mounting on {}: ...", absMountPoint);
 		Mount mount = new Mount(absMountPoint, dokanyDriver);
