@@ -260,7 +260,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (AccessDeniedException e) {
 				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
-				LOG.trace("Cause:",e);
+				LOG.trace("Cause:", e);
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (IOException e) {
 				if (attr != null) {
@@ -577,13 +577,14 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			DosFileAttributeView attrView = Files.getFileAttributeView(path, DosFileAttributeView.class);
 			try {
-				for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
+				for (FileAttribute attr : DokanyUtils.enumSetFromInt(rawAttributes, FileAttribute.values())) {
 					FileUtil.setAttribute(attrView, attr);
 				}
 				//TODO; trace msg
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				//TODO: Debug msg
+				LOG.trace("setFileAttributes(): Failed for file {} due to IOException.", path);
+				LOG.trace("setFileAttributes():Cause", e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
