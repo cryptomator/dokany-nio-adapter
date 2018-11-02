@@ -260,6 +260,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (AccessDeniedException e) {
 				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
+				LOG.trace("Cause:",e);
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (IOException e) {
 				if (attr != null) {
