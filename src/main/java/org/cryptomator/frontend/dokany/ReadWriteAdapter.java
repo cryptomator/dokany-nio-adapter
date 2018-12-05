@@ -730,7 +730,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				 DataLock dataLock = pathLock.lockDataForWriting()) {
 				OpenHandle handle = fac.get(dokanyFileInfo.Context);
 				((OpenFile) handle).truncate(rawByteOffset);
-				LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) Successful truncated {} to size {}.", dokanyFileInfo.Context, path, rawByteOffset);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
 				LOG.debug("({}) setEndOfFile(): IO error while truncating {}.", dokanyFileInfo.Context, path);
