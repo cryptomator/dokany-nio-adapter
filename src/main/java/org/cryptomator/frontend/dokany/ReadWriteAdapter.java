@@ -242,7 +242,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			try {
 				dokanyFileInfo.Context = fac.openFile(path, openOptions);
-				setFileAttributes(path, rawFileAttributes);
+				if (attr == null || mask == CreationDisposition.TRUNCATE_EXISTING.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
+					//according to zwCreateFile() documentation FileAttributes are ignored if no file is created or overwritten
+					setFileAttributes(path, rawFileAttributes);
+				}
 				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
 				//required by contract
 				Win32ErrorCode returnCode;
