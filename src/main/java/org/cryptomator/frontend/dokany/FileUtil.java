@@ -48,11 +48,11 @@ public class FileUtil {
 		if (attr.isDirectory()) {
 			set.add(FileAttribute.DIRECTORY);
 		}
-		if (attr.isRegularFile()) {
-			set.add(FileAttribute.NORMAL);
-		}
 		if (attr.isSymbolicLink()) {
 			set.add(FileAttribute.REPARSE_POINT);
+		}
+		if (attr.isRegularFile() && set.isEmpty()) {
+			set.add(FileAttribute.NORMAL);
 		}
 		return set;
 	}
