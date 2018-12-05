@@ -14,8 +14,11 @@ import java.util.stream.IntStream;
 
 public class FileUtil {
 
+	static final FileAttribute[] supportedAttributeValuesToSet = new FileAttribute[]{FileAttribute.HIDDEN, FileAttribute.READONLY, FileAttribute.SYSTEM, FileAttribute.ARCHIVE};
+
 	private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
 	private static final Set<Integer> globOperatorsToEscapeCodePoints;
+
 
 	static {
 		char[] globOperatorsToEscape = new char[]{'[', ']', '{', '}'};
@@ -57,19 +60,19 @@ public class FileUtil {
 		return set;
 	}
 
-	public static void setAttribute(DosFileAttributeView attrView, FileAttribute attr) throws IOException {
+	public static void setAttribute(DosFileAttributeView attrView, FileAttribute attr, boolean value) throws IOException {
 		switch (attr) {
 			case ARCHIVE:
-				attrView.setArchive(true);
+				attrView.setArchive(value);
 				break;
 			case HIDDEN:
-				attrView.setHidden(true);
+				attrView.setHidden(value);
 				break;
 			case READONLY:
-				attrView.setReadOnly(true);
+				attrView.setReadOnly(value);
 				break;
 			case SYSTEM:
-				attrView.setSystem(true);
+				attrView.setSystem(value);
 				break;
 			default:
 				LOG.debug("Windows file attribute {} is currently not supported and thus will be ignored", attr.name());

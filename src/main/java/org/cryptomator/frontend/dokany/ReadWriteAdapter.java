@@ -227,7 +227,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 								||
 								((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem())
 				)
-				) {
+		) {
 			//cannot overwrite hidden or system file
 			LOG.trace("{} is hidden or system file. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
@@ -235,7 +235,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		//read-only?
 		else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0))
 				&& dokanyFileInfo.DeleteOnClose != 0
-				) {
+		) {
 			//cannot overwrite file
 			LOG.trace("{} is readonly. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_FILE_READ_ONLY.getMask();
@@ -580,10 +580,32 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			DosFileAttributeView attrView = Files.getFileAttributeView(path, DosFileAttributeView.class);
 			try {
-				for (FileAttribute attr : DokanyUtils.enumSetFromInt(rawAttributes, FileAttribute.values())) {
-					FileUtil.setAttribute(attrView, attr);
+				EnumIntegerSet<FileAttribute> attrsToUnset = DokanyUtils.enumSetFromInt(Integer.MAX_VALUE, FileUtil.supportedAttributeValuesToSet);
+				EnumIntegerSet<FileAttribute> attrsToSet = DokanyUtils.enumSetFromInt(rawAttributes, FileAttribute.values());
+				if (rawAttributes == 0) {
+					// case FileAttributes == 0 :
+					// MS-FSCC 2.6 File Attributes : There is no file attribute with the value 0x00000000
+					// because a value of 0x00000000 in the FileAttributes field means that the file attributes for this file MUST NOT be changed when setting basic information for the file
+					//do nuthin'
+					return Win32ErrorCode.ERROR_SUCCESS.getMask();
+				} else if ((rawAttributes & FileAttribute.NORMAL.getMask()) != 0 && (rawAttributes - FileAttribute.NORMAL.getMask() == 0)) {
+					//contains only the NORMAL attribute
+					//removes all removable fields
+					for (FileAttribute attr : attrsToUnset) {
+						FileUtil.setAttribute(attrView, attr, false);
+					}
+				} else {
+					attrsToSet.remove(FileAttribute.NORMAL);
+					for (FileAttribute attr : attrsToSet) {
+						FileUtil.setAttribute(attrView, attr, true);
+						attrsToUnset.remove(attr);
+					}
+
+					for (FileAttribute attr : attrsToUnset) {
+						FileUtil.setAttribute(attrView, attr, false);
+					}
+
 				}
-				//TODO; trace msg
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
 				LOG.trace("setFileAttributes(): Failed for file {} due to IOException.", path);
