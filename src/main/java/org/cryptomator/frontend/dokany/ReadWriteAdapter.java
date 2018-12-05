@@ -3,6 +3,7 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyOperations;
 import com.dokany.java.DokanyUtils;
+import com.dokany.java.constants.AccessMask;
 import com.dokany.java.constants.CreateOptions;
 import com.dokany.java.constants.CreationDisposition;
 import com.dokany.java.constants.FileAttribute;
@@ -110,10 +111,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
 				Set<OpenOption> openOptions = Sets.newHashSet();
-				openOptions.add(StandardOpenOption.READ);
-				//TODO: mantle this statement with an if-statement which checks for write protection!
-				openOptions.add(StandardOpenOption.WRITE);
-				//TODO: ca we leave this check out?
+				if ((rawDesiredAccess & (AccessMask.MAXIMUM_ALLOWED.getMask() | AccessMask.GENERIC_ALL.getMask() | AccessMask.GENERIC_READ.getMask())) != 0) {
+					openOptions.add(StandardOpenOption.READ);
+				}
+				if ((rawDesiredAccess & (AccessMask.MAXIMUM_ALLOWED.getMask() | AccessMask.GENERIC_ALL.getMask() | AccessMask.GENERIC_WRITE.getMask())) != 0) {
+					openOptions.add(StandardOpenOption.WRITE);
+				}
 				if (attr.isPresent()) {
 					switch (creationDisposition) {
 						case CREATE_NEW:
