@@ -3,10 +3,12 @@ package com.dokany.java.structure;
 
 import com.dokany.java.DokanyUtils;
 import com.dokany.java.constants.FileAttribute;
+import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinBase.FILETIME;
 import com.sun.jna.platform.win32.WinBase.WIN32_FIND_DATA;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -56,10 +58,11 @@ public class FullFileInfo extends ByHandleFileInfo {
 	 */
 
 	public WIN32_FIND_DATA toWin32FindData() {
-		final char[] cFileName = DokanyUtils.trimFrontSeparator(DokanyUtils.trimStrToSize(filePath, 260)).toCharArray();
+		char[] cFileName = Arrays.copyOf(filePath.toCharArray(), WinBase.MAX_PATH);
+		cFileName[259] = '\0'; //ensure the string is null terminated
+		//cannot be used by dokany, see https://github.com/dokan-dev/dokany/issues/301
 		final char[] cAlternateFileName = new char[14];
-		// val cAlternateFileName = Utils.trimFrontSlash(Utils.trimStrToSize(path, 14)).toCharArray();
-		// TODO: Why does setting alternate name cause file name to show up twice??
+		cAlternateFileName[0] = '\0';
 		return new WIN32_FIND_DATA(dwFileAttributes, ftCreationTime, ftLastAccessTime, ftLastWriteTime, nFileSizeHigh, nFileSizeLow, dwReserved0, dwReserved1, cFileName, cAlternateFileName);
 	}
 
