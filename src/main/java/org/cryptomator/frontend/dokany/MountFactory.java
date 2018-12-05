@@ -26,7 +26,7 @@ public class MountFactory {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MountFactory.class);
 	private static final int MOUNT_TIMEOUT_MS = 5000;
-	private static final short THREAD_COUNT = 1;
+	private static final short THREAD_COUNT = 5;
 	private static final EnumIntegerSet<MountOption> MOUNT_OPTIONS = new EnumIntegerSet<>( //
 			// MountOption.DEBUG_MODE, //
 			// MountOption.STD_ERR_OUTPUT, //
