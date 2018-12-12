@@ -3,8 +3,10 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyOperations;
 import com.dokany.java.DokanyUtils;
+import com.dokany.java.constants.AccessMask;
 import com.dokany.java.constants.CreateOptions;
 import com.dokany.java.constants.CreationDisposition;
+import com.dokany.java.constants.FileAccessMask;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.constants.Win32ErrorCode;
 import com.dokany.java.structure.ByHandleFileInfo;
@@ -109,57 +111,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (dokanyFileInfo.isDirectory()) {
 				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
-				Set<OpenOption> openOptions = Sets.newHashSet();
-				openOptions.add(StandardOpenOption.READ);
-				//TODO: mantle this statement with an if-statement which checks for write protection!
-				openOptions.add(StandardOpenOption.WRITE);
-				//TODO: ca we leave this check out?
-				if (attr.isPresent()) {
-					switch (creationDisposition) {
-						case CREATE_NEW:
-							//FAILS
-							openOptions.add(StandardOpenOption.CREATE_NEW);
-							break;
-						case CREATE_ALWAYS:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						case OPEN_EXISTING:
-							//SUCCESS
-							break;
-						case OPEN_ALWAYS:
-							openOptions.add(StandardOpenOption.CREATE);
-							break;
-						case TRUNCATE_EXISTING:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						default:
-							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-					}
-				} else {
-					switch (creationDisposition) {
-						case CREATE_NEW:
-							openOptions.add(StandardOpenOption.CREATE_NEW);
-							break;
-						case CREATE_ALWAYS:
-							openOptions.add(StandardOpenOption.CREATE);
-							break;
-						case OPEN_EXISTING:
-							//FAILS
-							//return
-							break;
-						case OPEN_ALWAYS:
-							openOptions.add(StandardOpenOption.CREATE);
-							break;
-						case TRUNCATE_EXISTING:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						default:
-							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-					}
-				}
-				if (dokanyFileInfo.writeToEndOfFile()) {
-					openOptions.add(StandardOpenOption.APPEND);
-				}
+				EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, AccessMask.values());
+				EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccessMask.values());
+				EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
+				Set<OpenOption> openOptions = FileUtil.buildOpenOptions(accessMasks, fileAccessMasks, fileAttributes, createOptions, creationDisposition, dokanyFileInfo.writeToEndOfFile(), attr.isPresent());
 				return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 			}
 		}
@@ -227,7 +182,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 								||
 								((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem())
 				)
-				) {
+		) {
 			//cannot overwrite hidden or system file
 			LOG.trace("{} is hidden or system file. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
@@ -235,14 +190,17 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		//read-only?
 		else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0))
 				&& dokanyFileInfo.DeleteOnClose != 0
-				) {
+		) {
 			//cannot overwrite file
 			LOG.trace("{} is readonly. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_FILE_READ_ONLY.getMask();
 		} else {
 			try {
 				dokanyFileInfo.Context = fac.openFile(path, openOptions);
-				setFileAttributes(path, rawFileAttributes);
+				if (attr == null || mask == CreationDisposition.TRUNCATE_EXISTING.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) {
+					//according to zwCreateFile() documentation FileAttributes are ignored if no file is created or overwritten
+					setFileAttributes(path, rawFileAttributes);
+				}
 				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
 				//required by contract
 				Win32ErrorCode returnCode;
@@ -260,6 +218,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (AccessDeniedException e) {
 				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
+				LOG.trace("Cause:", e);
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (IOException e) {
 				if (attr != null) {
@@ -576,13 +535,36 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			DosFileAttributeView attrView = Files.getFileAttributeView(path, DosFileAttributeView.class);
 			try {
-				for (FileAttribute attr : FileAttribute.fromInt(rawAttributes)) {
-					FileUtil.setAttribute(attrView, attr);
+				EnumIntegerSet<FileAttribute> attrsToUnset = DokanyUtils.enumSetFromInt(Integer.MAX_VALUE, FileUtil.supportedAttributeValuesToSet);
+				EnumIntegerSet<FileAttribute> attrsToSet = DokanyUtils.enumSetFromInt(rawAttributes, FileAttribute.values());
+				if (rawAttributes == 0) {
+					// case FileAttributes == 0 :
+					// MS-FSCC 2.6 File Attributes : There is no file attribute with the value 0x00000000
+					// because a value of 0x00000000 in the FileAttributes field means that the file attributes for this file MUST NOT be changed when setting basic information for the file
+					//do nuthin'
+					return Win32ErrorCode.ERROR_SUCCESS.getMask();
+				} else if ((rawAttributes & FileAttribute.NORMAL.getMask()) != 0 && (rawAttributes - FileAttribute.NORMAL.getMask() == 0)) {
+					//contains only the NORMAL attribute
+					//removes all removable fields
+					for (FileAttribute attr : attrsToUnset) {
+						FileUtil.setAttribute(attrView, attr, false);
+					}
+				} else {
+					attrsToSet.remove(FileAttribute.NORMAL);
+					for (FileAttribute attr : attrsToSet) {
+						FileUtil.setAttribute(attrView, attr, true);
+						attrsToUnset.remove(attr);
+					}
+
+					for (FileAttribute attr : attrsToUnset) {
+						FileUtil.setAttribute(attrView, attr, false);
+					}
+
 				}
-				//TODO; trace msg
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				//TODO: Debug msg
+				LOG.trace("setFileAttributes(): Failed for file {} due to IOException.", path);
+				LOG.trace("setFileAttributes():Cause", e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
@@ -728,7 +710,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				 DataLock dataLock = pathLock.lockDataForWriting()) {
 				OpenHandle handle = fac.get(dokanyFileInfo.Context);
 				((OpenFile) handle).truncate(rawByteOffset);
-				LOG.trace("({}) Successful truncated {}.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) Successful truncated {} to size {}.", dokanyFileInfo.Context, path, rawByteOffset);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
 				LOG.debug("({}) setEndOfFile(): IO error while truncating {}.", dokanyFileInfo.Context, path);
