@@ -6,6 +6,7 @@ import com.dokany.java.DokanyUtils;
 import com.dokany.java.constants.AccessMask;
 import com.dokany.java.constants.CreateOptions;
 import com.dokany.java.constants.CreationDisposition;
+import com.dokany.java.constants.FileAccessMask;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.constants.Win32ErrorCode;
 import com.dokany.java.structure.ByHandleFileInfo;
@@ -110,59 +111,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (dokanyFileInfo.isDirectory()) {
 				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
-				Set<OpenOption> openOptions = Sets.newHashSet();
-				if ((rawDesiredAccess & (AccessMask.MAXIMUM_ALLOWED.getMask() | AccessMask.GENERIC_ALL.getMask() | AccessMask.GENERIC_READ.getMask())) != 0) {
-					openOptions.add(StandardOpenOption.READ);
-				}
-				if ((rawDesiredAccess & (AccessMask.MAXIMUM_ALLOWED.getMask() | AccessMask.GENERIC_ALL.getMask() | AccessMask.GENERIC_WRITE.getMask())) != 0) {
-					openOptions.add(StandardOpenOption.WRITE);
-				}
-				if (attr.isPresent()) {
-					switch (creationDisposition) {
-						case CREATE_NEW:
-							//FAILS
-							openOptions.add(StandardOpenOption.CREATE_NEW);
-							break;
-						case CREATE_ALWAYS:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						case OPEN_EXISTING:
-							//SUCCESS
-							break;
-						case OPEN_ALWAYS:
-							openOptions.add(StandardOpenOption.CREATE);
-							break;
-						case TRUNCATE_EXISTING:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						default:
-							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-					}
-				} else {
-					switch (creationDisposition) {
-						case CREATE_NEW:
-							openOptions.add(StandardOpenOption.CREATE_NEW);
-							break;
-						case CREATE_ALWAYS:
-							openOptions.add(StandardOpenOption.CREATE);
-							break;
-						case OPEN_EXISTING:
-							//FAILS
-							//return
-							break;
-						case OPEN_ALWAYS:
-							openOptions.add(StandardOpenOption.CREATE);
-							break;
-						case TRUNCATE_EXISTING:
-							openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-							break;
-						default:
-							throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-					}
-				}
-				if (dokanyFileInfo.writeToEndOfFile()) {
-					openOptions.add(StandardOpenOption.APPEND);
-				}
+				EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, AccessMask.values());
+				EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccessMask.values());
+				EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
+				Set<OpenOption> openOptions = FileUtil.buildOpenOptions(accessMasks, fileAccessMasks, fileAttributes, createOptions, creationDisposition, dokanyFileInfo.writeToEndOfFile(), attr.isPresent());
 				return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 			}
 		}
