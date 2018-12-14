@@ -111,7 +111,7 @@ public class FileUtil {
 		}
 		if (accessMasks.contains(AccessMask.GENERIC_READ)) {
 			openOptions.add(StandardOpenOption.READ);
-			//openOptions.add(StandardOpenOption.SYNC); TODO: research to what flags GENERIC_READ, WRITE and ALL translates
+			//openOptions.add(StandardOpenOption.SYNC); TODO: research to what flags GENERIC_READ, GENERIC_WRITE and GENERIC_ALL translate!
 		}
 		if (accessMasks.contains(AccessMask.MAXIMUM_ALLOWED) || accessMasks.contains(AccessMask.GENERIC_ALL)) {
 			openOptions.add(StandardOpenOption.READ);
@@ -123,9 +123,10 @@ public class FileUtil {
 		if (append) {
 			openOptions.add(StandardOpenOption.APPEND);
 		}
-		if (accessMasks.contains(AccessMask.DELETE) && createOptions.contains(CreateOptions.FILE_DELETE_ON_CLOSE)) {
-			openOptions.add(StandardOpenOption.DELETE_ON_CLOSE);
-		}
+		// From the Java Documentation of DELETE_ON_CLOSE:This option is not recommended for use when opening files that are open concurrently by other entities.
+//		if (accessMasks.contains(AccessMask.DELETE) && createOptions.contains(CreateOptions.FILE_DELETE_ON_CLOSE)) {
+//			//openOptions.add(StandardOpenOption.DELETE_ON_CLOSE);
+//		}
 		if (fileAttributes.contains(FileAttribute.SPARSE_FILE)) {
 			openOptions.add(StandardOpenOption.SPARSE);
 		}
