@@ -307,7 +307,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		boolean reopened = false;
 		OpenFile handle = (OpenFile) fac.get(handleID);
 		if (handle == null) {
-			LOG.debug("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath));
+			LOG.debug("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, path);
 			try {
 				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
 				handle = (OpenFile) fac.get(handleID);
@@ -356,7 +356,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		boolean reopened = false;
 		OpenFile handle = (OpenFile) fac.get(handleID);
 		if (handle == null) {
-			LOG.debug("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, getRootedPath(rawPath));
+			LOG.debug("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, path);
 			try {
 				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
 				handle = (OpenFile) fac.get(handleID);
