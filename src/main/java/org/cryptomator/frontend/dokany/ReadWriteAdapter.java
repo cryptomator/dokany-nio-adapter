@@ -531,6 +531,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		}
 	}
 
+	//TODO: this method should return Java Things, not Windows 32 error codes!
 	private int setFileAttributes(Path path, int rawAttributes) {
 		if (Files.notExists(path)) {
 			return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
