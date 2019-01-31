@@ -15,13 +15,13 @@ class DataRLockImpl extends DataLockImpl {
 
 	static DataRLockImpl create(String path, ReadWriteLock lock) {
 		lock.readLock().lock();
-		LOG.trace("Acquired read data lock for '{}'", path);
+		//LOG.trace("Acquired read data lock for '{}'", path);
 		return new DataRLockImpl(path, lock);
 	}
 
 	@Override
 	public void close() {
-		LOG.trace("Released read data lock for '{}'", path);
+		//LOG.trace("Released read data lock for '{}'", path);
 		lock.readLock().unlock();
 	}
 

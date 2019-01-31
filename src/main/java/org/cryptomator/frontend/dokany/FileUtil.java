@@ -3,8 +3,6 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.constants.AccessMask;
 import com.dokany.java.constants.CreateOptions;
 import com.dokany.java.constants.CreationDisposition;
-import com.dokany.java.constants.EnumInteger;
-import com.dokany.java.constants.FileAccess;
 import com.dokany.java.constants.FileAccessMask;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.EnumIntegerSet;
@@ -106,10 +104,10 @@ public class FileUtil {
 
 	public static Set<OpenOption> buildOpenOptions(EnumIntegerSet<AccessMask> accessMasks, EnumIntegerSet<FileAccessMask> fileAccessMasks, EnumIntegerSet<FileAttribute> fileAttributes, EnumIntegerSet<CreateOptions> createOptions, CreationDisposition creationDisposition, boolean append, boolean fileExists) {
 		Set<OpenOption> openOptions = Sets.newHashSet();
-		if (accessMasks.contains(AccessMask.GENERIC_WRITE)) {
+		if (accessMasks.contains(AccessMask.GENERIC_WRITE) || accessMasks.contains(AccessMask.DELETE) || fileAccessMasks.contains(FileAccessMask.READ_DATA)) {
 			openOptions.add(StandardOpenOption.WRITE);
 		}
-		if (accessMasks.contains(AccessMask.GENERIC_READ)) {
+		if (accessMasks.contains(AccessMask.GENERIC_READ) || fileAccessMasks.contains(FileAccessMask.READ_DATA)) {
 			openOptions.add(StandardOpenOption.READ);
 			//openOptions.add(StandardOpenOption.SYNC); TODO: research to what flags GENERIC_READ, GENERIC_WRITE and GENERIC_ALL translate!
 		}
@@ -130,48 +128,32 @@ public class FileUtil {
 		if (fileAttributes.contains(FileAttribute.SPARSE_FILE)) {
 			openOptions.add(StandardOpenOption.SPARSE);
 		}
-		if (fileExists) {
-			switch (creationDisposition) {
-				case CREATE_NEW:
-					//FAILS
-					openOptions.add(StandardOpenOption.CREATE_NEW);
-					break;
-				case CREATE_ALWAYS:
+		switch (creationDisposition) {
+			case CREATE_NEW:
+				openOptions.add(StandardOpenOption.CREATE_NEW);
+				openOptions.add(StandardOpenOption.WRITE); //Necessary, otherwise an Exceptions is thrown during filechannel creation
+				break;
+			case CREATE_ALWAYS:
+				if (fileExists) {
 					openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-					break;
-				case OPEN_EXISTING:
-					//SUCCESS
-					break;
-				case OPEN_ALWAYS:
+				} else {
 					openOptions.add(StandardOpenOption.CREATE);
-					break;
-				case TRUNCATE_EXISTING:
-					openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-					break;
-				default:
-					throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-			}
-		} else {
-			switch (creationDisposition) {
-				case CREATE_NEW:
-					openOptions.add(StandardOpenOption.CREATE_NEW);
-					break;
-				case CREATE_ALWAYS:
-					openOptions.add(StandardOpenOption.CREATE);
-					break;
-				case OPEN_EXISTING:
-					//FAILS
-					//return
-					break;
-				case OPEN_ALWAYS:
-					openOptions.add(StandardOpenOption.CREATE);
-					break;
-				case TRUNCATE_EXISTING:
-					openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-					break;
-				default:
-					throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
-			}
+					openOptions.add(StandardOpenOption.WRITE);
+				}
+				break;
+			case OPEN_EXISTING:
+				//SUCCESS
+				break;
+			case OPEN_ALWAYS:
+				openOptions.add(StandardOpenOption.CREATE);
+				if (!fileExists) openOptions.add(StandardOpenOption.WRITE);
+				break;
+			case TRUNCATE_EXISTING:
+				openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+				break;
+			default:
+				throw new IllegalStateException("Unknown createDispostion attribute: " + creationDisposition.name());
+
 		}
 		return openOptions;
 	}
