@@ -15,7 +15,6 @@ import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.FullFileInfo;
 import com.dokany.java.structure.VolumeInformation;
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Sets;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase;
@@ -47,6 +46,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.text.Normalizer;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -482,7 +482,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					filteredStream = stream;
 				} else {
 					// we want to filter by glob
-					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + FileUtil.addEscapeSequencesForPathPattern(searchPattern.toString()));
+					//since the Java API does NOT specify on which string represntation a pathMatcher compares a path to a given expression, we assume NFC
+					String nfcSearchPattern = Normalizer.normalize(FileUtil.addEscapeSequencesForPathPattern(searchPattern.toString()), Normalizer.Form.NFC);
+					PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + nfcSearchPattern);
 					filteredStream = stream.map(Path::getFileName).filter(matcher::matches);
 				}
 				filteredStream.map(p -> {
