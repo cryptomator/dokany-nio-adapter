@@ -48,10 +48,14 @@ import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.Normalizer;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * TODO: Beware of DokanyUtils.enumSetFromInt()!!!
@@ -89,8 +93,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		Optional<BasicFileAttributes> attr;
 		try {
 			attr = Optional.of(Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS));
-		} catch (IOException e) {
+		} catch (NoSuchFileException e) {
 			attr = Optional.empty();
+		} catch (IOException e) {
+			return Win32ErrorCode.ERROR_IO_DEVICE.getMask();
 		}
 
 		//is the file a directory and if yes, indicated as one?
@@ -104,6 +110,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				//TODO: maybe other error code? e.g. ACCESS DENIED
 				return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
 			}
+		} else if (attr.isPresent() && !attr.get().isRegularFile()) {
+			return Win32ErrorCode.ERROR_CANT_ACCESS_FILE.getMask(); // or ERROR_OPEN_FAILED or ERROR_CALL_NOT_IMPLEMENTED?
 		}
 
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
@@ -119,7 +127,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 		}
 	}
-
 
 	/**
 	 * @return
@@ -167,7 +174,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		final int mask = creationDisposition.getMask();
 		DosFileAttributes attr = null;
 		try {
-			attr = Files.readAttributes(path, DosFileAttributes.class);
+			attr = Files.readAttributes(path, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 		} catch (IOException e) {
 			LOG.trace("Could not read file attributes.");
 		}
@@ -494,23 +501,28 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 						 DataLock dataLock = pathLock.lockDataForReading()) {
 						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+						if (attr.isDirectory() || attr.isRegularFile()) {
 							return toFullFileInfo(p, attr).toWin32FindData();
+						} else {
+							LOG.warn("({}) findFilesWithPattern(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+							return null;
+						}
 					} catch (IOException e) {
 						LOG.debug("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
 						return null;
 					}
 				}).filter(Objects::nonNull)
-				.forEach(file -> {
-					assert file != null;
-					try {
-						LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
-						rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-					} catch (Error e) {
-						//TODO: invalid memory access can happen, which is an Java.Lang.Error
-						LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName());
-						LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace:", e);
-					}
-				});
+						.forEach(file -> {
+							assert file != null;
+							try {
+								LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
+								rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+							} catch (Error e) {
+								//TODO: invalid memory access can happen, which is an Java.Lang.Error
+								LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName());
+								LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace:", e);
+							}
+						});
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
@@ -768,7 +780,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param rawFileSystemFlags
 	 * @param rawFileSystemNameBuffer
 	 * @param rawFileSystemNameSize
-	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @param dokanyFileInfo            {@link DokanyFileInfo} with information about the file or directory.
 	 * @return
 	 */
 	@Override
