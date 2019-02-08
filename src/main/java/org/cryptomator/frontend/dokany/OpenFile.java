@@ -76,10 +76,10 @@ public class OpenFile extends OpenHandle {
 	 */
 	public synchronized int write(Pointer buf, int num, long offset) throws IOException {
 		ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-		long written = 0;
+		int written = 0;
 		channel.position(offset);
 		do {
-			long remaining = num - written;
+			int remaining = num - written;
 			bb.clear();
 			int len = (int) Math.min(remaining, bb.capacity());
 			buf.read(written, bb.array(), 0, len);
@@ -87,7 +87,7 @@ public class OpenFile extends OpenHandle {
 			channel.write(bb); // TODO check return value
 			written += len;
 		} while (written < num);
-		return (int) written; // TODO wtf cast
+		return written;
 	}
 
 	private int readNext(ByteBuffer readBuf, long num) throws IOException {
