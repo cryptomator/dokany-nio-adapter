@@ -42,30 +42,29 @@ public class OpenFile extends OpenHandle {
 	 * @throws IOException If an exception occurs during read.
 	 */
 	public synchronized int read(Pointer buf, int num, long offset) throws IOException {
-		long size = channel.size();
-		if (offset >= size) {
+		if (offset >= channel.size()) {
 			return 0;
 		} else {
 			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-			long pos = 0;
+			int pos = 0;
 			channel.position(offset);
 			do {
-				long remaining = num - pos;
+				int remaining = num - pos;
 				int read = readNext(bb, remaining);
 				if (read == -1) {
-					return (int) pos; // reached EOF TODO: wtf cast
+					return pos; // reached EOF
 				} else {
 					LOG.trace("Reading {}-{} ({}-{})", offset + pos, offset + pos + read, offset, offset + num);
 					buf.write(pos, bb.array(), 0, read);
 					pos += read;
 				}
 			} while (pos < num);
-			return (int) pos; // TODO wtf cast
+			return pos;
 		}
 	}
 
 	/**
-	 * Writes up to {@code num} bytes from {@code buf} from {@code offset} into the current file
+	 * Writes up to {@code num} bytes from {@code buf} into the current file beginning at {@code offset}
 	 *
 	 * @param buf Buffer
 	 * @param num Number of bytes to write
