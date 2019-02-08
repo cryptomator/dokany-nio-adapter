@@ -38,10 +38,10 @@ public class OpenFile extends OpenHandle {
 	 * @param buf Buffer
 	 * @param num Number of bytes to read
 	 * @param offset Position of first byte to read
-	 * @return Actual number of bytes read (can be less than {@code size} if reached EOF).
+	 * @return Actual number of bytes read (can be less than {@code num} if reached EOF).
 	 * @throws IOException If an exception occurs during read.
 	 */
-	public synchronized int read(Pointer buf, long num, long offset) throws IOException {
+	public synchronized int read(Pointer buf, int num, long offset) throws IOException {
 		long size = channel.size();
 		if (offset >= size) {
 			return 0;
@@ -74,7 +74,7 @@ public class OpenFile extends OpenHandle {
 	 * TODO: only the bytes which contains information or also some filling zeros?
 	 * @throws IOException If an exception occurs during write.
 	 */
-	public synchronized int write(Pointer buf, long num, long offset) throws IOException {
+	public synchronized int write(Pointer buf, int num, long offset) throws IOException {
 		ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 		long written = 0;
 		channel.position(offset);
