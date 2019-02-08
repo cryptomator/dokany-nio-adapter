@@ -110,20 +110,14 @@ public class OpenFile extends OpenHandle {
 	}
 
 	/**
-	 * Test via acquiring a FileLock if we can delete this file.
-	 * TODO: should this lock be released or not? if not, we should rename the method!
+	 * Test if we can delete this file.
 	 *
-	 * @return
+	 * @return Only <code>true</code> if no concurrent routine holds a lock on this file
+	 * @implNote Attempts to acquire an exclusive lock (and immediately releases it upon success)
 	 */
 	public boolean canBeDeleted() {
-		try {
-			FileLock lock = channel.tryLock();
-			if (lock != null) {
-				lock.release();
-				return true;
-			} else {
-				return false;
-			}
+		try (FileLock lock = channel.tryLock()) {
+			return lock != null; // we could acquire the exclusive lock, i.e. nobody else is accessing this channel
 		} catch (IOException e) {
 			return false;
 		}
