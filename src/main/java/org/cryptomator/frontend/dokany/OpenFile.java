@@ -38,34 +38,33 @@ public class OpenFile extends OpenHandle {
 	 * @param buf Buffer
 	 * @param num Number of bytes to read
 	 * @param offset Position of first byte to read
-	 * @return Actual number of bytes read (can be less than {@code size} if reached EOF).
+	 * @return Actual number of bytes read (can be less than {@code num} if reached EOF).
 	 * @throws IOException If an exception occurs during read.
 	 */
-	public synchronized int read(Pointer buf, long num, long offset) throws IOException {
-		long size = channel.size();
-		if (offset >= size) {
+	public synchronized int read(Pointer buf, int num, long offset) throws IOException {
+		if (offset >= channel.size()) {
 			return 0;
 		} else {
 			ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-			long pos = 0;
+			int pos = 0;
 			channel.position(offset);
 			do {
-				long remaining = num - pos;
+				int remaining = num - pos;
 				int read = readNext(bb, remaining);
 				if (read == -1) {
-					return (int) pos; // reached EOF TODO: wtf cast
+					return pos; // reached EOF
 				} else {
 					LOG.trace("Reading {}-{} ({}-{})", offset + pos, offset + pos + read, offset, offset + num);
 					buf.write(pos, bb.array(), 0, read);
 					pos += read;
 				}
 			} while (pos < num);
-			return (int) pos; // TODO wtf cast
+			return pos;
 		}
 	}
 
 	/**
-	 * Writes up to {@code num} bytes from {@code buf} from {@code offset} into the current file
+	 * Writes up to {@code num} bytes from {@code buf} into the current file beginning at {@code offset}
 	 *
 	 * @param buf Buffer
 	 * @param num Number of bytes to write
@@ -74,12 +73,12 @@ public class OpenFile extends OpenHandle {
 	 * TODO: only the bytes which contains information or also some filling zeros?
 	 * @throws IOException If an exception occurs during write.
 	 */
-	public synchronized int write(Pointer buf, long num, long offset) throws IOException {
+	public synchronized int write(Pointer buf, int num, long offset) throws IOException {
 		ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-		long written = 0;
+		int written = 0;
 		channel.position(offset);
 		do {
-			long remaining = num - written;
+			int remaining = num - written;
 			bb.clear();
 			int len = (int) Math.min(remaining, bb.capacity());
 			buf.read(written, bb.array(), 0, len);
@@ -87,7 +86,7 @@ public class OpenFile extends OpenHandle {
 			channel.write(bb); // TODO check return value
 			written += len;
 		} while (written < num);
-		return (int) written; // TODO wtf cast
+		return written;
 	}
 
 	private int readNext(ByteBuffer readBuf, long num) throws IOException {
@@ -110,20 +109,14 @@ public class OpenFile extends OpenHandle {
 	}
 
 	/**
-	 * Test via acquiring a FileLock if we can delete this file.
-	 * TODO: should this lock be released or not? if not, we should rename the method!
+	 * Test if we can delete this file.
 	 *
-	 * @return
+	 * @return Only <code>true</code> if no concurrent routine holds a lock on this file
+	 * @implNote Attempts to acquire an exclusive lock (and immediately releases it upon success)
 	 */
 	public boolean canBeDeleted() {
-		try {
-			FileLock lock = channel.tryLock();
-			if (lock != null) {
-				lock.release();
-				return true;
-			} else {
-				return false;
-			}
+		try (FileLock lock = channel.tryLock()) {
+			return lock != null; // we could acquire the exclusive lock, i.e. nobody else is accessing this channel
 		} catch (IOException e) {
 			return false;
 		}

@@ -2,8 +2,8 @@ package com.dokany.java;
 
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.filesecurity.*;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -24,22 +24,22 @@ public class SelfRelativeSecurityDescriptorTest {
 		control.add(SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD, SecurityDescriptorControlFlag.DD, SecurityDescriptorControlFlag.SD);
 		ByteBuffer buf = ByteBuffer.allocate(2);
 
-		Assert.assertEquals((43 << 8 + 0) << 16, Integer.reverseBytes(control.toInt()));
-		Assert.assertEquals((43 << 8 + 0), Short.reverseBytes((short) control.toInt()));
-		Assert.assertArrayEquals(new byte[]{43, 0}, buf.putShort(Short.reverseBytes((short) control.toInt())).array());
+		Assertions.assertEquals((43 << 8 + 0) << 16, Integer.reverseBytes(control.toInt()));
+		Assertions.assertEquals((43 << 8 + 0), Short.reverseBytes((short) control.toInt()));
+		Assertions.assertArrayEquals(new byte[]{43, 0}, buf.putShort(Short.reverseBytes((short) control.toInt())).array());
 	}
 
 	@Test
 	public void testSidWithoutSubAuthorities() {
 		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, null);
 		byte[] expected = new byte[]{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
-		Assert.assertArrayEquals(expected, sid.toByteArray());
+		Assertions.assertArrayEquals(expected, sid.toByteArray());
 	}
 
 	@Test
 	public void testValidEveryoneSid() {
 		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.WORLD_SID_AUTHORITY, Collections.singletonList(0));
-		Assert.assertArrayEquals(getEveryoneSid(), sid.toByteArray());
+		Assertions.assertArrayEquals(getEveryoneSid(), sid.toByteArray());
 	}
 
 	@Test
@@ -48,13 +48,13 @@ public class SelfRelativeSecurityDescriptorTest {
 		subAuths.add(32);
 		subAuths.add(544);
 		SecurityIdentifier sid = new SecurityIdentifier(SidIdentifierAuthority.SECURITY_NT_AUTHORITY, subAuths);
-		Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00}, sid.toByteArray());
+		Assertions.assertArrayEquals(new byte[]{0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00}, sid.toByteArray());
 	}
 
 	@Test
 	public void testSidFromString() {
 		SecurityIdentifier sid = SecurityIdentifier.fromString("S-1-5-32-544");
-		Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00}, sid.toByteArray());
+		Assertions.assertArrayEquals(new byte[]{0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x20, 0x00, 0x00, 0x00, 0x20, 0x02, 0x00, 0x00}, sid.toByteArray());
 	}
 
 	@Test
@@ -69,23 +69,23 @@ public class SelfRelativeSecurityDescriptorTest {
 		SecurityIdentifier sid = SecurityIdentifier.fromString("S-1-1-0");// everyone sid
 		//create ace
 		AccessAllowedACE allowedACE = new AccessAllowedACE(flags, sid, mask);
-		Assert.assertArrayEquals(getAllowedAccessACE(), allowedACE.toByteArray());
+		Assertions.assertArrayEquals(getAllowedAccessACE(), allowedACE.toByteArray());
 	}
 
 	@Test
 	public void testACL() {
 		//test empty DACL rev2
 		AccessControlList emptyDaclRev2 = AccessControlList.createDaclRevision2(new ArrayList<>(0));
-		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev2.toByteArray());
+		Assertions.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev2.toByteArray());
 		//test empty DACL rev4
 		AccessControlList emptyDaclRev4 = AccessControlList.createDaclRevision4(new ArrayList<>(0));
-		Assert.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev4.toByteArray());
+		Assertions.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptyDaclRev4.toByteArray());
 		//test empty SACL rev2
 		AccessControlList emptySaclRev2 = AccessControlList.createSaclRevision2(new ArrayList<>(0));
-		Assert.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev2.toByteArray());
+		Assertions.assertArrayEquals(new byte[]{0x02, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev2.toByteArray());
 		//test empty SACL rev4
 		AccessControlList emptySaclRev4 = AccessControlList.createSaclRevision4(new ArrayList<>(0));
-		Assert.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev4.toByteArray());
+		Assertions.assertArrayEquals(new byte[]{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00}, emptySaclRev4.toByteArray());
 
 		//test DACL rev2 with accessAllowACE
 		EnumIntegerSet<AccessControlEntryFlag> flags = new EnumIntegerSet<AccessControlEntryFlag>(AccessControlEntryFlag.class);
@@ -98,7 +98,7 @@ public class SelfRelativeSecurityDescriptorTest {
 		//create ace
 		AccessControlList daclRev2WithAccessAllow = AccessControlList.createDaclRevision2(Collections.singletonList(new AccessAllowedACE(flags, sid, mask)));
 
-		Assert.assertArrayEquals(getAclWithAAAce(), daclRev2WithAccessAllow.toByteArray());
+		Assertions.assertArrayEquals(getAclWithAAAce(), daclRev2WithAccessAllow.toByteArray());
 	}
 
 	@Test
@@ -107,7 +107,7 @@ public class SelfRelativeSecurityDescriptorTest {
 		flags.add(SecurityDescriptorControlFlag.GD, SecurityDescriptorControlFlag.OD, SecurityDescriptorControlFlag.DD, SecurityDescriptorControlFlag.SD);
 		byte[] expected = getEmptySelfRelativeSecurityDescriptorWithEmptyFlags();
 		expected[2] = 43;
-		Assert.assertArrayEquals(expected, SelfRelativeSecurityDescriptor.createEmptySD(flags).toByteArray());
+		Assertions.assertArrayEquals(expected, SelfRelativeSecurityDescriptor.createEmptySD(flags).toByteArray());
 	}
 
 	@Test
@@ -130,7 +130,7 @@ public class SelfRelativeSecurityDescriptorTest {
 		byte[] sid = getEveryoneSid();
 		byte[] expected = concat(concat(emptySD, sid), sid);
 
-		Assert.assertArrayEquals(expected, sd.toByteArray());
+		Assertions.assertArrayEquals(expected, sd.toByteArray());
 	}
 
 	@Test
@@ -173,7 +173,7 @@ public class SelfRelativeSecurityDescriptorTest {
 				0x00, 0x00, 0x00, 0x10, //access mask
 				0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
 		byte[] expected = concat(concat(concat(emptySD, sid), sid), acl);
-		Assert.assertArrayEquals(expected, sd.toByteArray());
+		Assertions.assertArrayEquals(expected, sd.toByteArray());
 	}
 
 	private static byte[] getEmptySelfRelativeSecurityDescriptorWithEmptyFlags() {

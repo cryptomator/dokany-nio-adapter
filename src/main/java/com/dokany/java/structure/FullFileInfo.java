@@ -30,12 +30,12 @@ public class FullFileInfo extends ByHandleFileInfo {
 	 */
 	private int dwReserved1 = 0;
 
-	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber) throws FileNotFoundException {
+	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber) {
 		// times automatically set to now by ByHandleFileInfo constructors
 		this(path, index, attributes, volumeSerialNumber, null, null, null);
 	}
 
-	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber, final FILETIME creationTime, final FILETIME lastAccessTime, final FILETIME lastWriteTime) throws FileNotFoundException {
+	public FullFileInfo(final String path, final long index, final EnumIntegerSet<FileAttribute> attributes, final int volumeSerialNumber, final FILETIME creationTime, final FILETIME lastAccessTime, final FILETIME lastWriteTime) {
 		super(creationTime, lastAccessTime, lastWriteTime);
 		filePath = Objects.requireNonNull(path);
 		setIndex(index);

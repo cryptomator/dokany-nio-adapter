@@ -16,12 +16,12 @@ public class OpenRestrictedFile extends OpenFile {
 	}
 
 	@Override
-	public synchronized int read(Pointer buf, long num, long offset) throws IOException {
+	public synchronized int read(Pointer buf, int num, long offset) throws IOException {
 		throw new FileSystemException("File opened in restricted mode. Read is not supported.");
 	}
 
 	@Override
-	public synchronized int write(Pointer buf, long num, long offset) throws IOException {
+	public synchronized int write(Pointer buf, int num, long offset) throws IOException {
 		throw new FileSystemException("File is opened in restricted mode. Write is not supported.");
 	}
 
