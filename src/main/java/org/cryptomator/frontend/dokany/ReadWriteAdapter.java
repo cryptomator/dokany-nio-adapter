@@ -493,7 +493,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			} else {
 				// we want to filter by glob
 				// since the Java API does NOT specify on which string representation a pathMatcher compares a path to a given expression, we assume NFC
-				String nfcSearchPattern = Normalizer.normalize(FileUtil.addEscapeSequencesForPathPattern(searchPattern.toString()), Normalizer.Form.NFC);
+				String nfcSearchPattern = Normalizer.normalize(FileUtil.convertToGlobPattern(searchPattern.toString()), Normalizer.Form.NFC);
 				PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + nfcSearchPattern);
 				filter = (Path p) -> matcher.matches(p.getFileName());
 			}

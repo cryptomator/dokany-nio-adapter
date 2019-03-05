@@ -86,13 +86,42 @@ public class FileUtil {
 	}
 
 	/**
+	 * Converts search string expression from the windows kernel to valid glob search patterns
+	 * <p>
+	 * TODO: maybe both methods should be merged for speed up?
+	 *
+	 * @param rawWindowsPattern a String that may contain unescaped glob patterns or windows kernel specific search patterns
+	 * @return the corresponding glob search pattern for a {@link java.nio.file.PathMatcher}
+	 */
+	public static String convertToGlobPattern(String rawWindowsPattern) {
+		String javaPattern = convertToJavaPattern(rawWindowsPattern);
+		return addEscapeSequencesForPathPattern(javaPattern);
+	}
+
+	/**
+	 * Replaces specific characters that are windows kernel specific search patterns. It is no problem to replace them directly, since all three are invalid filename characters (see <a href="https://docs.microsoft.com/de-de/windows/desktop/FileIO/naming-a-file"> Microsoft documentation</a>)
+	 * 1. '>' is replaced by '?'
+	 * 2. '<' is replaced by '*'
+	 * 3. '"' is replaced by '.'
+	 *
+	 * @param rawWindowsPattern a String that may contain windows kernel specific search patterns
+	 * @return
+	 */
+	private static String convertToJavaPattern(String rawWindowsPattern) {
+		String tmp1 = rawWindowsPattern.replace('>', '?');
+		String tmp2 = tmp1.replace('<', '*');
+		String tmp3 = tmp2.replace('"', '.');
+		return tmp3;
+	}
+
+	/**
 	 * Method for preprocessing a string containing glob patterns for a {@link java.nio.file.PathMatcher}. These characters must be escaped to not cause a different matching expression.
 	 * This method escapes the characters defined in {@link FileUtil#globOperatorsToEscapeCodePoints}.
 	 *
 	 * @param rawPattern a string possibly containing unwanted glob operators
 	 * @return a String where some glob operators are escaped
 	 */
-	public static String addEscapeSequencesForPathPattern(String rawPattern) {
+	private static String addEscapeSequencesForPathPattern(String rawPattern) {
 		return rawPattern.codePoints().flatMap(c -> {
 			if (Character.isBmpCodePoint(c) && globOperatorsToEscapeCodePoints.contains(c)) {
 				return IntStream.of((int) '\\', c);
@@ -101,6 +130,7 @@ public class FileUtil {
 			}
 		}).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
 	}
+
 
 	public static Set<OpenOption> buildOpenOptions(EnumIntegerSet<AccessMask> accessMasks, EnumIntegerSet<FileAccessMask> fileAccessMasks, EnumIntegerSet<FileAttribute> fileAttributes, EnumIntegerSet<CreateOptions> createOptions, CreationDisposition creationDisposition, boolean append, boolean fileExists) {
 		Set<OpenOption> openOptions = Sets.newHashSet();
