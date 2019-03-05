@@ -34,6 +34,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -57,9 +58,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- * TODO: Beware of DokanyUtils.enumSetFromInt()!!!
- */
+
 public class ReadWriteAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
@@ -86,7 +85,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
-		Path path = getRootedPath(rawPath);
+		Path path;
+		try {
+			path = getRootedPath(rawPath);
+		} catch (InvalidPathException e) {
+			return Win32ErrorCode.ERROR_BAD_PATHNAME.getMask();
+		}
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
 		LOG.trace("zwCreateFile() is called for {} with CreationDisposition {}.", path, creationDisposition.name());
 
@@ -780,7 +784,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param rawFileSystemFlags
 	 * @param rawFileSystemNameBuffer
 	 * @param rawFileSystemNameSize
-	 * @param dokanyFileInfo            {@link DokanyFileInfo} with information about the file or directory.
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return
 	 */
 	@Override
