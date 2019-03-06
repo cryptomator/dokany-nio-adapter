@@ -27,6 +27,13 @@ public class OpenFile extends OpenHandle {
 		this.channel = null;
 	}
 
+	/**
+	 * TODO: Refactor: open the filechannel only if its needed!
+	 * @param path
+	 * @param options
+	 * @param attrs
+	 * @throws IOException
+	 */
 	public OpenFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		super(path);
 		this.channel = FileChannel.open(path, options, attrs);

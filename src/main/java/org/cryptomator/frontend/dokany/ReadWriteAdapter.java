@@ -539,8 +539,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path );
-				LOG.error("("+dokanyFileInfo.Context+") findFilesWithPattern(): Message and Stacktrace.",e);
+				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
+				LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Message and Stacktrace.", e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
