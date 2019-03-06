@@ -167,8 +167,17 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			// we open the directory in some kinda way
 			setFileAttributes(path, rawFileAttributes);
-			dokanyFileInfo.Context = fac.openDir(path);
-			LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
+			try {
+				dokanyFileInfo.Context = fac.openDir(path);
+				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
+			} catch (NoSuchFileException e) {
+				LOG.trace("{} not found.", path);
+				return Win32ErrorCode.ERROR_PATH_NOT_FOUND.getMask();
+			} catch (IOException e) {
+				LOG.debug("zwCreateFile(): IO error occurred during opening handle to {}.", path);
+				LOG.debug("zwCreateFile(): ", e);
+				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
+			}
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		}
 	}

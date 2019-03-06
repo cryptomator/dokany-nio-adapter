@@ -27,7 +27,7 @@ public class OpenHandleFactory implements AutoCloseable {
 	 * @param path
 	 * @return
 	 */
-	public long openDir(Path path) {
+	public long openDir(Path path) throws IOException {
 		long dirHandle = handleGen.getAndIncrement();
 		if (dirHandle == 0) {
 			dirHandle = handleGen.getAndIncrement();
