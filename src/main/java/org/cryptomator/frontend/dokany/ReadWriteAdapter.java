@@ -34,6 +34,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -57,9 +58,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- * TODO: Beware of DokanyUtils.enumSetFromInt()!!!
- */
+
 public class ReadWriteAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
@@ -86,7 +85,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
-		Path path = getRootedPath(rawPath);
+		Path path;
+		try {
+			path = getRootedPath(rawPath);
+		} catch (InvalidPathException e) {
+			return Win32ErrorCode.ERROR_BAD_PATHNAME.getMask();
+		}
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
 		LOG.trace("zwCreateFile() is called for {} with CreationDisposition {}.", path, creationDisposition.name());
 
@@ -163,8 +167,17 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			// we open the directory in some kinda way
 			setFileAttributes(path, rawFileAttributes);
-			dokanyFileInfo.Context = fac.openDir(path);
-			LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
+			try {
+				dokanyFileInfo.Context = fac.openDir(path);
+				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
+			} catch (NoSuchFileException e) {
+				LOG.trace("{} not found.", path);
+				return Win32ErrorCode.ERROR_PATH_NOT_FOUND.getMask();
+			} catch (IOException e) {
+				LOG.debug("zwCreateFile(): IO error occurred during opening handle to {}.", path);
+				LOG.debug("zwCreateFile(): ", e);
+				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
+			}
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		}
 	}
@@ -470,11 +483,57 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int findFiles(WString rawPath, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, getRootedPath(rawPath));
-		return findFilesWithPattern(rawPath, new WString("*"), rawFillFindData, dokanyFileInfo);
+		Path path = getRootedPath(rawPath);
+		assert path.isAbsolute();
+		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, path);
+		if (dokanyFileInfo.Context == 0) {
+			LOG.debug("findFilesWithPattern(): Invalid handle to {}.", path);
+			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
+		} else {
+			try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
+				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
+				Stream<Path> stream = StreamSupport.stream(spliterator, false);
+				stream.map(p -> {
+					assert p.isAbsolute();
+					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+						 DataLock dataLock = pathLock.lockDataForReading()) {
+						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+						if (attr.isDirectory() || attr.isRegularFile()) {
+							return toFullFileInfo(p, attr).toWin32FindData();
+						} else {
+							LOG.warn("({}) findFilesWithPattern(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+							return null;
+						}
+					} catch (IOException e) {
+						LOG.debug("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+						return null;
+					}
+				}).filter(Objects::nonNull)
+						.forEach(file -> {
+							assert file != null;
+							LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+						});
+				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
+				return Win32ErrorCode.ERROR_SUCCESS.getMask();
+			} catch (IOException e) {
+				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
+				LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Message and Stacktrace.", e);
+				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
+			}
+		}
 	}
 
+	/**
+	 * @param fileName
+	 * @param searchPattern
+	 * @param rawFillFindData
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 * @deprecated This method is not used anymore, since Windows has additional globbing characters which makes file name matching difficult. (for more Information, see the <a href="https://github.com/cryptomator/dokany-nio-adapter/issues/19">corresponding github issue</a>)
+	 */
 	@Override
+	@Deprecated
 	public int findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(fileName);
 		assert path.isAbsolute();
@@ -489,7 +548,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			} else {
 				// we want to filter by glob
 				// since the Java API does NOT specify on which string representation a pathMatcher compares a path to a given expression, we assume NFC
-				String nfcSearchPattern = Normalizer.normalize(FileUtil.addEscapeSequencesForPathPattern(searchPattern.toString()), Normalizer.Form.NFC);
+				String nfcSearchPattern = Normalizer.normalize(FileUtil.convertToGlobPattern(searchPattern.toString()), Normalizer.Form.NFC);
 				PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + nfcSearchPattern);
 				filter = (Path p) -> matcher.matches(p.getFileName());
 			}
@@ -520,13 +579,14 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 							} catch (Error e) {
 								//TODO: invalid memory access can happen, which is an Java.Lang.Error
 								LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName());
-								LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace:", e);
+								LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace.", e);
 							}
 						});
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}. Error is {}", dokanyFileInfo.Context, path, e);
+				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
+				LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Message and Stacktrace.", e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
@@ -780,7 +840,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param rawFileSystemFlags
 	 * @param rawFileSystemNameBuffer
 	 * @param rawFileSystemNameSize
-	 * @param dokanyFileInfo            {@link DokanyFileInfo} with information about the file or directory.
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return
 	 */
 	@Override

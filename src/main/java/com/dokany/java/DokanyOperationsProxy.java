@@ -28,7 +28,7 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.GetVolumeInformation = new GetVolumeInformationProxy();
 		super.GetDiskFreeSpace = new GetDiskFreeSpaceProxy();
 		super.FindFiles = new FindFilesProxy();
-		super.FindFilesWithPattern = new FindFilesWithPatternProxy();
+		super.FindFilesWithPattern = null;
 		super.SetFileAttributes = new SetFileAttributesProxy();
 		super.SetFileTime = new SetFileTimeProxy();
 		super.DeleteFile = new DeleteFileProxy();
