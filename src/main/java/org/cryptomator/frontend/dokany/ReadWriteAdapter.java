@@ -483,11 +483,57 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int findFiles(WString rawPath, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, getRootedPath(rawPath));
-		return findFilesWithPattern(rawPath, new WString("*"), rawFillFindData, dokanyFileInfo);
+		Path path = getRootedPath(rawPath);
+		assert path.isAbsolute();
+		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, path);
+		if (dokanyFileInfo.Context == 0) {
+			LOG.debug("findFilesWithPattern(): Invalid handle to {}.", path);
+			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
+		} else {
+			try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
+				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
+				Stream<Path> stream = StreamSupport.stream(spliterator, false);
+				stream.map(p -> {
+					assert p.isAbsolute();
+					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+						 DataLock dataLock = pathLock.lockDataForReading()) {
+						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+						if (attr.isDirectory() || attr.isRegularFile()) {
+							return toFullFileInfo(p, attr).toWin32FindData();
+						} else {
+							LOG.warn("({}) findFilesWithPattern(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+							return null;
+						}
+					} catch (IOException e) {
+						LOG.debug("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+						return null;
+					}
+				}).filter(Objects::nonNull)
+						.forEach(file -> {
+							assert file != null;
+							LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+						});
+				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
+				return Win32ErrorCode.ERROR_SUCCESS.getMask();
+			} catch (IOException e) {
+				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
+				LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Message and Stacktrace.", e);
+				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
+			}
+		}
 	}
 
+	/**
+	 * @param fileName
+	 * @param searchPattern
+	 * @param rawFillFindData
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 * @deprecated This method is not used anymore, since Windows has additional globbing characters which makes file name matching difficult. (for more Information, see the <a href="https://github.com/cryptomator/dokany-nio-adapter/issues/19">corresponding github issue</a>)
+	 */
 	@Override
+	@Deprecated
 	public int findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(fileName);
 		assert path.isAbsolute();
