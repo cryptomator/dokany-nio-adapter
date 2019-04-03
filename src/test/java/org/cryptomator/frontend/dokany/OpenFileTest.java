@@ -9,6 +9,7 @@ import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,7 +23,7 @@ class OpenFileTest {
 	void testReadShortString(@TempDir Path tmpDir) throws IOException {
 		Path file = tmpDir.resolve("read.txt");
 		Files.write(file, "hello world".getBytes(StandardCharsets.US_ASCII));
-		try (OpenFile openFile = new OpenFile(file, EnumSet.of(StandardOpenOption.READ))) {
+		try (OpenFile openFile = OpenFile.open(file, EnumSet.of(StandardOpenOption.READ))) {
 			Pointer p = Mockito.mock(Pointer.class);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			Mockito.doAnswer(invocation -> {
@@ -49,7 +50,7 @@ class OpenFileTest {
 	void testWriteShortString(@TempDir Path tmpDir) throws IOException {
 		byte[] input = "hello world".getBytes(StandardCharsets.US_ASCII);
 		Path file = tmpDir.resolve("write.txt");
-		try (OpenFile openFile = new OpenFile(file, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))) {
+		try (OpenFile openFile = OpenFile.open(file, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))) {
 			Pointer p = Mockito.mock(Pointer.class);
 			Mockito.doAnswer(invocation -> {
 				long offset = invocation.getArgument(0);

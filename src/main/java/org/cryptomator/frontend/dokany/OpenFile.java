@@ -22,21 +22,9 @@ public class OpenFile extends OpenHandle {
 	private final FileChannel channel;
 
 
-	protected OpenFile(Path path) {
+	public OpenFile(Path path, FileChannel channel) {
 		super(path);
-		this.channel = null;
-	}
-
-	/**
-	 * TODO: Refactor: open the filechannel only if its needed!
-	 * @param path
-	 * @param options
-	 * @param attrs
-	 * @throws IOException
-	 */
-	public OpenFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		super(path);
-		this.channel = FileChannel.open(path, options, attrs);
+		this.channel = channel;
 	}
 
 	/**
@@ -135,6 +123,11 @@ public class OpenFile extends OpenHandle {
 				.add("path", path) //
 				.add("channel", channel) //
 				.toString();
+	}
+
+	public static OpenFile open(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+		FileChannel channel = FileChannel.open(path, options, attrs);
+		return new OpenFile(path, channel);
 	}
 
 }

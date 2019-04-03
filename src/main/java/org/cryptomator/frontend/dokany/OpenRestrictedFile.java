@@ -12,7 +12,7 @@ import java.nio.file.Path;
 public class OpenRestrictedFile extends OpenFile {
 
 	public OpenRestrictedFile(Path path) {
-		super(path);
+		super(path, null);
 	}
 
 	@Override
@@ -43,5 +43,9 @@ public class OpenRestrictedFile extends OpenFile {
 	@Override
 	public void close() throws IOException {
 
+	}
+
+	public static OpenRestrictedFile open(Path path) {
+		return new OpenRestrictedFile(path);
 	}
 }
