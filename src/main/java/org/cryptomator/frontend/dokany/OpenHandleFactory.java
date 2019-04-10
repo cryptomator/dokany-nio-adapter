@@ -60,7 +60,7 @@ public class OpenHandleFactory implements AutoCloseable {
 		if (fileHandle == 0) {
 			fileHandle = handleGen.getAndIncrement();
 		}
-		openHandles.put(fileHandle, new OpenFile(path, options, attrs));
+		openHandles.put(fileHandle, OpenFile.open(path, options, attrs));
 		return fileHandle;
 	}
 
@@ -76,7 +76,7 @@ public class OpenHandleFactory implements AutoCloseable {
 		if (fileHandle == 0) {
 			fileHandle = handleGen.getAndIncrement();
 		}
-		openHandles.put(fileHandle, new OpenRestrictedFile(path));
+		openHandles.put(fileHandle, OpenRestrictedFile.open(path));
 		return fileHandle;
 	}
 

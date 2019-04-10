@@ -339,6 +339,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 		}
 
+		assert handle != null;
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
@@ -351,7 +352,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} finally {
 			if (reopened) {
 				try {
-					handle.close();
+					fac.close(handleID);
 					LOG.trace("({}) readFile(): Successful closed REOPENED file {}.", handleID, path);
 				} catch (IOException e) {
 					LOG.debug("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path);
@@ -399,7 +400,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} finally {
 			if (reopened) {
 				try {
-					handle.close();
+					fac.close(handleID);
 					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", handleID, path);
 				} catch (IOException e) {
 					LOG.debug("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path);
@@ -487,38 +488,39 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		assert path.isAbsolute();
 		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, path);
 		if (dokanyFileInfo.Context == 0) {
-			LOG.debug("findFilesWithPattern(): Invalid handle to {}.", path);
+			LOG.debug("findFiles(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else {
-			try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
+			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
+				 DataLock dataLock = pathLock.lockDataForReading();
+				 DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
 				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
 				Stream<Path> stream = StreamSupport.stream(spliterator, false);
 				stream.map(p -> {
 					assert p.isAbsolute();
-					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
-						 DataLock dataLock = pathLock.lockDataForReading()) {
+					try {
 						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 						if (attr.isDirectory() || attr.isRegularFile()) {
 							return toFullFileInfo(p, attr).toWin32FindData();
 						} else {
-							LOG.warn("({}) findFilesWithPattern(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+							LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
 							return null;
 						}
 					} catch (IOException e) {
-						LOG.debug("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+						LOG.debug("({}) findFiles(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
 						return null;
-					}
-				}).filter(Objects::nonNull)
-						.forEach(file -> {
-							assert file != null;
-							LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
-							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-						});
+					}})
+				.filter(Objects::nonNull)
+				.forEach(file -> {
+					 assert file != null;
+					 LOG.trace("({}) findFiles(): found file {}", dokanyFileInfo.Context, file.getFileName());
+					 rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+				});
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
-				LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Message and Stacktrace.", e);
+				LOG.error("({}) findFiles(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
+				LOG.error("(" + dokanyFileInfo.Context + ") findFiles(): Message and Stacktrace.", e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
