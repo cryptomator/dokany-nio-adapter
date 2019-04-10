@@ -339,6 +339,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 		}
 
+		assert handle != null;
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
