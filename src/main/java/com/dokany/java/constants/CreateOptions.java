@@ -38,7 +38,7 @@ public enum CreateOptions implements EnumInteger {
 
     @Override
     public int getMask() {
-        return 0;
+        return mask;
     }
 
 }
