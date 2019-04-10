@@ -110,7 +110,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
 			} else {
-				LOG.debug("Ressource {} is a Directory and cannot be opened as a file.");
+				LOG.debug("Ressource {} is a Directory and cannot be opened as a file.", path);
 				//TODO: maybe other error code? e.g. ACCESS DENIED
 				return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
 			}
