@@ -279,6 +279,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				if (dokanyFileInfo.deleteOnClose()) {
 					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
 						 DataLock dataLock = pathLock.lockDataForWriting()) {
+						Files.getFileAttributeView(path, DosFileAttributeView.class).setReadOnly(false);
 						Files.delete(path);
 						LOG.trace("({}) {} successful deleted.", dokanyFileInfo.Context, path);
 					} catch (DirectoryNotEmptyException e) {
