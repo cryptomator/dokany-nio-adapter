@@ -29,7 +29,6 @@ public class OpenHandleFactory implements AutoCloseable {
 	 */
 	public long openDir(Path path) throws IOException {
 		long dirHandle = handleGen.getAndIncrement();
-		}
 		openHandles.putIfAbsent(dirHandle, new OpenDirectory(path));
 		return dirHandle;
 	}
