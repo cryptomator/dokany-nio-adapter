@@ -496,27 +496,28 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				 DataLock dataLock = pathLock.lockDataForReading();
 				 DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
 				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
-				Stream<Path> stream = StreamSupport.stream(spliterator, false);
-				stream.map(p -> {
-					assert p.isAbsolute();
-					try {
-						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-						if (attr.isDirectory() || attr.isRegularFile()) {
-							return toFullFileInfo(p, attr).toWin32FindData();
-						} else {
-							LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
-							return null;
-						}
-					} catch (IOException e) {
-						LOG.debug("({}) findFiles(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
-						return null;
-					}})
-				.filter(Objects::nonNull)
-				.forEach(file -> {
-					 assert file != null;
-					 LOG.trace("({}) findFiles(): found file {}", dokanyFileInfo.Context, file.getFileName());
-					 rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-				});
+				StreamSupport.stream(spliterator, false)
+						.map(p -> {
+							assert p.isAbsolute();
+							try {
+								DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+								if (attr.isDirectory() || attr.isRegularFile()) {
+									return toFullFileInfo(p, attr).toWin32FindData();
+								} else {
+									LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+									return null;
+								}
+							} catch (IOException e) {
+								LOG.debug("({}) findFiles(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+								return null;
+							}
+						})
+						.filter(Objects::nonNull)
+						.forEach(file -> {
+							assert file != null;
+							LOG.trace("({}) findFiles(): found file {}", dokanyFileInfo.Context, file.getFileName());
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+						});
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
