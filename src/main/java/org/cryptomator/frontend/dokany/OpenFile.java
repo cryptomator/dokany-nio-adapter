@@ -107,7 +107,7 @@ public class OpenFile extends OpenHandle {
 	/**
 	 * Test if we can delete this file.
 	 *
-	 * @return Only <code>true</code> if no concurrent routine holds a lock on this file
+	 * @return <code>true</code> if no concurrent routine holds a lock on this file or the file is opened as read-only
 	 * @implNote Attempts to acquire an exclusive lock (and immediately releases it upon success)
 	 */
 	public boolean canBeDeleted() {
