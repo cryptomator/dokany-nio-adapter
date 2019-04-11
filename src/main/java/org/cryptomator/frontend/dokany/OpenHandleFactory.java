@@ -21,7 +21,7 @@ public class OpenHandleFactory implements AutoCloseable {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenHandleFactory.class);
 
 	private final ConcurrentMap<Long, OpenHandle> openHandles = new ConcurrentHashMap<>();
-	private final AtomicLong handleGen = new AtomicLong(1);
+	private final HandleGenerator handleGen = new HandleGenerator();
 
 	/**
 	 * @param path
@@ -29,8 +29,6 @@ public class OpenHandleFactory implements AutoCloseable {
 	 */
 	public long openDir(Path path) throws IOException {
 		long dirHandle = handleGen.getAndIncrement();
-		if (dirHandle == 0) {
-			dirHandle = handleGen.getAndIncrement();
 		}
 		openHandles.putIfAbsent(dirHandle, new OpenDirectory(path));
 		return dirHandle;
@@ -57,9 +55,6 @@ public class OpenHandleFactory implements AutoCloseable {
 	 */
 	public long openFile(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		long fileHandle = handleGen.getAndIncrement();
-		if (fileHandle == 0) {
-			fileHandle = handleGen.getAndIncrement();
-		}
 		openHandles.put(fileHandle, OpenFile.open(path, options, attrs));
 		return fileHandle;
 	}
@@ -73,9 +68,6 @@ public class OpenHandleFactory implements AutoCloseable {
 	 */
 	public long openRestrictedFile(Path path) {
 		long fileHandle = handleGen.getAndIncrement();
-		if (fileHandle == 0) {
-			fileHandle = handleGen.getAndIncrement();
-		}
 		openHandles.put(fileHandle, OpenRestrictedFile.open(path));
 		return fileHandle;
 	}
@@ -126,6 +118,22 @@ public class OpenHandleFactory implements AutoCloseable {
 		}
 		if (exception.getSuppressed().length > 0) {
 			throw exception;
+		}
+	}
+
+	/**
+	 * Generates handle ids excluding the id 0 which is used as a special value.
+	 */
+	private class HandleGenerator {
+
+		private final AtomicLong handleGen = new AtomicLong(1);
+
+		public long getAndIncrement() {
+			long handle = handleGen.getAndIncrement();
+			if (handle == 0) {
+				handle = handleGen.getAndIncrement();
+			}
+			return handle;
 		}
 	}
 }
