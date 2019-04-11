@@ -110,9 +110,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
 			} else {
-				LOG.debug("Ressource {} is a Directory and cannot be opened as a file.");
-				//TODO: maybe other error code? e.g. ACCESS DENIED
-				return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
+				LOG.debug("Ressource {} is a Directory and cannot be opened as a file.", path);
+				return Win32ErrorCode.ERROR_INVALID_STATE.getMask();
 			}
 		} else if (attr.isPresent() && !attr.get().isRegularFile()) {
 			return Win32ErrorCode.ERROR_CANT_ACCESS_FILE.getMask(); // or ERROR_OPEN_FAILED or ERROR_CALL_NOT_IMPLEMENTED?
@@ -279,6 +278,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				if (dokanyFileInfo.deleteOnClose()) {
 					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
 						 DataLock dataLock = pathLock.lockDataForWriting()) {
+						Files.getFileAttributeView(path, DosFileAttributeView.class).setReadOnly(false);
 						Files.delete(path);
 						LOG.trace("({}) {} successful deleted.", dokanyFileInfo.Context, path);
 					} catch (DirectoryNotEmptyException e) {
@@ -323,18 +323,18 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		}
 
-		long handleID = dokanyFileInfo.Context;
+		long usedHandleID = dokanyFileInfo.Context;
 		boolean reopened = false;
-		OpenFile handle = (OpenFile) fac.get(handleID);
+		OpenFile handle = (OpenFile) fac.get(usedHandleID);
 		if (handle == null) {
-			LOG.debug("({}) readFile(): Unable to find handle for {}. Try to reopen it.", handleID, path);
+			LOG.debug("({}) readFile(): Unable to find handle for {}. Possible already cleanup() called. Try to reopen it.", usedHandleID, path);
 			try {
-				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
-				handle = (OpenFile) fac.get(handleID);
-				LOG.trace("readFile(): Successful reopened {} with handle {}.", path, handleID);
+				usedHandleID = fac.openFile(path, Collections.singleton(StandardOpenOption.READ));
+				handle = (OpenFile) fac.get(usedHandleID);
+				LOG.trace("({}) readFile(): Successful reopened {} with intermediate handle id {}.", dokanyFileInfo.Context, path, usedHandleID);
 				reopened = true;
 			} catch (IOException e1) {
-				LOG.debug("readFile(): Reopen of {} failed. Aborting.", path);
+				LOG.debug("({}) readFile(): Reopen of {} failed. Aborting.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
 			}
 		}
@@ -343,19 +343,19 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 			 DataLock dataLock = pathLock.lockDataForReading()) {
 			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
-			LOG.trace("({}) Data successful read from {}.", handleID, path);
+			LOG.trace("({}) Data successful read from {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		} catch (IOException e) {
-			LOG.debug("({}) readFile(): IO error while reading file {}.", handleID, path);
+			LOG.debug("({}) readFile(): IO error while reading file {}.", dokanyFileInfo.Context, path);
 			LOG.debug("Error is:", e);
 			return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 		} finally {
 			if (reopened) {
 				try {
-					fac.close(handleID);
-					LOG.trace("({}) readFile(): Successful closed REOPENED file {}.", handleID, path);
+					fac.close(usedHandleID);
+					LOG.trace("({}) readFile(): Successful closed REOPENED file {}.", dokanyFileInfo.Context, path);
 				} catch (IOException e) {
-					LOG.debug("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path);
+					LOG.debug("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", dokanyFileInfo.Context, path);
 				}
 			}
 		}
@@ -366,25 +366,25 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		Path path = getRootedPath(rawPath);
 		LOG.trace("({}) writeFile() is called for {}.", dokanyFileInfo.Context, path);
 		if (dokanyFileInfo.Context == 0) {
-			LOG.debug("writeFile(): Invalid handle to {}", path);
+			LOG.debug("writeFile(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (dokanyFileInfo.isDirectory()) {
 			LOG.debug("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		}
 
-		long handleID = dokanyFileInfo.Context;
+		long usedHandleID = dokanyFileInfo.Context;
 		boolean reopened = false;
-		OpenFile handle = (OpenFile) fac.get(handleID);
+		OpenFile handle = (OpenFile) fac.get(usedHandleID);
 		if (handle == null) {
-			LOG.debug("({}) writeFile(): Unable to find handle for {}. Try to reopen it.", handleID, path);
+			LOG.debug("({}) writeFile(): Unable to find handle for {}. Possible already cleanup() called. Try to reopen it.", dokanyFileInfo.Context, path);
 			try {
-				handleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
-				handle = (OpenFile) fac.get(handleID);
-				LOG.trace("writeFile(): Successful reopened {} with handle {}.", path, handleID);
+				usedHandleID = fac.openFile(path, Collections.singleton(StandardOpenOption.WRITE));
+				handle = (OpenFile) fac.get(usedHandleID);
+				LOG.trace("({}) writeFile(): Successful reopened {} with handle {}.", dokanyFileInfo.Context, path, usedHandleID);
 				reopened = true;
 			} catch (IOException e1) {
-				LOG.debug("writeFile(): Reopen of {} failed. Aborting.", path);
+				LOG.debug("({}) writeFile(): Reopen of {} failed. Aborting.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
 			}
 		}
@@ -392,18 +392,19 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
 			rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
-			LOG.trace("({}) Data successful written to {}.", handleID, path);
+			LOG.trace("({}) Data successful written to {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		} catch (IOException e) {
-			LOG.debug("({}) writeFile(): IO Error while writing to {} ", handleID, path, e);
+			LOG.debug("({}) writeFile(): IO Error while writing to {}.", dokanyFileInfo.Context, path);
+			LOG.debug("Error is:", e);
 			return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 		} finally {
 			if (reopened) {
 				try {
-					fac.close(handleID);
-					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", handleID, path);
+					fac.close(usedHandleID);
+					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", dokanyFileInfo.Context, path);
 				} catch (IOException e) {
-					LOG.debug("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", handleID, path);
+					LOG.debug("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", dokanyFileInfo.Context, path);
 				}
 			}
 		}
@@ -495,27 +496,28 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				 DataLock dataLock = pathLock.lockDataForReading();
 				 DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
 				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
-				Stream<Path> stream = StreamSupport.stream(spliterator, false);
-				stream.map(p -> {
-					assert p.isAbsolute();
-					try {
-						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-						if (attr.isDirectory() || attr.isRegularFile()) {
-							return toFullFileInfo(p, attr).toWin32FindData();
-						} else {
-							LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
-							return null;
-						}
-					} catch (IOException e) {
-						LOG.debug("({}) findFiles(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
-						return null;
-					}})
-				.filter(Objects::nonNull)
-				.forEach(file -> {
-					 assert file != null;
-					 LOG.trace("({}) findFiles(): found file {}", dokanyFileInfo.Context, file.getFileName());
-					 rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-				});
+				StreamSupport.stream(spliterator, false)
+						.map(p -> {
+							assert p.isAbsolute();
+							try {
+								DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+								if (attr.isDirectory() || attr.isRegularFile()) {
+									return toFullFileInfo(p, attr).toWin32FindData();
+								} else {
+									LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+									return null;
+								}
+							} catch (IOException e) {
+								LOG.debug("({}) findFiles(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+								return null;
+							}
+						})
+						.filter(Objects::nonNull)
+						.forEach(file -> {
+							assert file != null;
+							LOG.trace("({}) findFiles(): found file {}", dokanyFileInfo.Context, file.getFileName());
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
+						});
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {

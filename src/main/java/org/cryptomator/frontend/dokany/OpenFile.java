@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
@@ -106,12 +107,14 @@ public class OpenFile extends OpenHandle {
 	/**
 	 * Test if we can delete this file.
 	 *
-	 * @return Only <code>true</code> if no concurrent routine holds a lock on this file
+	 * @return <code>true</code> if no concurrent routine holds a lock on this file or the file is opened as read-only
 	 * @implNote Attempts to acquire an exclusive lock (and immediately releases it upon success)
 	 */
 	public boolean canBeDeleted() {
 		try (FileLock lock = channel.tryLock()) {
 			return lock != null; // we could acquire the exclusive lock, i.e. nobody else is accessing this channel
+		} catch (NonWritableChannelException e) {
+			return true; //channel only opened for reading, so we can't say anything
 		} catch (IOException e) {
 			return false;
 		}

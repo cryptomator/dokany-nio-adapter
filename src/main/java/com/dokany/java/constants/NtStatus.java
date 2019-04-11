@@ -337,7 +337,9 @@ public enum NtStatus implements EnumInteger {
     TRANSACTION_REQUIRED_PROMOTION(-1072103357),
     CANNOT_EXECUTE_FILE_IN_TRANSACTION(-1072103356),
     TRANSACTIONS_NOT_FROZEN(-1072103355),
-    MAXIMUM_NT_STATUS(-1);
+    MAXIMUM_NT_STATUS(-1),
+    FILE_IS_A_DIRECTORY(0xC00000BA);
+
     private final int mask;
 
     @SuppressWarnings("all")

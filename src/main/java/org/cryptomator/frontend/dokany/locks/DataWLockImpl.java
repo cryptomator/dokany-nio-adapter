@@ -16,13 +16,13 @@ class DataWLockImpl extends DataLockImpl {
 
 	static DataWLockImpl create(List<String> pathComponents, ReadWriteLock lock) {
 		lock.writeLock().lock();
-		LOG.trace("Acquired write data lock for '{}'", pathComponents);
+		//LOG.trace("Acquired write data lock for '{}'", pathComponents);
 		return new DataWLockImpl(pathComponents, lock);
 	}
 
 	@Override
 	public void close() {
-		LOG.trace("Released write data lock for '{}'", pathComponents);
+//		LOG.trace("Released write data lock for '{}'", pathComponents);
 		lock.writeLock().unlock();
 	}
 
