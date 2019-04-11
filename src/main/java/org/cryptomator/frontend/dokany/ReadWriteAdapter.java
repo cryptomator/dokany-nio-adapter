@@ -111,8 +111,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				//TODO: set the share access like in the dokany mirror example
 			} else {
 				LOG.debug("Ressource {} is a Directory and cannot be opened as a file.", path);
-				//TODO: maybe other error code? e.g. ACCESS DENIED
-				return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
+				return Win32ErrorCode.ERROR_INVALID_STATE.getMask();
 			}
 		} else if (attr.isPresent() && !attr.get().isRegularFile()) {
 			return Win32ErrorCode.ERROR_CANT_ACCESS_FILE.getMask(); // or ERROR_OPEN_FAILED or ERROR_CALL_NOT_IMPLEMENTED?

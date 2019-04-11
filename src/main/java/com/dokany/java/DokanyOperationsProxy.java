@@ -1,6 +1,8 @@
 package com.dokany.java;
 
 
+import com.dokany.java.constants.NtStatus;
+import com.dokany.java.constants.Win32ErrorCode;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
 import com.sun.jna.Pointer;
@@ -53,7 +55,13 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 			IntByReference desiredAccess = new IntByReference();
 			IntByReference fileAttributeFlags = new IntByReference();
 			NativeMethods.DokanMapKernelToUserCreateFileFlags(rawDesiredAccess, rawFileAttributes, rawCreateOptions, rawCreateDisposition, desiredAccess, fileAttributeFlags, createDisposition);
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo));
+			int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo);
+			//little cheat for issue #24
+			if (win32ErrorCode == Win32ErrorCode.ERROR_INVALID_STATE.getMask()) {
+				return NtStatus.FILE_IS_A_DIRECTORY.getMask();
+			} else {
+				return NativeMethods.DokanNtStatusFromWin32(win32ErrorCode);
+			}
 		}
 	}
 
