@@ -391,7 +391,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 			 DataLock dataLock = pathLock.lockDataForWriting()) {
-			rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
+			if (dokanyFileInfo.writeToEndOfFile()) {
+				rawNumberOfBytesWritten.setValue(handle.append(rawBuffer, rawNumberOfBytesToWrite));
+			} else {
+				rawNumberOfBytesWritten.setValue(handle.write(rawBuffer, rawNumberOfBytesToWrite, rawOffset));
+			}
 			LOG.trace("({}) Data successful written to {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		} catch (IOException e) {
