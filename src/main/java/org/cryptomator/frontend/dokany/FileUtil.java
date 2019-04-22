@@ -134,7 +134,7 @@ public class FileUtil {
 
 	public static Set<OpenOption> buildOpenOptions(EnumIntegerSet<AccessMask> accessMasks, EnumIntegerSet<FileAccessMask> fileAccessMasks, EnumIntegerSet<FileAttribute> fileAttributes, EnumIntegerSet<CreateOptions> createOptions, CreationDisposition creationDisposition, boolean append, boolean fileExists) {
 		Set<OpenOption> openOptions = Sets.newHashSet();
-		if (accessMasks.contains(AccessMask.GENERIC_WRITE) || fileAccessMasks.contains(FileAccessMask.READ_DATA)) {
+		if (accessMasks.contains(AccessMask.GENERIC_WRITE) || fileAccessMasks.contains(FileAccessMask.WRITE_DATA)) {
 			openOptions.add(StandardOpenOption.WRITE);
 		}
 		if (accessMasks.contains(AccessMask.GENERIC_READ) || fileAccessMasks.contains(FileAccessMask.READ_DATA)) {
