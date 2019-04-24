@@ -85,6 +85,10 @@ public class OpenFile extends OpenHandle {
 		return written;
 	}
 
+	public int append(Pointer buf, int num) throws IOException {
+		return write(buf, num, channel.size());
+	}
+
 	private int readNext(ByteBuffer readBuf, long num) throws IOException {
 		readBuf.clear();
 		readBuf.limit((int) Math.min(readBuf.capacity(), num));
