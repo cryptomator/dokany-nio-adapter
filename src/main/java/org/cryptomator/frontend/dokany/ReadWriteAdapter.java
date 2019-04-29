@@ -230,10 +230,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				}
 				return returnCode.getMask();
 			} catch (FileAlreadyExistsException e) {
-				LOG.trace("Unable to open {}.", path);
+				LOG.trace("File {} already exists.", path);
 				return Win32ErrorCode.ERROR_FILE_EXISTS.getMask();
 			} catch (NoSuchFileException e) {
-				LOG.trace("{} not found.", path);
+				LOG.trace("File {} not found.", path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (AccessDeniedException e) {
 				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
