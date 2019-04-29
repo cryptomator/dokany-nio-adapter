@@ -10,11 +10,15 @@ import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link com.dokany.java.DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
  */
 final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
+
+	private final static Logger LOG = LoggerFactory.getLogger(DokanyOperationsProxy.class);
 
 	private final DokanyFileSystem fileSystem;
 
@@ -55,12 +59,17 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 			IntByReference desiredAccess = new IntByReference();
 			IntByReference fileAttributeFlags = new IntByReference();
 			NativeMethods.DokanMapKernelToUserCreateFileFlags(rawDesiredAccess, rawFileAttributes, rawCreateOptions, rawCreateDisposition, desiredAccess, fileAttributeFlags, createDisposition);
-			int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo);
-			//little cheat for issue #24
-			if (win32ErrorCode == Win32ErrorCode.ERROR_INVALID_STATE.getMask()) {
-				return NtStatus.FILE_IS_A_DIRECTORY.getMask();
-			} else {
-				return NativeMethods.DokanNtStatusFromWin32(win32ErrorCode);
+			try {
+				int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo);
+				//little cheat for issue #24
+				if (win32ErrorCode == Win32ErrorCode.ERROR_INVALID_STATE.getMask()) {
+					return NtStatus.FILE_IS_A_DIRECTORY.getMask();
+				} else {
+					return NativeMethods.DokanNtStatusFromWin32(win32ErrorCode);
+				}
+			} catch (Exception e) {
+				LOG.warn("zwCreateFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
 			}
 		}
 	}
@@ -77,7 +86,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, Pointer rawBuffer, int rawBufferLength, IntByReference rawReadLength, long rawOffset, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.readFile(rawPath, rawBuffer, rawBufferLength, rawReadLength, rawOffset, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.readFile(rawPath, rawBuffer, rawBufferLength, rawReadLength, rawOffset, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("readFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -85,7 +99,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, Pointer rawBuffer, int rawNumberOfBytesToWrite, IntByReference rawNumberOfBytesWritten, long rawOffset, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.writeFile(rawPath, rawBuffer, rawNumberOfBytesToWrite, rawNumberOfBytesWritten, rawOffset, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.writeFile(rawPath, rawBuffer, rawNumberOfBytesToWrite, rawNumberOfBytesWritten, rawOffset, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("writeFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -93,7 +112,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.flushFileBuffers(rawPath, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.flushFileBuffers(rawPath, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("flushFileBuffers(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -101,7 +125,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString fileName, ByHandleFileInfo handleFileInfo, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.getFileInformation(fileName, handleFileInfo, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.getFileInformation(fileName, handleFileInfo, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("getFileInformation(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -109,7 +138,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.findFiles(rawPath, rawFillFindData, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.findFiles(rawPath, rawFillFindData, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("findFiles(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -117,7 +151,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString fileName, WString searchPattern, FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.findFilesWithPattern(fileName, searchPattern, rawFillFindData, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.findFilesWithPattern(fileName, searchPattern, rawFillFindData, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("findFilesWithPattern(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -125,7 +164,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, int rawAttributes, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.setFileAttributes(rawPath, rawAttributes, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.setFileAttributes(rawPath, rawAttributes, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("setFileAttributes(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -133,7 +177,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, WinBase.FILETIME rawCreationTime, WinBase.FILETIME rawLastAccessTime, WinBase.FILETIME rawLastWriteTime, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.setFileTime(rawPath, rawCreationTime, rawLastAccessTime, rawLastWriteTime, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.setFileTime(rawPath, rawCreationTime, rawLastAccessTime, rawLastWriteTime, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("setFileTime(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -141,7 +190,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.deleteFile(rawPath, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.deleteFile(rawPath, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("deleteFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -149,7 +203,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.deleteDirectory(rawPath, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.deleteDirectory(rawPath, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("deleteDirectory(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -157,7 +216,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, WString rawNewFileName, boolean rawReplaceIfExisting, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.moveFile(rawPath, rawNewFileName, rawReplaceIfExisting, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.moveFile(rawPath, rawNewFileName, rawReplaceIfExisting, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("moveFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -165,7 +229,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, long rawByteOffset, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.setEndOfFile(rawPath, rawByteOffset, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.setEndOfFile(rawPath, rawByteOffset, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("setEndOfFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -173,7 +242,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, long rawLength, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.setAllocationSize(rawPath, rawLength, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.setAllocationSize(rawPath, rawLength, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("setAllocationSize(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -181,7 +255,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, long rawByteOffset, long rawLength, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.lockFile(rawPath, rawByteOffset, rawLength, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.lockFile(rawPath, rawByteOffset, rawLength, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("lockFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -189,7 +268,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, long rawByteOffset, long rawLength, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.unlockFile(rawPath, rawByteOffset, rawLength, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.unlockFile(rawPath, rawByteOffset, rawLength, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("unlockFile(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -197,7 +281,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(LongByReference freeBytesAvailable, LongByReference totalNumberOfBytes, LongByReference totalNumberOfFreeBytes, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.getDiskFreeSpace(freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.getDiskFreeSpace(freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("getDiskFreeSpace(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -205,7 +294,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.getVolumeInformation(rawVolumeNameBuffer, rawVolumeNameSize, rawVolumeSerialNumber, rawMaximumComponentLength, rawFileSystemFlags, rawFileSystemNameBuffer, rawFileSystemNameSize, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.getVolumeInformation(rawVolumeNameBuffer, rawVolumeNameSize, rawVolumeSerialNumber, rawMaximumComponentLength, rawFileSystemFlags, rawFileSystemNameBuffer, rawFileSystemNameSize, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("getVolumeInformation(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -213,7 +307,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long mounted(DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.mounted(dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.mounted(dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("mounted(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -221,7 +320,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long unmounted(DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.unmounted(dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.unmounted(dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("unmounted(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -229,7 +333,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, IntByReference rawSecurityDescriptorLengthNeeded, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.getFileSecurity(rawPath, rawSecurityInformation, rawSecurityDescriptor, rawSecurityDescriptorLength, rawSecurityDescriptorLengthNeeded, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.getFileSecurity(rawPath, rawSecurityInformation, rawSecurityDescriptor, rawSecurityDescriptorLength, rawSecurityDescriptorLengthNeeded, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("getFileSecurity(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -237,7 +346,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.setFileSecurity(rawPath, rawSecurityInformation, rawSecurityDescriptor, rawSecurityDescriptorLength, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.setFileSecurity(rawPath, rawSecurityInformation, rawSecurityDescriptor, rawSecurityDescriptorLength, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("setFileSecurity(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
@@ -245,7 +359,12 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, FillWin32FindStreamData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
-			return NativeMethods.DokanNtStatusFromWin32(fileSystem.findStreams(rawPath, rawFillFindData, dokanyFileInfo));
+			try {
+				return NativeMethods.DokanNtStatusFromWin32(fileSystem.findStreams(rawPath, rawFillFindData, dokanyFileInfo));
+			} catch (Exception e) {
+				LOG.warn("findStreams(): Uncaught exception. Returning generic failure code.", e);
+				return NtStatus.UNSUCCESSFUL.getMask();
+			}
 		}
 	}
 
