@@ -7,6 +7,7 @@ import com.dokany.java.constants.FileAccessMask;
 import com.dokany.java.constants.FileAttribute;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.google.common.collect.Sets;
+import com.sun.jna.platform.win32.WinBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,10 +16,15 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
 public class FileUtil {
+
+	public static final Instant WINDOWS_EPOCH_START = Instant.parse("1601-01-01T00:00:00Z");
 
 	static final FileAttribute[] supportedAttributeValuesToSet = new FileAttribute[]{FileAttribute.HIDDEN, FileAttribute.READONLY, FileAttribute.SYSTEM, FileAttribute.ARCHIVE};
 
@@ -186,6 +192,15 @@ public class FileUtil {
 
 		}
 		return openOptions;
+	}
+
+	public static Optional<FileTime> toFileTime(WinBase.FILETIME windowsTime) {
+		Instant instant = windowsTime.toDate().toInstant();
+		if (instant.equals(WINDOWS_EPOCH_START)) {
+			return Optional.empty();
+		} else {
+			return Optional.of(FileTime.from(instant));
+		}
 	}
 
 }

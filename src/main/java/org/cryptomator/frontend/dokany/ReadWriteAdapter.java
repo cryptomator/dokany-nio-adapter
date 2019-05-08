@@ -667,9 +667,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 				 DataLock dataLock = pathLock.lockDataForWriting()) {
-				FileTime lastModifiedTime = FileTime.fromMillis(rawLastWriteTime.toDate().getTime());
-				FileTime lastAccessTime = FileTime.fromMillis(rawLastAccessTime.toDate().getTime());
-				FileTime createdTime = FileTime.fromMillis(rawCreationTime.toDate().getTime());
+				FileTime lastModifiedTime = FileUtil.toFileTime(rawLastWriteTime).orElse(null);
+				FileTime lastAccessTime = FileUtil.toFileTime(rawLastAccessTime).orElse(null);
+				FileTime createdTime = FileUtil.toFileTime(rawCreationTime).orElse(null);
 				Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(lastModifiedTime, lastAccessTime, createdTime);
 				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
