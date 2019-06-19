@@ -121,7 +121,7 @@
 		<dependency>
 			<groupId>org.cryptomator</groupId>
 			<artifactId>cryptofs</artifactId>
-			<version>1.8.3</version>
+			<version>1.8.5</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
