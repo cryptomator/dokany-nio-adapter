@@ -4,7 +4,7 @@ package com.dokany.java.structure;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import com.dokany.java.constants.MountOption;
+import com.dokany.java.constants.DokanOption;
 import com.sun.jna.Structure;
 import com.sun.jna.WString;
 
@@ -23,10 +23,10 @@ public class DeviceOptions extends Structure implements Structure.ByReference {
 	/**
 	 * Features enable for the mount.
 	 *
-	 * @see {@link MountOption}
+	 * @see {@link DokanOption}
 	 */
 	public int Options;
-	private EnumIntegerSet<MountOption> mountOptions;
+	private EnumIntegerSet<DokanOption> dokanOptions;
 	/**
 	 * FileSystem can store anything here
 	 */
@@ -55,11 +55,11 @@ public class DeviceOptions extends Structure implements Structure.ByReference {
 	public DeviceOptions() {
 	}
 
-	public DeviceOptions(final String mountPoint, final short threadCount, final EnumIntegerSet<MountOption> mountOptions, final String uncName, final long timeout, final long allocationUnitSize, final long sectorSize) {
+	public DeviceOptions(final String mountPoint, final short threadCount, final EnumIntegerSet<DokanOption> dokanOptions, final String uncName, final long timeout, final long allocationUnitSize, final long sectorSize) {
 		MountPoint = new WString(mountPoint);
 		ThreadCount = threadCount;
-		this.mountOptions = mountOptions;
-		Options = mountOptions.toInt();
+		this.dokanOptions = dokanOptions;
+		Options = dokanOptions.toInt();
 		if (Objects.nonNull(uncName)) {
 			UNCName = new WString(uncName);
 		} else {
@@ -70,8 +70,8 @@ public class DeviceOptions extends Structure implements Structure.ByReference {
 		SectorSize = sectorSize;
 	}
 
-	public EnumIntegerSet<MountOption> getMountOptions() {
-		return mountOptions;
+	public EnumIntegerSet<DokanOption> getDokanOptions() {
+		return dokanOptions;
 	}
 
 	@Override
@@ -82,6 +82,6 @@ public class DeviceOptions extends Structure implements Structure.ByReference {
 	@Override
 	@SuppressWarnings("all")
 	public String toString() {
-		return "DeviceOptions(Version=" + this.Version + ", ThreadCount=" + this.ThreadCount + ", Options=" + this.Options + ", mountOptions=" + this.getMountOptions() + ", GlobalContext=" + this.GlobalContext + ", MountPoint=" + this.MountPoint + ", UNCName=" + this.UNCName + ", Timeout=" + this.Timeout + ", AllocationUnitSize=" + this.AllocationUnitSize + ", SectorSize=" + this.SectorSize + ")";
+		return "DeviceOptions(Version=" + this.Version + ", ThreadCount=" + this.ThreadCount + ", Options=" + this.Options + ", mountOptions=" + this.getDokanOptions() + ", GlobalContext=" + this.GlobalContext + ", MountPoint=" + this.MountPoint + ", UNCName=" + this.UNCName + ", Timeout=" + this.Timeout + ", AllocationUnitSize=" + this.AllocationUnitSize + ", SectorSize=" + this.SectorSize + ")";
 	}
 }

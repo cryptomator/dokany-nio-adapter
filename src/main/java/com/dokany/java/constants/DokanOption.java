@@ -3,7 +3,7 @@ package com.dokany.java.constants;
 import com.dokany.java.DokanyUtils;
 import com.dokany.java.structure.EnumIntegerSet;
 
-public enum MountOption implements EnumInteger {
+public enum DokanOption implements EnumInteger {
 	DEBUG_MODE(1, "Enable ouput debug message"),
 	STD_ERR_OUTPUT(2, "Enable ouput debug message to stderr"),
 	ALT_STREAM(4, "Use alternate stream"),
@@ -18,18 +18,18 @@ public enum MountOption implements EnumInteger {
 	private final String description;
 	private final boolean isReadonly;
 
-	MountOption(final int i, final String desc) {
+	DokanOption(final int i, final String desc) {
 		mask = i;
 		description = desc;
 		// TODO: is this proper logic?
 		isReadonly = (mask == 8);
 	}
 
-	public static EnumIntegerSet<MountOption> fromInt(final int value) {
+	public static EnumIntegerSet<DokanOption> fromInt(final int value) {
 		return DokanyUtils.enumSetFromInt(value, values());
 	}
 
-	private MountOption(final int mask, final String description, final boolean isReadonly) {
+	private DokanOption(final int mask, final String description, final boolean isReadonly) {
 		this.mask = mask;
 		this.description = description;
 		this.isReadonly = isReadonly;

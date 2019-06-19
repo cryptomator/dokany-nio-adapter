@@ -3,12 +3,10 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.DokanyDriver;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.constants.FileSystemFeature;
-import com.dokany.java.constants.MountOption;
+import com.dokany.java.constants.DokanOption;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.VolumeInformation;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Preconditions;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +25,11 @@ public class MountFactory {
 	private static final Logger LOG = LoggerFactory.getLogger(MountFactory.class);
 	private static final int MOUNT_TIMEOUT_MS = 5000;
 	private static final short THREAD_COUNT = 5;
-	private static final EnumIntegerSet<MountOption> MOUNT_OPTIONS = new EnumIntegerSet<>( //
-			// MountOption.DEBUG_MODE, //
-			// MountOption.STD_ERR_OUTPUT, //
-			// MountOption.REMOVABLE_DRIVE, //
-			MountOption.CURRENT_SESSION);
+	private static final EnumIntegerSet<DokanOption> DOKAN_OPTIONS = new EnumIntegerSet<>( //
+			// DokanOption.DEBUG_MODE, //
+			// DokanOption.STD_ERR_OUTPUT, //
+			// DokanOption.REMOVABLE_DRIVE, //
+			DokanOption.CURRENT_SESSION);
 	private static final EnumIntegerSet<FileSystemFeature> FILE_SYSTEM_FEATURES = new EnumIntegerSet<>( //
 			FileSystemFeature.CASE_PRESERVED_NAMES, //
 			FileSystemFeature.CASE_SENSITIVE_SEARCH, //
@@ -62,7 +60,7 @@ public class MountFactory {
 	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws MountFailedException {
 		Path absMountPoint = mountPoint.toAbsolutePath();
-		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, MOUNT_OPTIONS, UNC_NAME, TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, DOKAN_OPTIONS, "\\\\?\\"+absMountPoint.toString(), TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		LockManager lockManager = new LockManager();
