@@ -2,11 +2,12 @@ package org.cryptomator.frontend.dokany;
 
 import com.dokany.java.DokanyDriver;
 import com.dokany.java.DokanyFileSystem;
-import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.constants.DokanOption;
+import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.VolumeInformation;
+import org.apache.commons.cli.ParseException;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,7 @@ public class MountFactory {
 	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws MountFailedException {
 		Path absMountPoint = mountPoint.toAbsolutePath();
-		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, DOKAN_OPTIONS, "\\\\?\\"+absMountPoint.toString(), TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, DOKAN_OPTIONS, "\\\\?\\" + absMountPoint.toString(), TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		LockManager lockManager = new LockManager();
@@ -78,6 +79,50 @@ public class MountFactory {
 			LOG.error("Mounting failed.", e);
 			throw new MountFailedException(e.getCause());
 		} catch (TimeoutException e) {
+			LOG.warn("Mounting timed out.");
+		}
+		return mount;
+	}
+
+	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws MountFailedException {
+		Path absMountPoint = mountPoint.toAbsolutePath();
+		//Very ugly
+		MountUtil.MountOptions options = null;
+		try {
+			options = MountUtil.parse(additionalOptions);
+		} catch (IllegalArgumentException | ParseException e) {
+			LOG.warn("Error while parsing additional arguments. Abort mount...");
+			throw new MountFailedException(e);
+		}
+
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
+				options.getThreadCount().orElse(THREAD_COUNT),
+				options.getDokanOptions(),
+				"\\\\?\\" + absMountPoint.toString(),
+				options.getTimeout().orElse(TIMEOUT),
+				options.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
+				options.getSectorSize().orElse(SECTOR_SIZE));
+		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
+		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
+		LockManager lockManager = new LockManager();
+		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed);
+		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
+
+		LOG.debug("Mounting on {}: ...", absMountPoint);
+		Mount mount = new Mount(absMountPoint, dokanyDriver);
+		try {
+			mount.mount(executorService);
+			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+			LOG.debug("Mounted directory at {} successfully.", absMountPoint.toString());
+		} catch (
+				InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} catch (
+				ExecutionException e) {
+			LOG.error("Mounting failed.", e);
+			throw new MountFailedException(e.getCause());
+		} catch (
+				TimeoutException e) {
 			LOG.warn("Mounting timed out.");
 		}
 		return mount;
