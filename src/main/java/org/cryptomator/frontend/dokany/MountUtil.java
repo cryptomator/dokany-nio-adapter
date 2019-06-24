@@ -14,9 +14,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dokany.java.constants.DokanOption.*;
 
@@ -61,11 +62,34 @@ public class MountUtil {
 
 	public static class MountOptions {
 
-		private final Map<String, Integer> generalOptions = new HashMap<>();
-		private final EnumIntegerSet<DokanOption> dokanOptions = new EnumIntegerSet<>(DokanOption.class);
+		private final Optional<Short> threadCount;
+		private final Optional<Integer> allocationUnitSize;
+		private final Optional<Integer> sectorSize;
+		private final Optional<Integer> timeout;
+		private final EnumIntegerSet<DokanOption> dokanOptions;
 
-		public Map<String, Integer> getGeneralOptions() {
-			return generalOptions;
+		private MountOptions(Optional<Short> threadCount, Optional<Integer> allocationUnitSize, Optional<Integer> sectorSize, Optional<Integer> timeout, EnumIntegerSet<DokanOption> dokanOptions) {
+			this.threadCount = threadCount;
+			this.allocationUnitSize = allocationUnitSize;
+			this.sectorSize = sectorSize;
+			this.timeout = timeout;
+			this.dokanOptions = dokanOptions;
+		}
+
+		public Optional<Short> getThreadCount() {
+			return threadCount;
+		}
+
+		public Optional<Integer> getAllocationUnitSize() {
+			return allocationUnitSize;
+		}
+
+		public Optional<Integer> getSectorSize() {
+			return sectorSize;
+		}
+
+		public Optional<Integer> getTimeout() {
+			return timeout;
 		}
 
 		public EnumIntegerSet<DokanOption> getDokanOptions() {
@@ -73,8 +97,50 @@ public class MountUtil {
 		}
 	}
 
+	public static class MountOptionsBuilder {
 
-	public static MountOptions parseOrDefault(String argsString) throws ParseException, IllegalArgumentException {
+		private Optional<Short> threadCount = Optional.empty();
+		private Optional<Integer> allocationUnitSize = Optional.empty();
+		private Optional<Integer> sectorSize = Optional.empty();
+		private Optional<Integer> timeout = Optional.empty();
+		private EnumIntegerSet<DokanOption> dokanOptions = new EnumIntegerSet<>(DokanOption.class);
+
+		public MountOptionsBuilder() {
+		}
+
+		public MountOptionsBuilder addThreadCount(short num) {
+			this.threadCount = Optional.ofNullable(num);
+			return this;
+		}
+
+		public MountOptionsBuilder addAllocationSizeUnit(int bytes) {
+			this.allocationUnitSize = Optional.ofNullable(bytes);
+			return this;
+		}
+
+		public MountOptionsBuilder addSectorSize(int bytes) {
+			this.sectorSize = Optional.ofNullable(bytes);
+			return this;
+		}
+
+		public MountOptionsBuilder addTimeout(int milliseconds) {
+			this.timeout = Optional.ofNullable(milliseconds);
+			return this;
+		}
+
+		public MountOptionsBuilder addDokanOptions(Collection<DokanOption> other) {
+			this.dokanOptions.addAll(other);
+			return this;
+		}
+
+		public MountOptions build() {
+			return new MountOptions(threadCount, allocationUnitSize, sectorSize, timeout, dokanOptions);
+		}
+
+	}
+
+
+	public static MountOptions parse(String argsString) throws ParseException, IllegalArgumentException {
 		CommandLineParser parser = new DefaultParser();
 
 		if (argsString.contains("\\") && argsString.contains("-")) {
@@ -88,28 +154,33 @@ public class MountUtil {
 			throw new IllegalArgumentException("Unrecognized options:" + cmd.getArgList().toString());
 		}
 
-		MountOptions mountOptions = new MountOptions();
+		MountOptionsBuilder builder = new MountOptionsBuilder();
 		if (cmd.hasOption("t")) {
-			mountOptions.getGeneralOptions().put("threadCount", Integer.parseInt(cmd.getOptionValue("t")));
+			try {
+				builder.addThreadCount(Short.parseShort(cmd.getOptionValue("t")));
+			} catch (NumberFormatException e) {
+				throw new IllegalArgumentException("The maximum allowed number of threads is 65.535.", e);
+			}
 		}
 		if (cmd.hasOption("aus")) {
-			mountOptions.getGeneralOptions().put("allocationUnitSize", Integer.parseInt(cmd.getOptionValue("aus")));
+			builder.addAllocationSizeUnit(Integer.parseInt(cmd.getOptionValue("aus")));
 		}
 		if (cmd.hasOption("ss")) {
-			mountOptions.getGeneralOptions().put("sectorSize", Integer.parseInt(cmd.getOptionValue("ss")));
+			builder.addSectorSize(Integer.parseInt(cmd.getOptionValue("ss")));
 		}
 		if (cmd.hasOption("to")) {
-			mountOptions.getGeneralOptions().put("timeout", Integer.parseInt(cmd.getOptionValue("to")));
+			builder.addTimeout(Integer.parseInt(cmd.getOptionValue("to")));
 		}
 		if (cmd.hasOption("op")) {
-			Arrays.stream(cmd.getOptionValues("op"))
-					.filter(s -> !s.isEmpty())
-					.map(String::trim)
-					.map(MountUtil::convertAndCheck)
-					.forEach(mountOptions.getDokanOptions()::add);
+			builder.addDokanOptions(
+					Arrays.stream(cmd.getOptionValues("op"))
+							.filter(s -> !s.isEmpty())
+							.map(String::trim)
+							.map(MountUtil::convertAndCheck)
+							.collect(Collectors.toList()));
 
 		}
-		return mountOptions;
+		return builder.build();
 	}
 
 	private static DokanOption convertAndCheck(String s) {
