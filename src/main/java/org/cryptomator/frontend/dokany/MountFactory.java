@@ -86,15 +86,7 @@ public class MountFactory {
 
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws MountFailedException {
 		Path absMountPoint = mountPoint.toAbsolutePath();
-		//Very ugly
-		MountUtil.MountOptions options = null;
-		try {
-			options = MountUtil.parse(additionalOptions);
-		} catch (IllegalArgumentException | ParseException e) {
-			LOG.warn("Error while parsing additional arguments. Abort mount...");
-			throw new MountFailedException(e);
-		}
-
+		MountUtil.MountOptions options = parseMountOptions(additionalOptions);
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
 				options.getThreadCount().orElse(THREAD_COUNT),
 				options.getDokanOptions(),
@@ -126,6 +118,14 @@ public class MountFactory {
 			LOG.warn("Mounting timed out.");
 		}
 		return mount;
+	}
+
+	private MountUtil.MountOptions parseMountOptions(String options) throws MountFailedException {
+		try {
+			return MountUtil.parse(options);
+		} catch (IllegalArgumentException | ParseException e) {
+			throw new MountFailedException(e);
+		}
 	}
 
 	public static boolean isApplicable() {
