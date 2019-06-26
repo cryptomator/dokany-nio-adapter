@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
@@ -345,6 +347,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
 			LOG.trace("({}) Data successful read from {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
+		} catch (NonReadableChannelException e){
+			LOG.trace("({}) readFile(): File {} not opened for reading.",dokanyFileInfo.Context, path);
+			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
 			LOG.debug("({}) readFile(): IO error while reading file {}.", dokanyFileInfo.Context, path);
 			LOG.debug("Error is:", e);
@@ -398,6 +403,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 			LOG.trace("({}) Data successful written to {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
+		} catch (NonWritableChannelException e){
+			LOG.trace("({}) File {} not opened for writing.", dokanyFileInfo.Context, path);
+			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
 			LOG.debug("({}) writeFile(): IO Error while writing to {}.", dokanyFileInfo.Context, path);
 			LOG.debug("Error is:", e);
