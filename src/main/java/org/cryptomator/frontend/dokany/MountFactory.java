@@ -49,7 +49,7 @@ public class MountFactory {
 	}
 
 	/**
-	 * Mounts a drive with the given drive letter containing contents of the given path.
+	 * Mounts a virtual drive at the given mount point containing contents of the given path.
 	 * This method blocks until the mount succeeds or times out.
 	 *
 	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
@@ -84,6 +84,18 @@ public class MountFactory {
 		return mount;
 	}
 
+	/**
+	 * Mounts a virtual drive at the given mount point containing contents of the given path.
+	 * This method blocks until the mount succeeds or times out.
+	 *
+	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
+	 * @param mountPoint The mount point of the mounted drive. Can be an empty directory or a drive letter.
+	 * @param volumeName The name of the drive as shown to the user.
+	 * @param fileSystemName The technical file system name shown in the drive properties window.
+	 * @param additionalOptions String of additional options to overwrite default values. See {@link MountUtil} for details.
+	 * @return The mount object.
+	 * @throws MountFailedException if the mount process is aborted due to errors
+	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws MountFailedException {
 		Path absMountPoint = mountPoint.toAbsolutePath();
 		MountUtil.MountOptions options = parseMountOptions(additionalOptions);
