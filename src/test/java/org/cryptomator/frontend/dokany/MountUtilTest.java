@@ -25,19 +25,19 @@ public class MountUtilTest {
 
 	@Test
 	void testWindowsStyle() {
-		String optionsString = "\\t 10 \\aus 1024";
+		String optionsString = "/t 10 /aus 1024";
 		Assertions.assertDoesNotThrow(() -> MountUtil.parse(optionsString));
 	}
 
 	@Test
 	void testMixingWindowsAndPosixFails() {
-		String optionsString = "-t 10 \\aus 1024";
+		String optionsString = "-t 10 /aus 1024";
 		Assertions.assertThrows(IllegalArgumentException.class, () -> MountUtil.parse(optionsString));
 	}
 
 	@Test
 	void testMixingWindowsAndGnuFails() {
-		String optionsString = "--thread-count 10 \\aus 1024";
+		String optionsString = "--thread-count 10 /aus 1024";
 		Assertions.assertThrows(IllegalArgumentException.class, () -> MountUtil.parse(optionsString));
 	}
 

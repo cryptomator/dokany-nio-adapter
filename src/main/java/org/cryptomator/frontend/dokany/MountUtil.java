@@ -24,7 +24,7 @@ import static com.dokany.java.constants.DokanOption.*;
 /**
  * Utility class for processing a string of mount options.
  * <p>
- * Each option starts with an "-" (POSIX-style), "\" (DOS-style) or "--" (GNU-style), but the styles must not be mixed. Different options must be separated with at least one whitespace.
+ * Each option starts with an "-" (POSIX-style), "/" (DOS-style) or "--" (GNU-style), but the styles must not be mixed. Different options must be separated with at least one whitespace.
  * Available options are (DOS/POSIX option (GNU-long-option) -- Description):
  * <li>
  * <item>t (thread-count) -- Number of threads to be used by Dokan library internally. More threads will handle more events at the same time. </item>
@@ -143,11 +143,11 @@ public class MountUtil {
 	public static MountOptions parse(String argsString) throws ParseException, IllegalArgumentException {
 		CommandLineParser parser = new DefaultParser();
 
-		if (argsString.contains("\\") && argsString.contains("-")) {
+		if (argsString.contains("/") && argsString.contains("-")) {
 			throw new IllegalArgumentException("DOS-style and POSIX-style must not be mixed.");
 		}
 
-		String[] args = argsString.replaceAll("\\\\", "-").split(" "); //possible since we don't have any option which muswt be enclosed by "
+		String[] args = argsString.replaceAll("/", "-").split(" "); //possible since we don't have any option which muswt be enclosed by "
 		CommandLine cmd = parser.parse(OPTIONS, args);
 
 		if (!cmd.getArgList().isEmpty()) {
@@ -200,7 +200,7 @@ public class MountUtil {
 	public static String info() {
 		List<String> description = new ArrayList<>();
 		POSSIBLY_SUPPORTED_DOKAN_OPTIONS.forEach(op -> description.add(op.name() + " - " + op.getDescription() + "\n"));
-		String header = "Each option starts with an \"-\" (POSIX-style), \"\\\" (DOS-style) or \"--\" (GNU-style), but the styles must not be mixed. Different options must be separated with at least one whitespace.";
+		String header = "Each option starts with an \"-\" (POSIX-style), \"/\" (DOS-style) or \"--\" (GNU-style), but the styles must not be mixed. Different options must be separated with at least one whitespace.";
 		String syntax = "[-t INT] [-aus INT] [-ss INT] [-to INT] [-options OPTION1,OPTION2,...]";
 		HelpFormatter help = new HelpFormatter();
 		StringWriter writer = new StringWriter();
