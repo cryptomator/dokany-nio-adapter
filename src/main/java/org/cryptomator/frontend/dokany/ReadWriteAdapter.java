@@ -92,7 +92,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_BAD_PATHNAME.getMask();
 		}
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
-		LOG.trace("zwCreateFile() is called for {} with CreationDisposition {}.", path, creationDisposition.name());
+		EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
+		EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, AccessMask.values());
+		EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccessMask.values());
+		EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
+		LOG.debug("zwCreateFile(): File {} is opened with the following flags:\n\t Creation disposition -- {}\n\t Create options -- {}\n\t Access masks -- {}\n\t File access masks -- {}\n\t File attributes -- {}",path, creationDisposition, createOptions, accessMasks, fileAccessMasks, fileAttributes);
 
 		Optional<BasicFileAttributes> attr;
 		try {
@@ -104,7 +108,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		}
 
 		//is the file a directory and if yes, indicated as one?
-		EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
 		if (attr.isPresent() && attr.get().isDirectory()) {
 			if ((rawCreateOptions & CreateOptions.FILE_NON_DIRECTORY_FILE.getMask()) == 0) {
 				dokanyFileInfo.IsDirectory = 0x01;
@@ -122,9 +125,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (dokanyFileInfo.isDirectory()) {
 				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
-				EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, AccessMask.values());
-				EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccessMask.values());
-				EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
 				Set<OpenOption> openOptions = FileUtil.buildOpenOptions(accessMasks, fileAccessMasks, fileAttributes, createOptions, creationDisposition, dokanyFileInfo.writeToEndOfFile(), attr.isPresent());
 				return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 			}
