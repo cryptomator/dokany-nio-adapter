@@ -3,6 +3,7 @@ package com.dokany.java;
 import java.util.Arrays;
 import java.util.List;
 
+import com.dokany.java.constants.DokanOption;
 import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.constants.NtStatus;
 import com.dokany.java.structure.ByHandleFileInfo;
@@ -448,7 +449,7 @@ public class DokanyOperations extends Structure {
 
 	/**
 	 *
-	 * Lock file at a specific offset and data length. This is only used if {@link com.dokany.java.constants.MountOption#FILELOCK_USER_MODE} is enabled.
+	 * Lock file at a specific offset and data length. This is only used if {@link DokanOption#FILELOCK_USER_MODE} is enabled.
 	 */
 	@FunctionalInterface
 	interface LockFile extends Callback {
@@ -469,7 +470,7 @@ public class DokanyOperations extends Structure {
 
 	/**
 	 *
-	 * Unlock file at a specific offset and data length. This is only used if {@link com.dokany.java.constants.MountOption#FILELOCK_USER_MODE} is enabled.
+	 * Unlock file at a specific offset and data length. This is only used if {@link DokanOption#FILELOCK_USER_MODE} is enabled.
 	 */
 	@FunctionalInterface
 	interface UnlockFile extends Callback {
@@ -645,7 +646,7 @@ public class DokanyOperations extends Structure {
 
 	/**
 	 *
-	 * Retrieve all NTFS Streams informations on the file. This is only called if {@link com.dokany.java.constants.MountOption#ALT_STREAM} is enabled.
+	 * Retrieve all NTFS Streams informations on the file. This is only called if {@link DokanOption#ALT_STREAM} is enabled.
 	 */
 	@FunctionalInterface
 	interface FindStreams extends Callback {

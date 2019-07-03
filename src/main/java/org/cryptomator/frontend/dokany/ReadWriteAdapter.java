@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
@@ -92,7 +94,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_BAD_PATHNAME.getMask();
 		}
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
-		LOG.trace("zwCreateFile() is called for {} with CreationDisposition {}.", path, creationDisposition.name());
 
 		Optional<BasicFileAttributes> attr;
 		try {
@@ -104,7 +105,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		}
 
 		//is the file a directory and if yes, indicated as one?
-		EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
 		if (attr.isPresent() && attr.get().isDirectory()) {
 			if ((rawCreateOptions & CreateOptions.FILE_NON_DIRECTORY_FILE.getMask()) == 0) {
 				dokanyFileInfo.IsDirectory = 0x01;
@@ -122,6 +122,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (dokanyFileInfo.isDirectory()) {
 				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
+				EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
 				EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, AccessMask.values());
 				EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccessMask.values());
 				EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
@@ -165,8 +166,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_DIRECTORY.getMask();
 		} else {
 			// we open the directory in some kinda way
-			setFileAttributes(path, rawFileAttributes);
 			try {
+				setFileAttributes(path, rawFileAttributes);
 				dokanyFileInfo.Context = fac.openDir(path);
 				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
 			} catch (NoSuchFileException e) {
@@ -345,6 +346,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			rawReadLength.setValue(handle.read(rawBuffer, rawBufferLength, rawOffset));
 			LOG.trace("({}) Data successful read from {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
+		} catch (NonReadableChannelException e) {
+			LOG.trace("({}) readFile(): File {} not opened for reading.", dokanyFileInfo.Context, path);
+			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
 			LOG.debug("({}) readFile(): IO error while reading file {}.", dokanyFileInfo.Context, path);
 			LOG.debug("Error is:", e);
@@ -398,6 +402,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			}
 			LOG.trace("({}) Data successful written to {}.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
+		} catch (NonWritableChannelException e) {
+			LOG.trace("({}) File {} not opened for writing.", dokanyFileInfo.Context, path);
+			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
 			LOG.debug("({}) writeFile(): IO Error while writing to {}.", dokanyFileInfo.Context, path);
 			LOG.debug("Error is:", e);
@@ -460,7 +467,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) File Information successful read from {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (NoSuchFileException e) {
-				LOG.debug("({}) Resource {} not found.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) Resource {} not found.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
 				LOG.debug("({}) getFileInformation(): IO error occurred reading meta data from {}.", dokanyFileInfo.Context, path);
@@ -525,8 +532,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.error("({}) findFiles(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
-				LOG.error("(" + dokanyFileInfo.Context + ") findFiles(): Message and Stacktrace.", e);
+				LOG.debug("({}) findFiles(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
+				LOG.debug("(" + dokanyFileInfo.Context + ") findFiles(): Message and Stacktrace.", e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
@@ -610,50 +617,45 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} else {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 				 DataLock dataLock = pathLock.lockDataForWriting()) {
-				return setFileAttributes(path, rawAttributes);
+				setFileAttributes(path, rawAttributes);
+				return Win32ErrorCode.ERROR_SUCCESS.getMask();
+			} catch (NoSuchFileException e) {
+				LOG.trace("({}) setFileAttributes(): File {} not found.", dokanyFileInfo.Context, path);
+				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
+			} catch (IOException e) {
+				LOG.debug("({}) setFileAttributes(): IOException occurred during operation on {}.", dokanyFileInfo.Context, path);
+				LOG.debug("setFileAttributes(): Stacktrace", e);
+				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
 	}
 
-	//TODO: this method should return Java Things, not Windows 32 error codes!
-	private int setFileAttributes(Path path, int rawAttributes) {
-		if (Files.notExists(path)) {
-			return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
-		} else {
-			DosFileAttributeView attrView = Files.getFileAttributeView(path, DosFileAttributeView.class);
-			try {
-				EnumIntegerSet<FileAttribute> attrsToUnset = DokanyUtils.enumSetFromInt(Integer.MAX_VALUE, FileUtil.supportedAttributeValuesToSet);
-				EnumIntegerSet<FileAttribute> attrsToSet = DokanyUtils.enumSetFromInt(rawAttributes, FileAttribute.values());
-				if (rawAttributes == 0) {
-					// case FileAttributes == 0 :
-					// MS-FSCC 2.6 File Attributes : There is no file attribute with the value 0x00000000
-					// because a value of 0x00000000 in the FileAttributes field means that the file attributes for this file MUST NOT be changed when setting basic information for the file
-					//do nuthin'
-					return Win32ErrorCode.ERROR_SUCCESS.getMask();
-				} else if ((rawAttributes & FileAttribute.NORMAL.getMask()) != 0 && (rawAttributes - FileAttribute.NORMAL.getMask() == 0)) {
-					//contains only the NORMAL attribute
-					//removes all removable fields
-					for (FileAttribute attr : attrsToUnset) {
-						FileUtil.setAttribute(attrView, attr, false);
-					}
-				} else {
-					attrsToSet.remove(FileAttribute.NORMAL);
-					for (FileAttribute attr : attrsToSet) {
-						FileUtil.setAttribute(attrView, attr, true);
-						attrsToUnset.remove(attr);
-					}
-
-					for (FileAttribute attr : attrsToUnset) {
-						FileUtil.setAttribute(attrView, attr, false);
-					}
-
-				}
-				return Win32ErrorCode.ERROR_SUCCESS.getMask();
-			} catch (IOException e) {
-				LOG.trace("setFileAttributes(): Failed for file {} due to IOException.", path);
-				LOG.trace("setFileAttributes():Cause", e);
-				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
+	private void setFileAttributes(Path path, int rawAttributes) throws IOException {
+		DosFileAttributeView attrView = Files.getFileAttributeView(path, DosFileAttributeView.class);
+		EnumIntegerSet<FileAttribute> attrsToUnset = DokanyUtils.enumSetFromInt(Integer.MAX_VALUE, FileUtil.supportedAttributeValuesToSet);
+		EnumIntegerSet<FileAttribute> attrsToSet = DokanyUtils.enumSetFromInt(rawAttributes, FileAttribute.values());
+		if (rawAttributes == 0) {
+			// case FileAttributes == 0 :
+			// MS-FSCC 2.6 File Attributes : There is no file attribute with the value 0x00000000
+			// because a value of 0x00000000 in the FileAttributes field means that the file attributes for this file MUST NOT be changed when setting basic information for the file
+			// NO-OP
+		} else if ((rawAttributes & FileAttribute.NORMAL.getMask()) != 0 && (rawAttributes - FileAttribute.NORMAL.getMask() == 0)) {
+			//contains only the NORMAL attribute
+			//removes all removable fields
+			for (FileAttribute attr : attrsToUnset) {
+				FileUtil.setAttribute(attrView, attr, false);
 			}
+		} else {
+			attrsToSet.remove(FileAttribute.NORMAL);
+			for (FileAttribute attr : attrsToSet) {
+				FileUtil.setAttribute(attrView, attr, true);
+				attrsToUnset.remove(attr);
+			}
+
+			for (FileAttribute attr : attrsToUnset) {
+				FileUtil.setAttribute(attrView, attr, false);
+			}
+
 		}
 	}
 
@@ -674,7 +676,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (NoSuchFileException e) {
-				LOG.debug("({}) File {} not found.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) File {} not found.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
 				LOG.debug("({}) setFileTime(): IO error occurred accessing {}.", dokanyFileInfo.Context, path);

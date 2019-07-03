@@ -3,10 +3,9 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.DokanyDriver;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.constants.FileSystemFeature;
-import com.dokany.java.constants.MountOption;
+import com.dokany.java.constants.DokanOption;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
-import com.dokany.java.structure.FreeSpace;
 import com.dokany.java.structure.VolumeInformation;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 
@@ -28,8 +27,8 @@ public class MirrorReadOnlyThread implements Runnable {
 		this.dirToMirror = dirToMirror;
 
 		final short threadCount = 1;
-		EnumIntegerSet mountOptions = new EnumIntegerSet<>(MountOption.class);
-		mountOptions.add(MountOption.DEBUG_MODE, MountOption.STD_ERR_OUTPUT, MountOption.MOUNT_MANAGER);
+		EnumIntegerSet mountOptions = new EnumIntegerSet<>(DokanOption.class);
+		mountOptions.add(DokanOption.DEBUG_MODE, DokanOption.STD_ERR_OUTPUT, DokanOption.MOUNT_MANAGER);
 		String uncName = "";
 		int timeout = 10000;
 		int allocationUnitSize = 4096;
