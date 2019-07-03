@@ -39,7 +39,7 @@ public class MountUtil {
 	private static final Options OPTIONS = new Options();
 
 	static {
-		OPTIONS.addOption("t", "threadCount", true, "Number of threads to be used by Dokan library internally. More threads will handle more events at the same time.");
+		OPTIONS.addOption("t", "thread-count", true, "Number of threads to be used by Dokan library internally. More threads will handle more events at the same time.");
 		OPTIONS.addOption("aus", "allocation-unit-size", true, "Allocation Unit Size of the volume. This will affect the file size.");
 		OPTIONS.addOption("ss", "sector-size", true, "Sector Size of the volume. This will affect the file size.");
 		OPTIONS.addOption("to", "timeout", true, "Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.");
