@@ -85,7 +85,8 @@ public class MountFactory {
 	}
 
 	/**
-	 * Mounts a virtual drive at the given mount point containing contents of the given path.
+	 * Mounts a virtual drive at the given mount point containing contents of the given path with the specified additional mount options.
+	 * If an additional mount option is not specified the default value is used.
 	 * This method blocks until the mount succeeds or times out.
 	 *
 	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
