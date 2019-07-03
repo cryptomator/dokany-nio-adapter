@@ -24,28 +24,33 @@ import static com.dokany.java.constants.DokanOption.*;
 /**
  * Utility class for processing a string of mount options.
  * <p>
- * Each option starts with an "-" (POSIX-style), "/" (DOS-style) or "--" (GNU-style), but the styles must not be mixed. Different options must be separated with at least one whitespace.
- * Available options are (DOS/POSIX option (GNU-long-option) -- Description):
+ * Each option "--" (GNU-style). Different options must be separated with at least one whitespace.
+ * Available options are: (GNU-long-option -- Description)
  * <li>
- * <item>t (thread-count) -- Number of threads to be used by Dokan library internally. More threads will handle more events at the same time. </item>
- * <item>aus (allocation-unit-size -- Allocation Unit Size of the volume. This will affect the file size.</item>
- * <item>ss (sector-size) -- Sector Size of the volume. This will affect the file size.</item>
- * <item>to (timeout) -- Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.</item>
- * <item>op (options) -- Features enabled for the mount. Supported are DEBUG_MODE, STD_ERR_OUTPUT, MOUNT_MANAGER, CURRENT_SESSION, REMOVABLE_DRIVE and WRITE_PROTECTION. For their description look at the dokany documentation. </item>
+ * <item>thread-count -- Number of threads to be used by Dokan library internally. More threads will handle more events at the same time. </item>
+ * <item>allocation-unit-size -- Allocation Unit Size of the volume. This will affect the file size.</item>
+ * <item>sector-size -- Sector Size of the volume. This will affect the file size.</item>
+ * <item>timeout -- Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.</item>
+ * <item>options -- Features enabled for the mount. Supported are DEBUG_MODE, STD_ERR_OUTPUT, MOUNT_MANAGER, CURRENT_SESSION, REMOVABLE_DRIVE and WRITE_PROTECTION. For their description look at the dokany documentation. </item>
  * </li>
  */
 public class MountUtil {
 
 	private static final Options OPTIONS = new Options();
+	private static final String threadCountName = "thread-count";
+	private static final String allocationUnitSizeString = "allocation-unit-size";
+	private static final String sectorSizeName = "sector-size";
+	private static final String timeoutName = "timeout";
+	private static final String optionsName = "options";
 
 	static {
-		OPTIONS.addOption("t", "thread-count", true, "Number of threads to be used by Dokan library internally. More threads will handle more events at the same time.");
-		OPTIONS.addOption("aus", "allocation-unit-size", true, "Allocation Unit Size of the volume. This will affect the file size.");
-		OPTIONS.addOption("ss", "sector-size", true, "Sector Size of the volume. This will affect the file size.");
-		OPTIONS.addOption("to", "timeout", true, "Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.");
-		OPTIONS.addOption(Option.builder("op")
+		OPTIONS.addOption(null, threadCountName, true, "Number of threads to be used by Dokan library internally. More threads will handle more events at the same time.");
+		OPTIONS.addOption(null, allocationUnitSizeString, true, "Allocation Unit Size of the volume. This will affect the file size.");
+		OPTIONS.addOption(null, sectorSizeName, true, "Sector Size of the volume. This will affect the file size.");
+		OPTIONS.addOption(null, timeoutName, true, "Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.");
+		OPTIONS.addOption(Option.builder()
 				.argName("arg1,arg2,...")
-				.longOpt("options")
+				.longOpt(optionsName)
 				.hasArgs()
 				.valueSeparator(',')
 				.desc("Features enabled for the mount")
@@ -143,11 +148,7 @@ public class MountUtil {
 	public static MountOptions parse(String argsString) throws ParseException, IllegalArgumentException {
 		CommandLineParser parser = new DefaultParser();
 
-		if (argsString.contains("/") && argsString.contains("-")) {
-			throw new IllegalArgumentException("DOS-style and POSIX-style must not be mixed.");
-		}
-
-		String[] args = argsString.replaceAll("/", "-").split(" "); //possible since we don't have any option which muswt be enclosed by "
+		String[] args = argsString.split(" "); //possible since we don't have any option which muswt be enclosed by "
 		CommandLine cmd = parser.parse(OPTIONS, args);
 
 		if (!cmd.getArgList().isEmpty()) {
@@ -155,25 +156,25 @@ public class MountUtil {
 		}
 
 		MountOptionsBuilder builder = new MountOptionsBuilder();
-		if (cmd.hasOption("t")) {
+		if (cmd.hasOption(threadCountName)) {
 			try {
-				builder.addThreadCount(Short.parseShort(cmd.getOptionValue("t")));
+				builder.addThreadCount(Short.parseShort(cmd.getOptionValue(threadCountName)));
 			} catch (NumberFormatException e) {
 				throw new IllegalArgumentException("The maximum allowed number of threads is 65.535.", e);
 			}
 		}
-		if (cmd.hasOption("aus")) {
-			builder.addAllocationSizeUnit(Integer.parseInt(cmd.getOptionValue("aus")));
+		if (cmd.hasOption(allocationUnitSizeString)) {
+			builder.addAllocationSizeUnit(Integer.parseInt(cmd.getOptionValue(allocationUnitSizeString)));
 		}
-		if (cmd.hasOption("ss")) {
-			builder.addSectorSize(Integer.parseInt(cmd.getOptionValue("ss")));
+		if (cmd.hasOption(sectorSizeName)) {
+			builder.addSectorSize(Integer.parseInt(cmd.getOptionValue(sectorSizeName)));
 		}
-		if (cmd.hasOption("to")) {
-			builder.addTimeout(Integer.parseInt(cmd.getOptionValue("to")));
+		if (cmd.hasOption(timeoutName)) {
+			builder.addTimeout(Integer.parseInt(cmd.getOptionValue(timeoutName)));
 		}
-		if (cmd.hasOption("op")) {
+		if (cmd.hasOption(optionsName)) {
 			builder.addDokanOptions(
-					Arrays.stream(cmd.getOptionValues("op"))
+					Arrays.stream(cmd.getOptionValues(optionsName))
 							.filter(s -> !s.isEmpty())
 							.map(String::trim)
 							.map(MountUtil::convertAndCheck)
@@ -200,8 +201,8 @@ public class MountUtil {
 	public static String info() {
 		List<String> description = new ArrayList<>();
 		POSSIBLY_SUPPORTED_DOKAN_OPTIONS.forEach(op -> description.add(op.name() + " - " + op.getDescription() + "\n"));
-		String header = "Each option starts with an \"-\" (POSIX-style), \"/\" (DOS-style) or \"--\" (GNU-style), but the styles must not be mixed. Different options must be separated with at least one whitespace.";
-		String syntax = "[-t INT] [-aus INT] [-ss INT] [-to INT] [-options OPTION1,OPTION2,...]";
+		String header = "Each option starts with \"--\" (GNU-style). Different options must be separated with at least one whitespace.";
+		String syntax = "[--thread-count INT] [--allocation-unit-size INT] [--sector-size INT] [--timeout INT] [--options OPTION1,OPTION2,...]";
 		HelpFormatter help = new HelpFormatter();
 		StringWriter writer = new StringWriter();
 		help.printHelp(new PrintWriter(writer), 60, syntax, header, OPTIONS, 3, 3, "");

@@ -18,36 +18,6 @@ public class MountUtilTest {
 	}
 
 	@Test
-	void testPosixStyle() {
-		String optionsString = "-t 10 -aus 1024";
-		Assertions.assertDoesNotThrow(() -> MountUtil.parse(optionsString));
-	}
-
-	@Test
-	void testWindowsStyle() {
-		String optionsString = "/t 10 /aus 1024";
-		Assertions.assertDoesNotThrow(() -> MountUtil.parse(optionsString));
-	}
-
-	@Test
-	void testMixingWindowsAndPosixFails() {
-		String optionsString = "-t 10 /aus 1024";
-		Assertions.assertThrows(IllegalArgumentException.class, () -> MountUtil.parse(optionsString));
-	}
-
-	@Test
-	void testMixingWindowsAndGnuFails() {
-		String optionsString = "--thread-count 10 /aus 1024";
-		Assertions.assertThrows(IllegalArgumentException.class, () -> MountUtil.parse(optionsString));
-	}
-
-	@Test
-	void testMixingPosixAndGnuStyle() {
-		String optionsString = "-t 10 --allocation-unit-size 1024";
-		Assertions.assertDoesNotThrow(() -> MountUtil.parse(optionsString));
-	}
-
-	@Test
 	void testDokanOptionsParsing() {
 		String optionsString = "--options CURRENT_SESSION,DEBUG_MODE";
 		Assertions.assertDoesNotThrow(() -> MountUtil.parse(optionsString));
@@ -61,13 +31,13 @@ public class MountUtilTest {
 
 	@Test
 	void testThreadCountToBig() {
-		String optionsString = "-t 65.536";
+		String optionsString = "--thread-count 65.536";
 		Assertions.assertThrows(IllegalArgumentException.class, () -> MountUtil.parse(optionsString));
 	}
 
 	@Test
 	void testParsing() throws ParseException {
-		String optionsString = "-t 10 --sector-size 4096 --options CURRENT_SESSION,DEBUG_MODE";
+		String optionsString = "--thread-count 10 --sector-size 4096 --options CURRENT_SESSION,DEBUG_MODE";
 
 		MountOptions expected = new MountUtil.MountOptionsBuilder().addThreadCount((short) 10).addSectorSize(4096).addDokanOptions(new EnumIntegerSet<>(CURRENT_SESSION, DEBUG_MODE)).build();
 
@@ -76,6 +46,12 @@ public class MountUtilTest {
 		Assertions.assertEquals(actual.getThreadCount(), expected.getThreadCount());
 		Assertions.assertEquals(actual.getSectorSize(), expected.getSectorSize());
 		Assertions.assertEquals(actual.getTimeout(), expected.getTimeout());
+	}
+
+	@Test
+	void shortOptionDisabled() {
+		String optionsString = "-t 10 -to 1000 -ss 4096";
+		Assertions.assertThrows(ParseException.class, () -> MountUtil.parse(optionsString));
 	}
 
 }
