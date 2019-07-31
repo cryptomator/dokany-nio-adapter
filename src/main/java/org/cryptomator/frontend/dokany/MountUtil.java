@@ -24,14 +24,14 @@ import static com.dokany.java.constants.DokanOption.*;
 /**
  * Utility class for processing a string of mount options.
  * <p>
- * Each option "--" (GNU-style). Different options must be separated with at least one whitespace.
+ * Each option starts with "--" (GNU-style). Different options must be separated with at least one whitespace.
  * Available options are: (GNU-long-option -- Description)
  * <li>
  * <item>thread-count -- Number of threads to be used by Dokan library internally. More threads will handle more events at the same time. </item>
  * <item>allocation-unit-size -- Allocation Unit Size of the volume. This will affect the file size.</item>
  * <item>sector-size -- Sector Size of the volume. This will affect the file size.</item>
  * <item>timeout -- Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.</item>
- * <item>options -- Features enabled for the mount. Supported are DEBUG_MODE, STD_ERR_OUTPUT, MOUNT_MANAGER, CURRENT_SESSION, REMOVABLE_DRIVE and WRITE_PROTECTION. For their description look at the dokany documentation. </item>
+ * <item>options -- Features enabled for the mount given as a comma separated list without whitespaces. Supported features are DEBUG_MODE, STD_ERR_OUTPUT, MOUNT_MANAGER, CURRENT_SESSION, REMOVABLE_DRIVE and WRITE_PROTECTION. For their description see the Dokany API documentation. </item>
  * </li>
  */
 public class MountUtil {
