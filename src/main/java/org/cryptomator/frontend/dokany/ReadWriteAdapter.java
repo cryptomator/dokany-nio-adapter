@@ -94,6 +94,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_BAD_PATHNAME.getMask();
 		}
 		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
+		LOG.trace("zwCreateFile() is called for {}.", path);
 
 		Optional<BasicFileAttributes> attr;
 		try {
@@ -462,6 +463,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 				 DataLock dataLock = pathLock.lockDataForReading()) {
 				DosFileAttributes attr = Files.readAttributes(path, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+			    LOG.trace("({}) Filesize of {} is {}.",dokanyFileInfo.Context, path, attr.size());
 				FullFileInfo data = toFullFileInfo(path, attr);
 				data.copyTo(handleFileInfo);
 				LOG.trace("({}) File Information successful read from {}.", dokanyFileInfo.Context, path);
