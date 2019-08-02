@@ -55,12 +55,8 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long callback(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
-			IntByReference createDisposition = new IntByReference();
-			IntByReference desiredAccess = new IntByReference();
-			IntByReference fileAttributeFlags = new IntByReference();
-			NativeMethods.DokanMapKernelToUserCreateFileFlags(rawDesiredAccess, rawFileAttributes, rawCreateOptions, rawCreateDisposition, desiredAccess, fileAttributeFlags, createDisposition);
 			try {
-				int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, desiredAccess.getValue(), fileAttributeFlags.getValue(), rawShareAccess, createDisposition.getValue(), rawCreateOptions, dokanyFileInfo);
+				int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, rawDesiredAccess, rawFileAttributes, rawShareAccess, rawCreateDisposition, rawCreateOptions, dokanyFileInfo);
 				//little cheat for issue #24
 				if (win32ErrorCode == Win32ErrorCode.ERROR_INVALID_STATE.getMask()) {
 					return NtStatus.FILE_IS_A_DIRECTORY.getMask();
