@@ -93,8 +93,15 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} catch (InvalidPathException e) {
 			return Win32ErrorCode.ERROR_BAD_PATHNAME.getMask();
 		}
-		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreateDisposition);
+		int rawCreationDispostion = FileUtil.convertCreateDispositionToCreationDispostion(rawCreateDisposition);
+		int rawDesiredAccessWin32 = FileUtil.mapFileGenericAccessToGenericAccess(rawDesiredAccess);
 
+		EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
+		EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccessWin32, AccessMask.values());
+		EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccessWin32, FileAccessMask.values());
+		EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
+		CreationDisposition creationDisposition = CreationDisposition.fromInt(rawCreationDispostion);
+		LOG.trace("zwCreateFile() is called for {} with the following parameters:\n\tCreateDisposition -- {}\n\tcreateOptions -- {}\n\taccessMasks -- {}\n\tfileAccessMasks -- {}\n\tfileAttributes -- {}.", path, creationDisposition, createOptions, accessMasks, fileAttributes, fileAttributes);
 		Optional<BasicFileAttributes> attr;
 		try {
 			attr = Optional.of(Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS));
@@ -122,19 +129,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (dokanyFileInfo.isDirectory()) {
 				return createDirectory(path, creationDisposition, rawFileAttributes, dokanyFileInfo);
 			} else {
-				EnumIntegerSet<CreateOptions> createOptions = DokanyUtils.enumSetFromInt(rawCreateOptions, CreateOptions.values());
-				EnumIntegerSet<AccessMask> accessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, AccessMask.values());
-				EnumIntegerSet<FileAccessMask> fileAccessMasks = DokanyUtils.enumSetFromInt(rawDesiredAccess, FileAccessMask.values());
-				EnumIntegerSet<FileAttribute> fileAttributes = DokanyUtils.enumSetFromInt(rawFileAttributes, FileAttribute.values());
 				Set<OpenOption> openOptions = FileUtil.buildOpenOptions(accessMasks, fileAccessMasks, fileAttributes, createOptions, creationDisposition, dokanyFileInfo.writeToEndOfFile(), attr.isPresent());
 				return createFile(path, creationDisposition, openOptions, rawFileAttributes, dokanyFileInfo);
 			}
 		}
 	}
 
-	/**
-	 * @return
-	 */
 	private int createDirectory(Path path, CreationDisposition creationDisposition, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("Try to open {} as Directory.", path);
 		final int mask = creationDisposition.getMask();
@@ -462,6 +462,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 				 DataLock dataLock = pathLock.lockDataForReading()) {
 				DosFileAttributes attr = Files.readAttributes(path, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+				LOG.trace("({}) Filesize of {} is {}.", dokanyFileInfo.Context, path, attr.size());
 				FullFileInfo data = toFullFileInfo(path, attr);
 				data.copyTo(handleFileInfo);
 				LOG.trace("({}) File Information successful read from {}.", dokanyFileInfo.Context, path);
