@@ -25,8 +25,6 @@ import java.util.stream.IntStream;
 public class FileUtil {
 
 	public static final Instant WINDOWS_EPOCH_START = Instant.parse("1601-01-01T00:00:00Z");
-	public static final int SYNC_ALLOWED = AccessMask.SYNCHRONIZE.getMask() + AccessMask.GENERIC_ALL.getMask() + AccessMask.GENERIC_READ.getMask() + AccessMask.GENERIC_WRITE.getMask() + AccessMask.GENERIC_EXECUTE.getMask();
-	public static final int SYNC_REQUIRED = CreateOptions.FILE_SYNCHRONOUS_IO_ALERT.getMask() + CreateOptions.FILE_SYNCHRONOUS_IO_NONALERT.getMask() + CreateOptions.FILE_NO_INTERMEDIATE_BUFFERING.getMask() + CreateOptions.FILE_WRITE_THROUGH.getMask();
 
 	static final FileAttribute[] supportedAttributeValuesToSet = new FileAttribute[]{FileAttribute.HIDDEN, FileAttribute.READONLY, FileAttribute.SYSTEM, FileAttribute.ARCHIVE};
 
@@ -153,7 +151,7 @@ public class FileUtil {
 			openOptions.add(StandardOpenOption.READ);
 			openOptions.add(StandardOpenOption.WRITE);
 		}
-		if ((accessMasks.toInt() & SYNC_ALLOWED) != 0 && (createOptions.toInt() & SYNC_REQUIRED) != 0) {
+		if (createOptions.contains(CreateOptions.FILE_WRITE_THROUGH) || createOptions.contains(CreateOptions.FILE_NO_INTERMEDIATE_BUFFERING)) {
 			openOptions.add(StandardOpenOption.SYNC);
 		}
 		if (append) {
