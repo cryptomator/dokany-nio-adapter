@@ -61,7 +61,7 @@ public class MountFactory {
 	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws MountFailedException {
 		Path absMountPoint = mountPoint.toAbsolutePath();
-		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, DOKAN_OPTIONS, "\\?\\" + absMountPoint.toString(), TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, DOKAN_OPTIONS, UNC_NAME, TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		LockManager lockManager = new LockManager();
@@ -103,7 +103,7 @@ public class MountFactory {
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
 				options.getThreadCount().orElse(THREAD_COUNT),
 				options.getDokanOptions(),
-				"\\?\\" + absMountPoint.toString(),
+				UNC_NAME,
 				options.getTimeout().orElse(TIMEOUT),
 				options.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
 				options.getSectorSize().orElse(SECTOR_SIZE));
