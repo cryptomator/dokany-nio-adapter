@@ -59,18 +59,19 @@ public final class DokanyDriver {
 	 */
 	public void start() {
 		try {
-			int mountStatus = NativeMethods.DokanMain(deviceOptions, new DokanyOperationsProxy(fileSystem));
-
-			if (mountStatus < 0) {
-				throw new IllegalStateException(MountError.fromInt(mountStatus).getDescription());
-			}
-
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
 					shutdown();
 				}
 			});
+
+			int mountStatus = NativeMethods.DokanMain(deviceOptions, new DokanyOperationsProxy(fileSystem));
+
+			if (mountStatus < 0) {
+				throw new IllegalStateException(MountError.fromInt(mountStatus).getDescription());
+			}
+
 		} catch (UnsatisfiedLinkError err) {
 			LOG.error("Unable to find dokany driver.", err);
 			throw new LibraryNotFoundException(err.getMessage());
