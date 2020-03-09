@@ -160,7 +160,7 @@ public class FileUtil {
 			openOptions.add(StandardOpenOption.READ);
 			openOptions.add(StandardOpenOption.WRITE);
 		}
-		if (createOptions.contains(CreateOptions.FILE_WRITE_THROUGH) || createOptions.contains(CreateOptions.FILE_NO_INTERMEDIATE_BUFFERING)) {
+		if (createOptions.contains(CreateOptions.FILE_WRITE_THROUGH)) {
 			openOptions.add(StandardOpenOption.SYNC);
 		}
 		if (append) {
