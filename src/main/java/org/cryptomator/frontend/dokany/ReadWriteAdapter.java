@@ -154,8 +154,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				}
 			} catch (FileSystemException e) {
 				if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
-					LOG.warn("zwCreateFile(): Creation of {} failed, name too long.", path);
-					return Win32ErrorCode.ERROR_BUFFER_OVERFLOW.getMask();
+					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
+					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
 					LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
 					LOG.debug("zwCreateFile(): ", e);
@@ -253,8 +253,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (FileSystemException e) {
 				if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
-					LOG.warn("zwCreateFile(): Creation of {} failed, name too long.", path);
-					return Win32ErrorCode.ERROR_BUFFER_OVERFLOW.getMask();
+					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
+					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
 					LOG.debug("zwCreateFile(): IO error occured while opening handle to {}.", path);
 					LOG.debug("zwCreateFile(): ", e);
@@ -799,8 +799,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_DIR_NOT_EMPTY.getMask();
 			} catch (FileSystemException e) {
 				if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
-					LOG.warn("({}) Moving resource {} failed, name too long.", path);
-					return Win32ErrorCode.ERROR_BUFFER_OVERFLOW.getMask();
+					LOG.warn("({}) Moving resource {} failed, file name too long.", dokanyFileInfo.Context, path);
+					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
 					LOG.debug("({}) moveFile(): IO error while moving resource {}.", dokanyFileInfo.Context, path);
 					LOG.debug("moveFile(): ", e);
