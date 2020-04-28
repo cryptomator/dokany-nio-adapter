@@ -35,6 +35,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
@@ -150,6 +151,16 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					LOG.trace("Directory {} already exists.", path);
 					return Win32ErrorCode.ERROR_ALREADY_EXISTS.getMask();
 				}
+			} catch (FileSystemException e) {
+				final String reason = e.getReason().toLowerCase();
+				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
+					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
+					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
+				} else {
+					LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
+					LOG.debug("zwCreateFile(): ", e);
+					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
+				}
 			} catch (IOException e) {
 				//we dont know what the hell happened
 				LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
@@ -181,6 +192,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		}
 	}
+
 
 	private int createFile(Path path, CreationDisposition creationDisposition, Set<OpenOption> openOptions, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("Try to open {} as File.", path);
@@ -240,6 +252,16 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
 				LOG.trace("Cause:", e);
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
+			} catch (FileSystemException e) {
+				final String reason = e.getReason().toLowerCase();
+				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
+					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
+					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
+				} else {
+					LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
+					LOG.debug("zwCreateFile(): ", e);
+					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
+				}
 			} catch (IOException e) {
 				if (attr != null) {
 					LOG.debug("zwCreateFile(): IO error occurred during opening handle to {}.", path);
@@ -772,13 +794,23 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful moved resource {} to {}.", dokanyFileInfo.Context, path, newPath);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (FileAlreadyExistsException e) {
-				LOG.trace("({}) Ressource {} already exists at {}.", dokanyFileInfo.Context, path, newPath);
+				LOG.trace("({}) Resource {} already exists at {}.", dokanyFileInfo.Context, path, newPath);
 				return Win32ErrorCode.ERROR_FILE_EXISTS.getMask();
 			} catch (DirectoryNotEmptyException e) {
-				LOG.trace("({}) Target directoy {} is not emtpy.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) Target directory {} is not emtpy.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_DIR_NOT_EMPTY.getMask();
+			} catch (FileSystemException e) {
+				final String reason = e.getReason().toLowerCase();
+				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
+					LOG.warn("({}) Moving resource {} failed, file name too long.", dokanyFileInfo.Context, path);
+					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
+				} else {
+					LOG.debug("({}) moveFile(): IO error while moving resource {}.", dokanyFileInfo.Context, path);
+					LOG.debug("moveFile(): ", e);
+					return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
+				}
 			} catch (IOException e) {
-				LOG.debug("({}) moveFile(): IO error occured while moving ressource {}.", dokanyFileInfo.Context, path);
+				LOG.debug("({}) moveFile(): IO error while moving resource {}.", dokanyFileInfo.Context, path);
 				LOG.debug("moveFile(): ", e);
 				return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
 			}
@@ -935,5 +967,4 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		assert root.isAbsolute();
 		return root.resolve(relativeUnixPath);
 	}
-
 }
