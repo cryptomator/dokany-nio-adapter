@@ -15,7 +15,6 @@ import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.FullFileInfo;
 import com.dokany.java.structure.VolumeInformation;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Strings;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase;
@@ -153,7 +152,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					return Win32ErrorCode.ERROR_ALREADY_EXISTS.getMask();
 				}
 			} catch (FileSystemException e) {
-				if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
+				final String reason = e.getReason().toLowerCase();
+				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
 					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
 					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
@@ -192,6 +192,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		}
 	}
+
 
 	private int createFile(Path path, CreationDisposition creationDisposition, Set<OpenOption> openOptions, int rawFileAttributes, DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("Try to open {} as File.", path);
@@ -252,11 +253,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("Cause:", e);
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (FileSystemException e) {
-				if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
+				final String reason = e.getReason().toLowerCase();
+				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
 					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
 					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
-					LOG.debug("zwCreateFile(): IO error occured while opening handle to {}.", path);
+					LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
 					LOG.debug("zwCreateFile(): ", e);
 					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
 				}
@@ -798,7 +800,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Target directory {} is not emtpy.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_DIR_NOT_EMPTY.getMask();
 			} catch (FileSystemException e) {
-				if (Strings.nullToEmpty(e.getReason()).contains("path too long")) {
+				final String reason = e.getReason().toLowerCase();
+				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
 					LOG.warn("({}) Moving resource {} failed, file name too long.", dokanyFileInfo.Context, path);
 					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
@@ -964,5 +967,4 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		assert root.isAbsolute();
 		return root.resolve(relativeUnixPath);
 	}
-
 }
