@@ -153,18 +153,16 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				}
 			} catch (FileSystemException e) {
 				final String reason = e.getReason().toLowerCase();
-				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
-					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
+				if (reason.contains("too long")) {
+					LOG.debug("zwCreateFile(): Creation of {} failed, file name too long.", path);
 					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
-					LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
-					LOG.debug("zwCreateFile(): ", e);
+					LOG.warn("zwCreateFile(): File system reported an exception during the creation of {}.\n{}", path, e);
 					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
 				}
 			} catch (IOException e) {
 				//we dont know what the hell happened
-				LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
-				LOG.debug("zwCreateFile(): ", e);
+				LOG.warn("zwCreateFile(): IO error occured during the creation of {}.\n{}", path, e);
 				return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
 			}
 		}
@@ -185,8 +183,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("{} not found.", path);
 				return Win32ErrorCode.ERROR_PATH_NOT_FOUND.getMask();
 			} catch (IOException e) {
-				LOG.debug("zwCreateFile(): IO error occurred during opening handle to {}.", path);
-				LOG.debug("zwCreateFile(): ", e);
+				LOG.warn("zwCreateFile(): IO error occurred during opening handle to {}.\n{}", path, e);
 				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
 			}
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
@@ -203,27 +200,13 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} catch (IOException e) {
 			LOG.trace("Could not read file attributes.");
 		}
-		//we want to create a file
-		//system or hidden file?
-		if (attr != null
-				&&
-				(mask == CreationDisposition.TRUNCATE_EXISTING.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask())
-				&&
-				(
-						((rawFileAttributes & FileAttribute.HIDDEN.getMask()) == 0 && attr.isHidden())
-								||
-								((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem())
-				)
-		) {
+
+		if (attr != null && (mask == CreationDisposition.TRUNCATE_EXISTING.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) && (((rawFileAttributes & FileAttribute.HIDDEN.getMask()) == 0 && attr.isHidden()) || ((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem()))) {
 			//cannot overwrite hidden or system file
 			LOG.trace("{} is hidden or system file. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
-		}
-		//read-only?
-		else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0))
-				&& dokanyFileInfo.DeleteOnClose != 0
-		) {
-			//cannot overwrite file
+		} else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0)) && dokanyFileInfo.DeleteOnClose != 0) {
+			//cannot overwrite read-only file
 			LOG.trace("{} is readonly. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_FILE_READ_ONLY.getMask();
 		} else {
@@ -234,14 +217,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					setFileAttributes(path, rawFileAttributes);
 				}
 				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
-				//required by contract
-				Win32ErrorCode returnCode;
 				if (attr != null && (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask())) {
-					returnCode = Win32ErrorCode.ERROR_ALREADY_EXISTS;
+					//required by contract
+					return Win32ErrorCode.ERROR_ALREADY_EXISTS.getMask();
 				} else {
-					returnCode = Win32ErrorCode.ERROR_SUCCESS;
+					return Win32ErrorCode.ERROR_SUCCESS.getMask();
 				}
-				return returnCode.getMask();
 			} catch (FileAlreadyExistsException e) {
 				LOG.trace("File {} already exists.", path);
 				return Win32ErrorCode.ERROR_FILE_EXISTS.getMask();
@@ -250,35 +231,24 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (AccessDeniedException e) {
 				LOG.trace("zwCreateFile(): Access to file {} was denied.", path);
-				LOG.trace("Cause:", e);
 				return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 			} catch (FileSystemException e) {
 				final String reason = e.getReason().toLowerCase();
-				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
-					LOG.warn("zwCreateFile(): Creation of {} failed, file name too long.", path);
+				if (reason.contains("too long")) {
+					LOG.debug("zwCreateFile(): Creation of {} failed, file name too long.", path);
 					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
-					LOG.debug("zwCreateFile(): IO error occured during the creation of {}.", path);
-					LOG.debug("zwCreateFile(): ", e);
+					LOG.warn("zwCreateFile(): File system reported a problem during the creation of {}.\n{}", path, e);
 					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
 				}
 			} catch (IOException e) {
 				if (attr != null) {
-					LOG.debug("zwCreateFile(): IO error occurred during opening handle to {}.", path);
-					LOG.debug("zwCreateFile(): ", e);
+					LOG.warn("zwCreateFile(): IO error occurred during opening handle to {}.\n{}", path, e);
 					return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
 				} else {
-					LOG.debug("zwCreateFile(): IO error occurred during creation of {}.", path);
-					LOG.debug("zwCreateFile(): ", e);
+					LOG.warn("zwCreateFile(): IO error occurred during creation of {}.\n{}", path, e);
 					return Win32ErrorCode.ERROR_CANNOT_MAKE.getMask();
 				}
-			} catch (IllegalArgumentException e) {
-				//special handling for cryptofs
-				LOG.warn("createFile(): Exception occurred:", e);
-				LOG.warn("{} seems to be modified on disk.", path);
-				dokanyFileInfo.Context = fac.openRestrictedFile(path);
-				LOG.warn("({}) {} opened in restricted mode with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
-				return Win32ErrorCode.ERROR_FILE_CORRUPT.getMask();
 			}
 		}
 	}
@@ -305,15 +275,13 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 						Files.delete(path);
 						LOG.trace("({}) {} successful deleted.", dokanyFileInfo.Context, path);
 					} catch (DirectoryNotEmptyException e) {
-						LOG.debug("({}) Directory {} not empty.", dokanyFileInfo.Context, path);
+						LOG.trace("({}) Directory {} not empty.", dokanyFileInfo.Context, path);
 					} catch (IOException e) {
-						LOG.debug("({}) cleanup(): IO error during deletion of {} ", dokanyFileInfo.Context, path, e);
-						LOG.debug("cleanup(): ", e);
+						LOG.warn("({}) cleanup(): IO error during deletion of {}.\n{}", dokanyFileInfo.Context, path, e);
 					}
 				}
 			} catch (IOException e) {
-				LOG.debug("({}) cleanup(): Unable to close handle to {}", dokanyFileInfo.Context, path, e);
-				LOG.debug("cleanup(): ", e);
+				LOG.warn("({}) cleanup(): Unable to close handle to {}.\n{}", dokanyFileInfo.Context, path, e);
 			}
 		}
 	}
@@ -327,8 +295,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			try {
 				fac.close(dokanyFileInfo.Context);
 			} catch (IOException e) {
-				LOG.warn("({}) closeFile(): Unable to close handle to resource {}. To close it please restart the adapter.", dokanyFileInfo.Context, path);
-				LOG.warn("closeFile():", e);
+				LOG.warn("({}) closeFile(): Unable to close handle to resource {}. To close it please restart the adapter.\n{}", dokanyFileInfo.Context, path, e);
 			}
 		}
 		dokanyFileInfo.Context = 0;
@@ -342,7 +309,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.debug("readFile(): Invalid handle to {} ", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (dokanyFileInfo.isDirectory()) {
-			LOG.debug("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path);
+			LOG.trace("({}) {} is a directory. Unable to read Data from it.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		}
 
@@ -357,7 +324,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) readFile(): Successful reopened {} with intermediate handle id {}.", dokanyFileInfo.Context, path, usedHandleID);
 				reopened = true;
 			} catch (IOException e1) {
-				LOG.debug("({}) readFile(): Reopen of {} failed. Aborting.", dokanyFileInfo.Context, path);
+				LOG.warn("({}) readFile(): Reopen of {} failed. Aborting.\n{}", dokanyFileInfo.Context, path, e1);
 				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
 			}
 		}
@@ -372,8 +339,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.trace("({}) readFile(): File {} not opened for reading.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
-			LOG.debug("({}) readFile(): IO error while reading file {}.", dokanyFileInfo.Context, path);
-			LOG.debug("Error is:", e);
+			LOG.warn("({}) readFile(): IO error while reading file {}.\n{}", dokanyFileInfo.Context, path, e);
 			return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 		} finally {
 			if (reopened) {
@@ -381,7 +347,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					fac.close(usedHandleID);
 					LOG.trace("({}) readFile(): Successful closed REOPENED file {}.", dokanyFileInfo.Context, path);
 				} catch (IOException e) {
-					LOG.debug("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.", dokanyFileInfo.Context, path);
+					LOG.warn("({}) readFile(): IO error while closing REOPENED file {}. File will be closed on exit.\n{}", dokanyFileInfo.Context, path, e);
 				}
 			}
 		}
@@ -395,7 +361,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.debug("writeFile(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (dokanyFileInfo.isDirectory()) {
-			LOG.debug("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path);
+			LOG.trace("({}) {} is a directory. Unable to write Data to it.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		}
 
@@ -410,7 +376,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) writeFile(): Successful reopened {} with handle {}.", dokanyFileInfo.Context, path, usedHandleID);
 				reopened = true;
 			} catch (IOException e1) {
-				LOG.debug("({}) writeFile(): Reopen of {} failed. Aborting.", dokanyFileInfo.Context, path);
+				LOG.warn("({}) writeFile(): Reopen of {} failed. Aborting.\n{}", dokanyFileInfo.Context, path, e1);
 				return Win32ErrorCode.ERROR_OPEN_FAILED.getMask();
 			}
 		}
@@ -428,8 +394,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.trace("({}) File {} not opened for writing.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
-			LOG.debug("({}) writeFile(): IO Error while writing to {}.", dokanyFileInfo.Context, path);
-			LOG.debug("Error is:", e);
+			LOG.warn("({}) writeFile(): IO Error while writing to {}.\n{}", dokanyFileInfo.Context, path, e);
 			return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 		} finally {
 			if (reopened) {
@@ -437,7 +402,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					fac.close(usedHandleID);
 					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", dokanyFileInfo.Context, path);
 				} catch (IOException e) {
-					LOG.debug("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.", dokanyFileInfo.Context, path);
+					LOG.warn("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.\n{}", dokanyFileInfo.Context, path, e);
 				}
 			}
 		}
@@ -451,7 +416,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.debug("flushFileBuffers(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (dokanyFileInfo.isDirectory()) {
-			LOG.debug("({}) {} is a directory. Unable to write data to it.", dokanyFileInfo.Context, path);
+			LOG.trace("({}) {} is a directory. Unable to write data to it.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
 			OpenHandle handle = fac.get(dokanyFileInfo.Context);
@@ -460,8 +425,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("Flushed successful to {} with handle {}.", path, dokanyFileInfo.Context);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.debug("({}) flushFileBuffers(): IO Error while flushing to {}.", dokanyFileInfo.Context, path, e);
-				LOG.debug("flushFileBuffers(): ", e);
+				LOG.warn("({}) flushFileBuffers(): IO Error while flushing to {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
@@ -493,8 +457,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Resource {} not found.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
-				LOG.debug("({}) getFileInformation(): IO error occurred reading meta data from {}.", dokanyFileInfo.Context, path);
-				LOG.debug("getFileInformation(): ", e);
+				LOG.warn("({}) getFileInformation(): IO error occurred reading meta data from {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
@@ -542,7 +505,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 									return null;
 								}
 							} catch (IOException e) {
-								LOG.debug("({}) findFiles(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+								LOG.warn("({}) findFiles(): IO error accessing {}. Will be ignored in file listing. Reported Exception:\n{}", dokanyFileInfo.Context, p, e);
 								return null;
 							}
 						})
@@ -555,8 +518,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.debug("({}) findFiles(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
-				LOG.debug("(" + dokanyFileInfo.Context + ") findFiles(): Message and Stacktrace.", e);
+				LOG.warn("({}) findFiles(): Unable to list content of directory {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
@@ -605,7 +567,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 							return null;
 						}
 					} catch (IOException e) {
-						LOG.debug("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+						LOG.warn("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing. Reported exception:\n{}", dokanyFileInfo.Context, p, e);
 						return null;
 					}
 				}).filter(Objects::nonNull)
@@ -623,8 +585,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path);
-				LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Message and Stacktrace.", e);
+				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
@@ -646,8 +607,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) setFileAttributes(): File {} not found.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
-				LOG.debug("({}) setFileAttributes(): IOException occurred during operation on {}.", dokanyFileInfo.Context, path);
-				LOG.debug("setFileAttributes(): Stacktrace", e);
+				LOG.warn("({}) setFileAttributes(): IOException occurred during operation on {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
@@ -702,8 +662,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) File {} not found.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
-				LOG.debug("({}) setFileTime(): IO error occurred accessing {}.", dokanyFileInfo.Context, path);
-				LOG.debug("setFileTime(): ", e);
+				LOG.warn("({}) setFileTime(): IO error occurred accessing {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
@@ -717,7 +676,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.debug("deleteFile(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (dokanyFileInfo.isDirectory()) {
-			LOG.debug("({}) {} is a directory. Unable to delete via deleteFile()", dokanyFileInfo.Context, path);
+			LOG.trace("({}) {} is a directory. Unable to delete via deleteFile()", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
@@ -734,7 +693,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 						return Win32ErrorCode.ERROR_BUSY.getMask();
 					}
 				} else {
-					LOG.debug("({}) deleteFile(): {} not found.", dokanyFileInfo.Context, path);
+					LOG.trace("({}) deleteFile(): {} not found.", dokanyFileInfo.Context, path);
 					return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 				}
 			}
@@ -749,7 +708,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.debug("deleteDirectory(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (!dokanyFileInfo.isDirectory()) {
-			LOG.debug("({}) {} is a file. Unable to delete via deleteDirectory()", dokanyFileInfo.Context, path);
+			LOG.trace("({}) {} is a file. Unable to delete via deleteDirectory()", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
@@ -765,8 +724,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 						return Win32ErrorCode.ERROR_SUCCESS.getMask();
 					}
 				} catch (IOException e) {
-					LOG.debug("({}) deleteDirectory(): IO error occurred reading {}.", dokanyFileInfo.Context, path);
-					LOG.debug("deleteDirectory(): ", e);
+					LOG.warn("({}) deleteDirectory(): IO error occurred reading {}.\n{}", dokanyFileInfo.Context, path, e);
 					return Win32ErrorCode.ERROR_CURRENT_DIRECTORY.getMask();
 				}
 			}
@@ -787,6 +745,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				 PathLock newPathLock = lockManager.createPathLock(newPath.toString()).forWriting();
 				 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 				if (rawReplaceIfExisting) {
+					Files.deleteIfExists(newPath);
 					Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
 				} else {
 					Files.move(path, newPath);
@@ -801,17 +760,15 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				return Win32ErrorCode.ERROR_DIR_NOT_EMPTY.getMask();
 			} catch (FileSystemException e) {
 				final String reason = e.getReason().toLowerCase();
-				if (reason.contains("path too long") || reason.contains("extension too long") || reason.contains("path too long")) {
-					LOG.warn("({}) Moving resource {} failed, file name too long.", dokanyFileInfo.Context, path);
+				if (reason.contains("too long")) {
+					LOG.debug("({}) Moving resource {} failed, file name too long.", dokanyFileInfo.Context, path);
 					return Win32ErrorCode.ERROR_FILENAME_EXCED_RANGE.getMask();
 				} else {
-					LOG.debug("({}) moveFile(): IO error while moving resource {}.", dokanyFileInfo.Context, path);
-					LOG.debug("moveFile(): ", e);
+					LOG.warn("({}) moveFile(): Filesystem reported Problem while moving resource {}.\n{}", dokanyFileInfo.Context, path, e);
 					return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
 				}
 			} catch (IOException e) {
-				LOG.debug("({}) moveFile(): IO error while moving resource {}.", dokanyFileInfo.Context, path);
-				LOG.debug("moveFile(): ", e);
+				LOG.warn("({}) moveFile(): IO error while moving resource {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_GEN_FAILURE.getMask();
 			}
 		}
@@ -825,7 +782,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.debug("setEndOfFile(): Invalid handle to {}.", path);
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else if (dokanyFileInfo.isDirectory()) {
-			LOG.debug("({}) setEndOfFile(): {} is a directory. Unable to truncate.", dokanyFileInfo.Context, path);
+			LOG.trace("({}) setEndOfFile(): {} is a directory. Unable to truncate.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} else {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
@@ -835,8 +792,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) Successful truncated {} to size {}.", dokanyFileInfo.Context, path, rawByteOffset);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.debug("({}) setEndOfFile(): IO error while truncating {}.", dokanyFileInfo.Context, path);
-				LOG.debug("setEndOfFile(): ", e);
+				LOG.warn("({}) setEndOfFile(): IO error while truncating {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
@@ -868,7 +824,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			totalNumberOfFreeBytes.setValue(fileStore.getUnallocatedSpace());
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		} catch (IOException e) {
-			LOG.debug("({}) getFreeDiskSpace(): Unable to detect disk space status.", dokanyFileInfo.Context, e);
+			LOG.warn("({}) getFreeDiskSpace(): Unable to detect disk space status.\n{}", dokanyFileInfo.Context, e);
 			return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 		}
 	}
