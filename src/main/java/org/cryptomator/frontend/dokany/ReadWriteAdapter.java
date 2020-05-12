@@ -200,27 +200,13 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} catch (IOException e) {
 			LOG.trace("Could not read file attributes.");
 		}
-		//we want to create a file
-		//system or hidden file?
-		if (attr != null
-				&&
-				(mask == CreationDisposition.TRUNCATE_EXISTING.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask())
-				&&
-				(
-						((rawFileAttributes & FileAttribute.HIDDEN.getMask()) == 0 && attr.isHidden())
-								||
-								((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem())
-				)
-		) {
+
+		if (attr != null && (mask == CreationDisposition.TRUNCATE_EXISTING.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask()) && (((rawFileAttributes & FileAttribute.HIDDEN.getMask()) == 0 && attr.isHidden()) || ((rawFileAttributes & FileAttribute.SYSTEM.getMask()) == 0 && attr.isSystem()))) {
 			//cannot overwrite hidden or system file
 			LOG.trace("{} is hidden or system file. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
-		}
-		//read-only?
-		else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0))
-				&& dokanyFileInfo.DeleteOnClose != 0
-		) {
-			//cannot overwrite file
+		} else if ((attr != null && attr.isReadOnly() || ((rawFileAttributes & FileAttribute.READONLY.getMask()) != 0)) && dokanyFileInfo.DeleteOnClose != 0) {
+			//cannot overwrite read-only file
 			LOG.trace("{} is readonly. Unable to overwrite.", path);
 			return Win32ErrorCode.ERROR_FILE_READ_ONLY.getMask();
 		} else {
@@ -410,7 +396,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			LOG.trace("({}) File {} not opened for writing.", dokanyFileInfo.Context, path);
 			return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 		} catch (IOException e) {
-			LOG.warn("({}) writeFile(): IO Error while writing to {}.\n{}", dokanyFileInfo.Context, path,e);
+			LOG.warn("({}) writeFile(): IO Error while writing to {}.\n{}", dokanyFileInfo.Context, path, e);
 			return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 		} finally {
 			if (reopened) {
@@ -418,7 +404,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					fac.close(usedHandleID);
 					LOG.trace("({}) writeFile(): Successful closed REOPENED file {}.", dokanyFileInfo.Context, path);
 				} catch (IOException e) {
-					LOG.warn("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.\n{}", dokanyFileInfo.Context, path,e);
+					LOG.warn("({}) writeFile(): IO error while closing REOPENED file {}. File will be closed on exit.\n{}", dokanyFileInfo.Context, path, e);
 				}
 			}
 		}
@@ -678,7 +664,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				LOG.trace("({}) File {} not found.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
 			} catch (IOException e) {
-				LOG.warn("({}) setFileTime(): IO error occurred accessing {}.\n{}", dokanyFileInfo.Context, path,e);
+				LOG.warn("({}) setFileTime(): IO error occurred accessing {}.\n{}", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_WRITE_FAULT.getMask();
 			}
 		}
