@@ -745,6 +745,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				 PathLock newPathLock = lockManager.createPathLock(newPath.toString()).forWriting();
 				 DataLock newDataLock = newPathLock.lockDataForWriting()) {
 				if (rawReplaceIfExisting) {
+					Files.deleteIfExists(newPath);
 					Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
 				} else {
 					Files.move(path, newPath);
