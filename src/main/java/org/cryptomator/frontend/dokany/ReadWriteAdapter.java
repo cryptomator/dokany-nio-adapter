@@ -217,14 +217,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					setFileAttributes(path, rawFileAttributes);
 				}
 				LOG.trace("({}) {} opened successful with handle {}.", dokanyFileInfo.Context, path, dokanyFileInfo.Context);
-				//required by contract
-				Win32ErrorCode returnCode;
 				if (attr != null && (mask == CreationDisposition.OPEN_ALWAYS.getMask() || mask == CreationDisposition.CREATE_ALWAYS.getMask())) {
-					returnCode = Win32ErrorCode.ERROR_ALREADY_EXISTS;
+					//required by contract
+					return Win32ErrorCode.ERROR_ALREADY_EXISTS.getMask();
 				} else {
-					returnCode = Win32ErrorCode.ERROR_SUCCESS;
+					return Win32ErrorCode.ERROR_SUCCESS.getMask();
 				}
-				return returnCode.getMask();
 			} catch (FileAlreadyExistsException e) {
 				LOG.trace("File {} already exists.", path);
 				return Win32ErrorCode.ERROR_FILE_EXISTS.getMask();
