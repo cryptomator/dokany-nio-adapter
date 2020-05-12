@@ -52,6 +52,13 @@
 		</developer>
 	</developers>
 
+	<repositories>
+		<repository>
+			<id>jcenter</id>
+			<url>https://jcenter.bintray.com/</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<!-- Guava -->
 		<dependency>
@@ -127,7 +134,7 @@
 		<dependency>
 			<groupId>org.cryptomator</groupId>
 			<artifactId>cryptofs</artifactId>
-			<version>1.8.6</version>
+			<version>1.9.10</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
