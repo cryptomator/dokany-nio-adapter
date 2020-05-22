@@ -95,7 +95,7 @@ public final class DokanyDriver {
 	public synchronized void shutdown() {
 		LOG.info("Unmounting Dokan device at {}", deviceOptions.MountPoint);
 		if (isMounted.get()) {
-			isMounted.set(NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint));
+			isMounted.set(NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint)); //TODO: check if the volume is already unmounted
 			if (isMounted.get()) {
 				LOG.error("Unable to unmount Dokan device at {}.", deviceOptions.MountPoint);
 			}

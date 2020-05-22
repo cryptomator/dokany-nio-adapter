@@ -18,8 +18,8 @@
 		<slf4j.version>1.7.25</slf4j.version>
 		<logback.version>1.2.3</logback.version>
 		<guava.version>27.0-jre</guava.version>
-		<jna.version>5.1.0</jna.version>
-		<jna-platform.version>5.1.0</jna-platform.version>
+		<jna.version>5.5.0</jna.version>
+		<jna-platform.version>5.5.0</jna-platform.version>
 		<commons.cli.version>1.4</commons.cli.version>
 		<commons-io.version>2.6</commons-io.version>
 		<junit.jupiter.version>5.4.0</junit.jupiter.version>
@@ -146,7 +146,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.0</version>
 				<configuration>
-					<release>9</release>
+					<release>11</release>
 				</configuration>
 			</plugin>
 		</plugins>
