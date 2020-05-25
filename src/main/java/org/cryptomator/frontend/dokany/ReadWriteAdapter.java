@@ -866,6 +866,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public int unmounted(DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("unmounted() is called.");
+		try {
+			this.fac.close();
+		} catch (IOException e) {
+			LOG.warn("Could not close all open handles.", e);
+		}
 		return 0;
 	}
 
