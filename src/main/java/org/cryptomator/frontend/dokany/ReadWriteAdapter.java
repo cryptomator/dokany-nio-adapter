@@ -114,7 +114,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 		//is the file a directory and if yes, indicated as one?
 		if (attr.isPresent() && attr.get().isDirectory()) {
-			if ((rawCreateOptions & CreateOptions.FILE_NON_DIRECTORY_FILE.getMask()) == 0) {
+			if (!createOptions.contains(CreateOptions.FILE_NON_DIRECTORY_FILE)) {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
 			} else {
