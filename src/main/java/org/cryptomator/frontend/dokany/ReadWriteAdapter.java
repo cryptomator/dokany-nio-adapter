@@ -505,7 +505,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 									return null;
 								}
 							} catch (IOException e) {
-								LOG.warn("({}) findFiles(): IO error accessing {}. Will be ignored in file listing. Reported Exception:\n{}", dokanyFileInfo.Context, p, e);
+								LOG.warn("({}) findFiles(): IO error accessing {}. Will be ignored in file listing. Reported Exception:", dokanyFileInfo.Context, p, e);
 								return null;
 							}
 						})
