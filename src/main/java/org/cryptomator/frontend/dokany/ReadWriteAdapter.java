@@ -277,11 +277,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					} catch (DirectoryNotEmptyException e) {
 						LOG.trace("({}) Directory {} not empty.", dokanyFileInfo.Context, path);
 					} catch (IOException e) {
-						LOG.warn("({}) cleanup(): IO error during deletion of {}.\n{}", dokanyFileInfo.Context, path, e);
+						LOG.warn("({}) cleanup(): IO error during deletion of {}.", dokanyFileInfo.Context, path, e);
 					}
 				}
 			} catch (IOException e) {
-				LOG.warn("({}) cleanup(): Unable to close handle to {}.\n{}", dokanyFileInfo.Context, path, e);
+				LOG.warn("({}) cleanup(): Unable to close handle to {}.", dokanyFileInfo.Context, path, e);
 			}
 		}
 	}
