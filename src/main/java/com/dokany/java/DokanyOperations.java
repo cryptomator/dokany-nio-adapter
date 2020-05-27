@@ -1,14 +1,10 @@
 package com.dokany.java;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.dokany.java.constants.DokanOption;
 import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.constants.NtStatus;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
-import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.WString;
@@ -17,6 +13,10 @@ import com.sun.jna.platform.win32.WinBase.FILETIME;
 import com.sun.jna.platform.win32.WinBase.WIN32_FIND_DATA;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
+import com.sun.jna.win32.StdCallLibrary;
+
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -105,7 +105,7 @@ public class DokanyOperations extends Structure {
 	 * @see <a href="https://msdn.microsoft.com/en-us/library/windows/hardware/ff566424(v=vs.85).aspx">MSDN for more information about the parameters of this callback.</a>
 	 */
 	@FunctionalInterface
-	interface ZwCreateFile extends Callback {
+	interface ZwCreateFile extends DokanCallback {
 		/**
 		 * @param rawPath Path requested by the Kernel on the File System.
 		 * @param securityContext ??
@@ -137,7 +137,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface Cleanup extends Callback {
+	interface Cleanup extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -157,7 +157,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface CloseFile extends Callback {
+	interface CloseFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -173,7 +173,7 @@ public class DokanyOperations extends Structure {
 	 * thread safe.
 	 *
 	 */
-	interface ReadFile extends Callback {
+	interface ReadFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -199,7 +199,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface WriteFile extends Callback {
+	interface WriteFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -225,7 +225,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface FlushFileBuffers extends Callback {
+	interface FlushFileBuffers extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -243,7 +243,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface GetFileInformation extends Callback {
+	interface GetFileInformation extends DokanCallback {
 		/**
 		 *
 		 * @param fileName
@@ -262,7 +262,7 @@ public class DokanyOperations extends Structure {
 	 * List all files in the path requested.
 	 */
 	@FunctionalInterface
-	interface FindFiles extends Callback {
+	interface FindFiles extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -282,7 +282,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface FindFilesWithPattern extends Callback {
+	interface FindFilesWithPattern extends DokanCallback {
 		/**
 		 *
 		 * @param fileName
@@ -303,7 +303,7 @@ public class DokanyOperations extends Structure {
 	 * Set file attributes on a specific file.
 	 */
 	@FunctionalInterface
-	interface SetFileAttributes extends Callback {
+	interface SetFileAttributes extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -322,7 +322,7 @@ public class DokanyOperations extends Structure {
 	 * Set file times on a specific file.
 	 */
 	@FunctionalInterface
-	interface SetFileTime extends Callback {
+	interface SetFileTime extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath path to file or directory
@@ -356,7 +356,7 @@ public class DokanyOperations extends Structure {
 	 * @see {@link DokanyOperations.DeleteDirectory}
 	 */
 	@FunctionalInterface
-	interface DeleteFile extends Callback {
+	interface DeleteFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -376,7 +376,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface DeleteDirectory extends Callback {
+	interface DeleteDirectory extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -393,7 +393,7 @@ public class DokanyOperations extends Structure {
 	 * Move a file or directory to a new location.
 	 */
 	@FunctionalInterface
-	interface MoveFile extends Callback {
+	interface MoveFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -414,7 +414,7 @@ public class DokanyOperations extends Structure {
 	 * SetEndOfFile is used to truncate or extend a file (physical file size).
 	 */
 	@FunctionalInterface
-	interface SetEndOfFile extends Callback {
+	interface SetEndOfFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -433,7 +433,7 @@ public class DokanyOperations extends Structure {
 	 * SetAllocationSize is used to truncate or extend a file.
 	 */
 	@FunctionalInterface
-	interface SetAllocationSize extends Callback {
+	interface SetAllocationSize extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -452,7 +452,7 @@ public class DokanyOperations extends Structure {
 	 * Lock file at a specific offset and data length. This is only used if {@link DokanOption#FILELOCK_USER_MODE} is enabled.
 	 */
 	@FunctionalInterface
-	interface LockFile extends Callback {
+	interface LockFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -473,7 +473,7 @@ public class DokanyOperations extends Structure {
 	 * Unlock file at a specific offset and data length. This is only used if {@link DokanOption#FILELOCK_USER_MODE} is enabled.
 	 */
 	@FunctionalInterface
-	interface UnlockFile extends Callback {
+	interface UnlockFile extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -499,7 +499,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	interface GetDiskFreeSpace extends Callback {
+	interface GetDiskFreeSpace extends DokanCallback {
 		/**
 		 *
 		 * @param freeBytesAvailable
@@ -535,7 +535,7 @@ public class DokanyOperations extends Structure {
 	 *      </ul>
 	 */
 	@FunctionalInterface
-	interface GetVolumeInformation extends Callback {
+	interface GetVolumeInformation extends DokanCallback {
 		/**
 		 *
 		 * @param rawVolumeNameBuffer
@@ -564,7 +564,7 @@ public class DokanyOperations extends Structure {
 	 * Is called when Dokany succeeded mounting the volume.
 	 */
 	@FunctionalInterface
-	interface Mounted extends Callback {
+	interface Mounted extends DokanCallback {
 		long mounted(
 		          DokanyFileInfo dokanyFileInfo);
 	}
@@ -574,7 +574,7 @@ public class DokanyOperations extends Structure {
 	 * Is called when Dokany succeeded unmounting the volume.
 	 */
 	@FunctionalInterface
-	interface Unmounted extends Callback {
+	interface Unmounted extends DokanCallback {
 		long unmounted(
 		          final DokanyFileInfo dokanyFileInfo);
 	}
@@ -586,7 +586,7 @@ public class DokanyOperations extends Structure {
 	 * Supported since version 0.6.0. You must specify the version in {@link com.dokany.java.structure.DeviceOptions#Version}.
 	 */
 	@FunctionalInterface
-	interface GetFileSecurity extends Callback {
+	interface GetFileSecurity extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -613,7 +613,7 @@ public class DokanyOperations extends Structure {
 	 * Supported since version 0.6.0. You must specify the version in {@link com.dokany.java.structure.DeviceOptions#Version}.
 	 */
 	@FunctionalInterface
-	interface SetFileSecurity extends Callback {
+	interface SetFileSecurity extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -633,7 +633,7 @@ public class DokanyOperations extends Structure {
 	}
 
 	@FunctionalInterface
-	public interface FillWin32FindData extends Callback {
+	public interface FillWin32FindData extends StdCallLibrary.StdCallCallback {
 		/**
 		 *
 		 * @param rawFillFindData
@@ -649,7 +649,7 @@ public class DokanyOperations extends Structure {
 	 * Retrieve all NTFS Streams informations on the file. This is only called if {@link DokanOption#ALT_STREAM} is enabled.
 	 */
 	@FunctionalInterface
-	interface FindStreams extends Callback {
+	interface FindStreams extends DokanCallback {
 		/**
 		 *
 		 * @param rawPath
@@ -668,7 +668,7 @@ public class DokanyOperations extends Structure {
 	 *
 	 */
 	@FunctionalInterface
-	public interface FillWin32FindStreamData extends Callback {
+	public interface FillWin32FindStreamData extends DokanCallback {
 		/**
 		 *
 		 * @param rawFillFindData
