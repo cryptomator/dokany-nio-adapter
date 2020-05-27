@@ -5,6 +5,9 @@ import com.dokany.java.constants.NtStatus;
 import com.dokany.java.constants.Win32ErrorCode;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
+import com.sun.jna.Callback;
+import com.sun.jna.CallbackThreadInitializer;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase;
@@ -13,42 +16,98 @@ import com.sun.jna.ptr.LongByReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Implementation of {@link com.dokany.java.DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
  */
 final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 	private final static Logger LOG = LoggerFactory.getLogger(DokanyOperationsProxy.class);
+	private final static CallbackThreadInitializer DEFAULT_CALLBACK_THREAD_INITIALIZER = new CallbackThreadInitializer();
 
 	private final DokanyFileSystem fileSystem;
+	private List<Callback> usedCallbacks = new ArrayList<>();
 
 	DokanyOperationsProxy(final DokanyFileSystem fileSystem) {
 		this.fileSystem = fileSystem;
 		super.ZwCreateFile = new ZwCreateFileProxy();
+		usedCallbacks.add(super.ZwCreateFile);
+
 		super.CloseFile = fileSystem::closeFile;
+		usedCallbacks.add(super.CloseFile);
+
 		super.Cleanup = fileSystem::cleanup;
+		usedCallbacks.add(super.Cleanup);
+
 		super.ReadFile = new ReadFileProxy();
+		usedCallbacks.add(super.ReadFile);
+
 		super.WriteFile = new WriteFileProxy();
+		usedCallbacks.add(super.WriteFile);
+
 		super.FlushFileBuffers = new FlushFileBuffersProxy();
+		usedCallbacks.add(super.FlushFileBuffers);
+
 		super.GetFileInformation = new GetFileInformationProxy();
+		usedCallbacks.add(super.GetFileInformation);
+
 		super.GetVolumeInformation = new GetVolumeInformationProxy();
+		usedCallbacks.add(super.GetVolumeInformation);
+
 		super.GetDiskFreeSpace = new GetDiskFreeSpaceProxy();
+		usedCallbacks.add(super.GetDiskFreeSpace);
+
 		super.FindFiles = new FindFilesProxy();
+		usedCallbacks.add(super.FindFiles);
+
 		super.FindFilesWithPattern = null;
+		//callbacks.add(super.FindFilesWitPattern);
+
 		super.SetFileAttributes = new SetFileAttributesProxy();
+		usedCallbacks.add(super.SetFileAttributes);
+
 		super.SetFileTime = new SetFileTimeProxy();
+		usedCallbacks.add(super.SetFileTime);
+
 		super.DeleteFile = new DeleteFileProxy();
+		usedCallbacks.add(super.DeleteFile);
+
 		super.DeleteDirectory = new DeleteDirectoryProxy();
+		usedCallbacks.add(super.DeleteDirectory);
+
 		super.MoveFile = new MoveFileProxy();
+		usedCallbacks.add(super.MoveFile);
+
 		super.SetEndOfFile = new SetEndOfFileProxy();
+		usedCallbacks.add(super.SetEndOfFile);
+
 		super.SetAllocationSize = new SetAllocationSizeProxy();
+		usedCallbacks.add(super.SetAllocationSize);
+
 		super.LockFile = null;
+		//usedCallbacks.add(super.LockFile);
+
 		super.UnlockFile = null;
+		//usedCallbacks.add(super.UnlockFile);
+
 		super.Mounted = new MountedProxy();
+		usedCallbacks.add(super.Mounted);
+
 		super.Unmounted = new UnmountedProxy();
+		usedCallbacks.add(super.Unmounted);
+
 		super.GetFileSecurity = null;
+		//callbacks.add(super.GetFileSecurity);
+
 		super.SetFileSecurity = null;
+		//callbacks.add(super.SetFileSecurity);
+
 		super.FindStreams = null;
+		//callbacks.add(super.FindStreams);
+
+		usedCallbacks.forEach(callback -> Native.setCallbackThreadInitializer(callback,DEFAULT_CALLBACK_THREAD_INITIALIZER));
 	}
 
 	class ZwCreateFileProxy implements ZwCreateFile {
