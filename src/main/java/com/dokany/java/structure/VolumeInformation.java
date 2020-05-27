@@ -9,7 +9,7 @@ public final class VolumeInformation {
 	private final int serialNumber;
 	private final String fileSystemName;
 	private final EnumIntegerSet<FileSystemFeature> fileSystemFeatures;
-	public static final int DEFAULT_MAX_COMPONENT_LENGTH = 256;
+	public static final int DEFAULT_MAX_COMPONENT_LENGTH = 255;
 	public static final int DEFAULT_SERIAL_NUMBER = 305419896;
 	public static final String DEFAULT_VOLUME_NAME = "VOLUME1";
 	public static final String DEFAULT_FS_NAME = "DOKANY";
