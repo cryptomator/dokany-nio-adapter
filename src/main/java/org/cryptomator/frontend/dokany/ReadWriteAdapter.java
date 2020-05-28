@@ -498,10 +498,10 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 							assert p.isAbsolute();
 							try {
 								DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-								if (attr.isDirectory() || attr.isRegularFile()) {
+								if (! attr.isSymbolicLink()) {
 									return toFullFileInfo(p, attr).toWin32FindData();
 								} else {
-									LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+									LOG.warn("({}) findFiles(): {} is a symlink, which is not supported by Dokan. Will be ignored in file listing.", dokanyFileInfo.Context, p);
 									return null;
 								}
 							} catch (IOException e) {
