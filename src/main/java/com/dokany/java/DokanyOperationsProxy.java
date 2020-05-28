@@ -62,8 +62,8 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.FindFiles = new FindFilesProxy();
 		usedCallbacks.add(super.FindFiles);
 
-		super.FindFilesWithPattern = null;
-		//callbacks.add(super.FindFilesWitPattern);
+		super.FindFilesWithPattern = new FindFilesWithPatternProxy();
+		usedCallbacks.add(super.FindFilesWithPattern);
 
 		super.SetFileAttributes = new SetFileAttributesProxy();
 		usedCallbacks.add(super.SetFileAttributes);
