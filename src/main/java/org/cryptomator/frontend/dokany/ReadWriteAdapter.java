@@ -43,7 +43,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
@@ -51,7 +50,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.text.Normalizer;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -59,7 +57,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 
@@ -487,7 +484,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		Path path = getRootedPath(rawPath);
 		assert path.isAbsolute();
 		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, path);
-		return findFilesWithPattern(rawPath, MATCH_ALL_PATTERN,rawFillFindData, dokanyFileInfo);
+		return findFilesWithPattern(rawPath, MATCH_ALL_PATTERN, rawFillFindData, dokanyFileInfo);
 	}
 
 	/**
