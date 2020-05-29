@@ -22,12 +22,13 @@ public class ReadWriteMirrorTest {
 			return;
 		}
 
-		Path path = Paths.get("Y:\\test\\");
-		Path mountPoint = Paths.get("T:\\");
+		Path path = Paths.get("T:\\test\\");
+		Path mountPoint = Paths.get("T:\\mnt");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(path, mountPoint, "Test", "Cryptomator FS")) {
 			mount.reveal();
 			System.in.read();
+			mount.unmount();
 		}
 	}
 

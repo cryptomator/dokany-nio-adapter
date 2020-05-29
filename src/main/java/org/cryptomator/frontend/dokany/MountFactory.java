@@ -65,10 +65,11 @@ public class MountFactory {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		LockManager lockManager = new LockManager();
-		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed);
+		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
+		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed, handleCheckBuilder);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
 		LOG.debug("Mounting on {}: ...", absMountPoint);
-		Mount mount = new Mount(absMountPoint, dokanyDriver);
+		Mount mount = new Mount(absMountPoint, dokanyDriver, handleCheckBuilder.build());
 		try {
 			mount.mount(executorService);
 			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
@@ -110,11 +111,12 @@ public class MountFactory {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		LockManager lockManager = new LockManager();
-		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed);
+		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
+		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed, handleCheckBuilder);
 		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
 
 		LOG.debug("Mounting on {}: ...", absMountPoint);
-		Mount mount = new Mount(absMountPoint, dokanyDriver);
+		Mount mount = new Mount(absMountPoint, dokanyDriver, handleCheckBuilder.build());
 		try {
 			mount.mount(executorService);
 			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);

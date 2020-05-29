@@ -85,6 +85,28 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		}
 	}
 
+	/**
+	 * Creates a new ReadWriteAdapter with the given Path as root and adds to the OpenHandleCheckBuilder the check if the OpenHandleFactory is empty or not.
+	 * @param fileSystemRoot
+	 * @param lockManager
+	 * @param volumeInfo
+	 * @param mountDidSucceed
+	 * @param handleCheckBuilder
+	 */
+	public ReadWriteAdapter(Path fileSystemRoot, LockManager lockManager, VolumeInformation volumeInfo, CompletableFuture<Void> mountDidSucceed, OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder) {
+		this.root = fileSystemRoot;
+		this.lockManager = lockManager;
+		this.volumeInformation = volumeInfo;
+		this.didMount = mountDidSucceed;
+		this.fac = new OpenHandleFactory();
+		try {
+			this.fileStore = Files.getFileStore(root);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+		handleCheckBuilder.setFunction(fac::areNoHandlesOpen);
+	}
+
 	@Override
 	public int zwCreateFile(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 		Path path;
