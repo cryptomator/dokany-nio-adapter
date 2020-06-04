@@ -3,14 +3,19 @@ package org.cryptomator.frontend.dokany;
 import org.cryptomator.cryptofs.CryptoFileSystem;
 import org.cryptomator.cryptofs.CryptoFileSystemProperties;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.impl.SimpleLogger;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 
 public class ReadWriteCryptoFsTest {
+
+	public static Logger LOG = LoggerFactory.getLogger(ReadWriteCryptoFsTest.class);
 
 	static {
 		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
@@ -25,13 +30,35 @@ public class ReadWriteCryptoFsTest {
 			return;
 		}
 
-		Path pathToVault = Paths.get("D:\\Arbeit\\Skymatic\\tmp\\empty");
-		CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase("asd").withMasterkeyFilename("masterkey.cryptomator").build();
-		CryptoFileSystem cfs = CryptoFileSystemProvider.newFileSystem(pathToVault, props);
-		Path path = cfs.getPath("/");
-		Path mountPoint = Paths.get("T:\\");
+		final Path vaultPath;
+		final String vaultPassword;
+		final Path mountPoint;
+		Optional<String> testVaultPathProp = Optional.ofNullable(System.getProperty("TestVaultPath"));
+		Optional<String> testVaultPasswordProp = Optional.ofNullable(System.getProperty("TestVaultPassword"));
+		Optional<String> testMountPoint = Optional.ofNullable(System.getProperty("TestMountPoint"));
+		if (testVaultPathProp.isPresent() && testVaultPasswordProp.isPresent() && testMountPoint.isPresent()) {
+			vaultPath = Path.of(testVaultPathProp.get());
+			vaultPassword = testVaultPasswordProp.get();
+			mountPoint = Path.of(testMountPoint.get());
+		} else {
+			LOG.info("At least one of the properties \"TestVaultPath\" or \"TestVaultPassword\" is not set. Switching to manual mode.");
+			try (Scanner scanner = new Scanner(System.in)) {
+				System.out.println("Enter path to the vault you want to access:");
+				vaultPath = Path.of(scanner.nextLine());
+				System.out.println("Enter the password for the vault:");
+				vaultPassword = scanner.nextLine();
+				System.out.println("Enter path where vault is mounted:");
+				mountPoint = Path.of(scanner.nextLine());
+			}
+		}
+
+		CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(vaultPassword)
+				.withMasterkeyFilename("masterkey.cryptomator")
+				.build();
+		CryptoFileSystem cryptofs = CryptoFileSystemProvider.newFileSystem(vaultPath, props);
+		Path path = cryptofs.getPath("/");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(path, mountPoint, "1&1 Tresor", "NTFS")) {
+		try (Mount mount = mountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
 			mount.reveal();
 			System.in.read();
 		}
