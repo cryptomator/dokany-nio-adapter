@@ -3,8 +3,6 @@ package org.cryptomator.frontend.dokany;
 import org.cryptomator.cryptofs.CryptoFileSystem;
 import org.cryptomator.cryptofs.CryptoFileSystemProperties;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.impl.SimpleLogger;
 
 import java.io.IOException;
@@ -15,10 +13,8 @@ import java.util.concurrent.Executors;
 
 public class ReadWriteCryptoFsTest {
 
-	public static Logger LOG = LoggerFactory.getLogger(ReadWriteCryptoFsTest.class);
-
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
 		System.setProperty(SimpleLogger.LOG_FILE_KEY, "System.out");
 		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
@@ -41,7 +37,7 @@ public class ReadWriteCryptoFsTest {
 			vaultPassword = testVaultPasswordProp.get();
 			mountPoint = Path.of(testMountPoint.get());
 		} else {
-			LOG.info("At least one of the properties \"TestVaultPath\" or \"TestVaultPassword\" is not set. Switching to manual mode.");
+			System.out.println("At least one of the properties \"TestVaultPath\" or \"TestVaultPassword\" is not set. Switching to manual mode.");
 			try (Scanner scanner = new Scanner(System.in)) {
 				System.out.println("Enter path to the vault you want to access:");
 				vaultPath = Path.of(scanner.nextLine());
