@@ -51,6 +51,7 @@ import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -498,6 +499,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
 				DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
 		data.setSize(attr.size());
+		LOG.trace("Timestamps for {}:\t mTime {} \t cTime {} \t aTime {}",path, data.ftLastWriteTime.toTime(), data.ftCreationTime.toTime(), data.ftLastAccessTime.toTime());
 		return data;
 	}
 
@@ -629,7 +631,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				FileTime lastAccessTime = FileUtil.toFileTime(rawLastAccessTime).orElse(null);
 				FileTime createdTime = FileUtil.toFileTime(rawCreationTime).orElse(null);
 				Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(lastModifiedTime, lastAccessTime, createdTime);
-				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) Successful updated Filetime for {} to mTime {}, cTime {} and aTime {}.",
+						dokanyFileInfo.Context,
+						path,
+						lastModifiedTime != null? lastModifiedTime.toMillis(): null,
+						createdTime != null? createdTime.toMillis() : null,
+						lastAccessTime != null? lastAccessTime.toMillis(): null);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (NoSuchFileException e) {
 				LOG.trace("({}) File {} not found.", dokanyFileInfo.Context, path);
