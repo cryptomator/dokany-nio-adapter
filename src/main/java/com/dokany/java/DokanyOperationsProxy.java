@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Implementation of {@link com.dokany.java.DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
@@ -25,7 +26,6 @@ import java.util.List;
 final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 	private final static Logger LOG = LoggerFactory.getLogger(DokanyOperationsProxy.class);
-	private final static CallbackThreadInitializer DEFAULT_CALLBACK_THREAD_INITIALIZER = new CallbackThreadInitializer();
 
 	private final DokanyFileSystem fileSystem;
 	private List<Callback> usedCallbacks = new ArrayList<>();
@@ -107,7 +107,8 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.FindStreams = null;
 		//callbacks.add(super.FindStreams);
 
-		usedCallbacks.forEach(callback -> Native.setCallbackThreadInitializer(callback,DEFAULT_CALLBACK_THREAD_INITIALIZER));
+		IntStream.range(0, usedCallbacks.size())
+				.forEach(i -> Native.setCallbackThreadInitializer(usedCallbacks.get(i),new DokanCallbackThreadInitializer(i)));
 	}
 
 	class ZwCreateFileProxy implements ZwCreateFile {
