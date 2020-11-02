@@ -494,7 +494,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		FullFileInfo data = new FullFileInfo(filename != null ? filename.toString() : "", //case distinction necessary, because the root has no name!
 				index,
 				FileUtil.dosAttributesToEnumIntegerSet(attr),
-				0, //currently just a stub
+				0x98765432, //currently just a stub
 				DokanyUtils.getTime(attr.creationTime().toMillis()),
 				DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
 				DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
