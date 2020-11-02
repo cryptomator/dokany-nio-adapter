@@ -59,10 +59,18 @@ public class FullFileInfo extends ByHandleFileInfo {
 
 	public WIN32_FIND_DATA toWin32FindData() {
 		char[] cFileName = Arrays.copyOf(filePath.toCharArray(), WinBase.MAX_PATH);
-		cFileName[259] = '\0'; //ensure the string is null terminated
+
+		//ensure the string is null terminated
+		if(filePath.length() < WinBase.MAX_PATH){
+			cFileName[filePath.length()] = '\0';
+		} else{
+			cFileName[WinBase.MAX_PATH-1] = '\0';
+		}
+
 		//cannot be used by dokany, see https://github.com/dokan-dev/dokany/issues/301
 		final char[] cAlternateFileName = new char[14];
 		cAlternateFileName[0] = '\0';
+
 		return new WIN32_FIND_DATA(dwFileAttributes, ftCreationTime, ftLastAccessTime, ftLastWriteTime, nFileSizeHigh, nFileSizeLow, dwReserved0, dwReserved1, cFileName, cAlternateFileName);
 	}
 

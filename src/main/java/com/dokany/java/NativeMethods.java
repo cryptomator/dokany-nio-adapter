@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Native API to the kernel Dokany driver. This is an internal class and should not be used directly by code outside com.dokany.java.
  */
-class NativeMethods {
+public class NativeMethods {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NativeMethods.class);
 	private static final String DOKAN_DLL = "dokan1";
@@ -114,7 +114,7 @@ class NativeMethods {
 	 * @param ignoreCase - Case sensitive or not
 	 * @return result if name matches the expression
 	 */
-	static native boolean DokanIsNameInExpression(String expression, String name, boolean ignoreCase);
+	public static native boolean DokanIsNameInExpression(WString expression, WString name, boolean ignoreCase);
 
 	/**
 	 * @param serviceName

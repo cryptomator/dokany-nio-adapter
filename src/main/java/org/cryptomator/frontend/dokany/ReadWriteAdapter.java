@@ -3,6 +3,7 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyOperations;
 import com.dokany.java.DokanyUtils;
+import com.dokany.java.NativeMethods;
 import com.dokany.java.constants.AccessMask;
 import com.dokany.java.constants.CreateOptions;
 import com.dokany.java.constants.CreationDisposition;
@@ -42,7 +43,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
@@ -50,21 +50,21 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.text.Normalizer;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 
 public class ReadWriteAdapter implements DokanyFileSystem {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReadWriteAdapter.class);
+	private static final WString MATCH_ALL_PATTERN = new WString("*");
 
 	private final Path root;
 	private final LockManager lockManager;
@@ -84,6 +84,28 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	/**
+	 * Creates a new ReadWriteAdapter with the given Path as root and adds to the OpenHandleCheckBuilder the check if the OpenHandleFactory is empty or not.
+	 * @param fileSystemRoot
+	 * @param lockManager
+	 * @param volumeInfo
+	 * @param mountDidSucceed
+	 * @param handleCheckBuilder
+	 */
+	public ReadWriteAdapter(Path fileSystemRoot, LockManager lockManager, VolumeInformation volumeInfo, CompletableFuture<Void> mountDidSucceed, OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder) {
+		this.root = fileSystemRoot;
+		this.lockManager = lockManager;
+		this.volumeInformation = volumeInfo;
+		this.didMount = mountDidSucceed;
+		this.fac = new OpenHandleFactory();
+		try {
+			this.fileStore = Files.getFileStore(root);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+		handleCheckBuilder.setFunction(fac::areNoHandlesOpen);
 	}
 
 	@Override
@@ -114,15 +136,15 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 		//is the file a directory and if yes, indicated as one?
 		if (attr.isPresent() && attr.get().isDirectory()) {
-			if ((rawCreateOptions & CreateOptions.FILE_NON_DIRECTORY_FILE.getMask()) == 0) {
+			if (!createOptions.contains(CreateOptions.FILE_NON_DIRECTORY_FILE)) {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
 			} else {
-				LOG.debug("Ressource {} is a Directory and cannot be opened as a file.", path);
+				LOG.debug("Resource {} is a directory and cannot be opened as a file.", path);
 				return Win32ErrorCode.ERROR_INVALID_STATE.getMask();
 			}
-		} else if (attr.isPresent() && !attr.get().isRegularFile()) {
-			return Win32ErrorCode.ERROR_CANT_ACCESS_FILE.getMask(); // or ERROR_OPEN_FAILED or ERROR_CALL_NOT_IMPLEMENTED?
+		} else if (attr.isPresent()) {
+			dokanyFileInfo.IsDirectory = 0x00;
 		}
 
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
@@ -277,11 +299,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 					} catch (DirectoryNotEmptyException e) {
 						LOG.trace("({}) Directory {} not empty.", dokanyFileInfo.Context, path);
 					} catch (IOException e) {
-						LOG.warn("({}) cleanup(): IO error during deletion of {}.\n{}", dokanyFileInfo.Context, path, e);
+						LOG.warn("({}) cleanup(): IO error during deletion of {}.", dokanyFileInfo.Context, path, e);
 					}
 				}
 			} catch (IOException e) {
-				LOG.warn("({}) cleanup(): Unable to close handle to {}.\n{}", dokanyFileInfo.Context, path, e);
+				LOG.warn("({}) cleanup(): Unable to close handle to {}.", dokanyFileInfo.Context, path, e);
 			}
 		}
 	}
@@ -472,11 +494,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		FullFileInfo data = new FullFileInfo(filename != null ? filename.toString() : "", //case distinction necessary, because the root has no name!
 				index,
 				FileUtil.dosAttributesToEnumIntegerSet(attr),
-				0, //currently just a stub
+				0x98765432, //currently just a stub
 				DokanyUtils.getTime(attr.creationTime().toMillis()),
 				DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
 				DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
 		data.setSize(attr.size());
+		LOG.trace("Timestamps for {}:\t mTime {} \t cTime {} \t aTime {}",path, data.ftLastWriteTime.toTime(), data.ftCreationTime.toTime(), data.ftLastAccessTime.toTime());
 		return data;
 	}
 
@@ -485,43 +508,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		Path path = getRootedPath(rawPath);
 		assert path.isAbsolute();
 		LOG.trace("({}) findFiles() is called for {}.", dokanyFileInfo.Context, path);
-		if (dokanyFileInfo.Context == 0) {
-			LOG.debug("findFiles(): Invalid handle to {}.", path);
-			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
-		} else {
-			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
-				 DataLock dataLock = pathLock.lockDataForReading();
-				 DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
-				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
-				StreamSupport.stream(spliterator, false)
-						.map(p -> {
-							assert p.isAbsolute();
-							try {
-								DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-								if (attr.isDirectory() || attr.isRegularFile()) {
-									return toFullFileInfo(p, attr).toWin32FindData();
-								} else {
-									LOG.warn("({}) findFiles(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
-									return null;
-								}
-							} catch (IOException e) {
-								LOG.warn("({}) findFiles(): IO error accessing {}. Will be ignored in file listing. Reported Exception:\n{}", dokanyFileInfo.Context, p, e);
-								return null;
-							}
-						})
-						.filter(Objects::nonNull)
-						.forEach(file -> {
-							assert file != null;
-							LOG.trace("({}) findFiles(): found file {}", dokanyFileInfo.Context, file.getFileName());
-							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-						});
-				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
-				return Win32ErrorCode.ERROR_SUCCESS.getMask();
-			} catch (IOException e) {
-				LOG.warn("({}) findFiles(): Unable to list content of directory {}.\n{}", dokanyFileInfo.Context, path, e);
-				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
-			}
-		}
+		return findFilesWithPattern(rawPath, MATCH_ALL_PATTERN, rawFillFindData, dokanyFileInfo);
 	}
 
 	/**
@@ -530,10 +517,8 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param rawFillFindData
 	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
 	 * @return
-	 * @deprecated This method is not used anymore, since Windows has additional globbing characters which makes file name matching difficult. (for more Information, see the <a href="https://github.com/cryptomator/dokany-nio-adapter/issues/19">corresponding github issue</a>)
 	 */
 	@Override
-	@Deprecated
 	public int findFilesWithPattern(WString fileName, WString searchPattern, DokanyOperations.FillWin32FindData rawFillFindData, DokanyFileInfo dokanyFileInfo) {
 		Path path = getRootedPath(fileName);
 		assert path.isAbsolute();
@@ -543,49 +528,39 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			return Win32ErrorCode.ERROR_INVALID_HANDLE.getMask();
 		} else {
 			final DirectoryStream.Filter<Path> filter;
-			if (searchPattern == null || searchPattern.toString().equals("*")) {
+			if (searchPattern.equals(MATCH_ALL_PATTERN)) {
 				filter = (Path p) -> true;  // match all
 			} else {
-				// we want to filter by glob
-				// since the Java API does NOT specify on which string representation a pathMatcher compares a path to a given expression, we assume NFC
-				String nfcSearchPattern = Normalizer.normalize(FileUtil.convertToGlobPattern(searchPattern.toString()), Normalizer.Form.NFC);
-				PathMatcher matcher = path.getFileSystem().getPathMatcher("glob:" + nfcSearchPattern);
-				filter = (Path p) -> matcher.matches(p.getFileName());
+				filter = (Path p) -> NativeMethods.DokanIsNameInExpression(new WString(p.getFileName().toString()), searchPattern, false);
 			}
 			try (DirectoryStream<Path> ds = Files.newDirectoryStream(path, filter)) {
 				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
-				Stream<Path> stream = StreamSupport.stream(spliterator, false);
-				stream.map(p -> {
-					assert p.isAbsolute();
-					try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
-						 DataLock dataLock = pathLock.lockDataForReading()) {
-						DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-						if (attr.isDirectory() || attr.isRegularFile()) {
-							return toFullFileInfo(p, attr).toWin32FindData();
-						} else {
-							LOG.warn("({}) findFilesWithPattern(): Found node that is neither directory nor file: {}. Will be ignored in file listing.", dokanyFileInfo.Context, p);
-							return null;
-						}
-					} catch (IOException e) {
-						LOG.warn("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing. Reported exception:\n{}", dokanyFileInfo.Context, p, e);
-						return null;
-					}
-				}).filter(Objects::nonNull)
+				StreamSupport.stream(spliterator, false)
+						.map(p -> {
+							assert p.isAbsolute();
+							try {
+								DosFileAttributes attr = Files.readAttributes(p, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+								if (!attr.isSymbolicLink()) {
+									return toFullFileInfo(p, attr).toWin32FindData();
+								} else {
+									LOG.warn("({}) findFilesWithPattern(): {} is a symlink, which is not supported by Dokan. Will be ignored in file listing.", dokanyFileInfo.Context, p);
+									return null;
+								}
+							} catch (IOException e) {
+								LOG.warn("({}) findFilesWithPattern(): IO error accessing {}. Will be ignored in file listing. Reported Exception:", dokanyFileInfo.Context, p, e);
+								return null;
+							}
+						})
+						.filter(Objects::nonNull)
 						.forEach(file -> {
 							assert file != null;
-							try {
-								LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
-								rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
-							} catch (Error e) {
-								//TODO: invalid memory access can happen, which is an Java.Lang.Error
-								LOG.error("({}) Error filling Win32FindData with file {}. Occurred error is {}", dokanyFileInfo.Context, file.getFileName());
-								LOG.error("(" + dokanyFileInfo.Context + ") findFilesWithPattern(): Stacktrace.", e);
-							}
+							LOG.trace("({}) findFilesWithPattern(): found file {}", dokanyFileInfo.Context, file.getFileName());
+							rawFillFindData.fillWin32FindData(file, dokanyFileInfo);
 						});
 				LOG.trace("({}) Successful searched content in {}.", dokanyFileInfo.Context, path);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (IOException e) {
-				LOG.error("({}) findFilesWithPattern(): Unable to list content of directory {}.\n{}", dokanyFileInfo.Context, path, e);
+				LOG.warn("({}) findFilesWithPattern(): Unable to list content of directory {}.", dokanyFileInfo.Context, path, e);
 				return Win32ErrorCode.ERROR_READ_FAULT.getMask();
 			}
 		}
@@ -656,7 +631,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				FileTime lastAccessTime = FileUtil.toFileTime(rawLastAccessTime).orElse(null);
 				FileTime createdTime = FileUtil.toFileTime(rawCreationTime).orElse(null);
 				Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(lastModifiedTime, lastAccessTime, createdTime);
-				LOG.trace("({}) Successful updated Filetime for {}.", dokanyFileInfo.Context, path);
+				LOG.trace("({}) Successful updated Filetime for {} to mTime {}, cTime {} and aTime {}.",
+						dokanyFileInfo.Context,
+						path,
+						lastModifiedTime != null? lastModifiedTime.toMillis(): null,
+						createdTime != null? createdTime.toMillis() : null,
+						lastAccessTime != null? lastAccessTime.toMillis(): null);
 				return Win32ErrorCode.ERROR_SUCCESS.getMask();
 			} catch (NoSuchFileException e) {
 				LOG.trace("({}) File {} not found.", dokanyFileInfo.Context, path);
@@ -866,6 +846,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public int unmounted(DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("unmounted() is called.");
+		try {
+			this.fac.close();
+		} catch (IOException e) {
+			LOG.warn("Could not close all open handles.", e);
+		}
 		return 0;
 	}
 

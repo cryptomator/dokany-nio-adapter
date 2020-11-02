@@ -21,6 +21,7 @@ public class Mount implements AutoCloseable {
 	private final DokanyDriver driver;
 	private final Path mountPoint;
 	private final ProcessBuilder revealCommand;
+	private final SafeUnmountCheck unmountCheck;
 
 	private Future<?> driverJob;
 
@@ -28,6 +29,14 @@ public class Mount implements AutoCloseable {
 		this.driver = driver;
 		this.mountPoint = mountPoint;
 		this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
+		this.unmountCheck = () -> true; //crazy that this works.
+	}
+
+	public Mount(Path mountPoint, DokanyDriver driver, SafeUnmountCheck unmountCheck) {
+		this.driver = driver;
+		this.mountPoint = mountPoint;
+		this.revealCommand = new ProcessBuilder("explorer", "/root,", mountPoint.toString());
+		this.unmountCheck = unmountCheck;
 	}
 
 	public void mount(ExecutorService executorService) throws ExecutionException, InterruptedException {
@@ -56,6 +65,19 @@ public class Mount implements AutoCloseable {
 		} catch (IOException e) {
 			LOG.error("Failed to reveal drive.", e);
 			return false;
+		}
+	}
+
+	/**
+	 * Unmounts the filessystem, if it is safe.
+	 *
+	 * @throws IllegalStateException if it is currently not possible to unmount the filesytsem.
+	 */
+	public void unmount() {
+		if (unmountCheck.safeUnmountPossible()) {
+			close();
+		} else {
+			throw new IllegalStateException("There are handles to files or directories open.");
 		}
 	}
 

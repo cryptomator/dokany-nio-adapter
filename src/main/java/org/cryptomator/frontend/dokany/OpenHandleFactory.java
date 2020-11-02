@@ -135,4 +135,8 @@ public class OpenHandleFactory implements AutoCloseable {
 			return handle;
 		}
 	}
+
+	public boolean areNoHandlesOpen() {
+		return openHandles.isEmpty();
+	}
 }

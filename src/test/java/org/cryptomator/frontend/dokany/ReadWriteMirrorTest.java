@@ -4,7 +4,8 @@ import org.slf4j.impl.SimpleLogger;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 
 public class ReadWriteMirrorTest {
@@ -22,12 +23,28 @@ public class ReadWriteMirrorTest {
 			return;
 		}
 
-		Path path = Paths.get("Y:\\test\\");
-		Path mountPoint = Paths.get("T:\\");
+		final Path dirPath;
+		final String vaultPassword;
+		final Path mountPoint;
+		Optional<String> testDirProp = Optional.ofNullable(System.getProperty("TestDir"));
+		Optional<String> testMountPoint = Optional.ofNullable(System.getProperty("TestMountPoint"));
+		if (testDirProp.isPresent() && testMountPoint.isPresent()) {
+			dirPath = Path.of(testDirProp.get());
+			mountPoint = Path.of(testMountPoint.get());
+		} else {
+			try (Scanner scanner = new Scanner(System.in)) {
+				System.out.println("Enter path to the vault you want to access:");
+				dirPath = Path.of(scanner.nextLine());
+				System.out.println("Enter path where vault is mounted:");
+				mountPoint = Path.of(scanner.nextLine());
+			}
+		}
+
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(path, mountPoint, "Test", "Cryptomator FS")) {
+		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "Cryptomator FS")) {
 			mount.reveal();
 			System.in.read();
+			mount.unmount();
 		}
 	}
 

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>dokany-nio-adapter</artifactId>
-	<version>1.1.15</version>
+	<version>1.2.0</version>
 	<description>Access resources at a given NIO path via Dokany.</description>
 	<name>Dokany-NIO Adapter</name>
 	<url>https://github.com/cryptomator/dokany-nio-adapter</url>
@@ -17,9 +17,9 @@
 	<properties>
 		<slf4j.version>1.7.25</slf4j.version>
 		<logback.version>1.2.3</logback.version>
-		<guava.version>27.0-jre</guava.version>
-		<jna.version>5.1.0</jna.version>
-		<jna-platform.version>5.1.0</jna-platform.version>
+		<guava.version>30.0-jre</guava.version>
+		<jna.version>5.5.0</jna.version>
+		<jna-platform.version>5.5.0</jna-platform.version>
 		<commons.cli.version>1.4</commons.cli.version>
 		<commons-io.version>2.6</commons-io.version>
 		<junit.jupiter.version>5.4.0</junit.jupiter.version>
@@ -134,7 +134,7 @@
 		<dependency>
 			<groupId>org.cryptomator</groupId>
 			<artifactId>cryptofs</artifactId>
-			<version>1.9.10</version>
+			<version>1.9.11</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -146,7 +146,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.0</version>
 				<configuration>
-					<release>9</release>
+					<release>11</release>
 				</configuration>
 			</plugin>
 		</plugins>
