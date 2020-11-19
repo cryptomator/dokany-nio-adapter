@@ -73,12 +73,19 @@ public class Mount implements AutoCloseable {
 	 *
 	 * @throws IllegalStateException if it is currently not possible to unmount the filesytsem.
 	 */
-	public void unmount() {
+	public void unmount() throws IllegalStateException {
 		if (unmountCheck.safeUnmountPossible()) {
 			close();
 		} else {
 			throw new IllegalStateException("There are handles to files or directories open.");
 		}
+	}
+
+	/**
+	 * Unmounts the filesystem, no matter what.
+	 */
+	public void unmountForced() {
+		close();
 	}
 
 	@Override
