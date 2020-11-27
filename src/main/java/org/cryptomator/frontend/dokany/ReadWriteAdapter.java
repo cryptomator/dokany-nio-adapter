@@ -531,7 +531,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (searchPattern.equals(MATCH_ALL_PATTERN)) {
 				filter = (Path p) -> true;  // match all
 			} else {
-				filter = (Path p) -> NativeMethods.DokanIsNameInExpression(new WString(p.getFileName().toString()), searchPattern, false);
+				filter = (Path p) -> NativeMethods.DokanIsNameInExpression(searchPattern, new WString(p.getFileName().toString()), true);
 			}
 			try (DirectoryStream<Path> ds = Files.newDirectoryStream(path, filter)) {
 				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);
