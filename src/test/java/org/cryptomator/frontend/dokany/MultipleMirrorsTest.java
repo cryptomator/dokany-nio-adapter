@@ -76,9 +76,9 @@ public class MultipleMirrorsTest {
 		});
 	}
 
-	@Disabled
 	@Test
-	public void testMultipleConcurrentMirrorsDriveLetterMounts() throws InterruptedException {
+	@Disabled
+	public void testMultipleConcurrentMirrorsDriveLetterMounts() {
 		Assertions.assertTimeoutPreemptively(Duration.ofSeconds(20), () -> {
 			for (int i = 0; i < numberOfMounts; i++) {
 				var testDir = SANDBOX.resolve(testDirPrefix + i);
