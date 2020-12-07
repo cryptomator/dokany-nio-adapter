@@ -121,8 +121,8 @@ public final class DokanyDriver {
 	 * Unmounts the Dokan Device from the mount point given in the mount options.
 	 */
 	public synchronized void shutdown() {
-		LOG.info("Unmounting Dokan device at {}", deviceOptions.MountPoint);
 		if (isMounted) {
+			LOG.info("Unmounting Dokan device at {}", deviceOptions.MountPoint);
 			boolean unmounted = NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
 			if (unmounted) {
 				setIsMounted(false);
