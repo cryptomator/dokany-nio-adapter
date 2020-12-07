@@ -24,7 +24,6 @@ public class ReadWriteMirrorTest {
 		}
 
 		final Path dirPath;
-		final String vaultPassword;
 		final Path mountPoint;
 		Optional<String> testDirProp = Optional.ofNullable(System.getProperty("TestDir"));
 		Optional<String> testMountPoint = Optional.ofNullable(System.getProperty("TestMountPoint"));
@@ -41,10 +40,10 @@ public class ReadWriteMirrorTest {
 		}
 
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "Cryptomator FS")) {
+		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
 			mount.reveal();
 			System.in.read();
-			mount.unmount();
+			mount.unmountForced();
 		}
 	}
 
