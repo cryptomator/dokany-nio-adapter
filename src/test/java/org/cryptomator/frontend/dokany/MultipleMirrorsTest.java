@@ -25,7 +25,7 @@ public class MultipleMirrorsTest {
 	@TempDir
 	static Path SANDBOX; // = Path.of("T:\\sandbox");
 
-	private static int numberOfMounts = 10;
+	private static int numberOfMounts = 5;
 	private static String testDirPrefix = "testDir";
 
 	private ConcurrentLinkedQueue<Mount> mounts;
@@ -61,14 +61,14 @@ public class MultipleMirrorsTest {
 	@Test
 	@EnabledIfDokanyInstalled
 	public void testMultipleConcurrentMirrorsFolderMounts() {
-		Assertions.assertTimeoutPreemptively(Duration.ofSeconds(20), () -> {
+		Assertions.assertTimeoutPreemptively(Duration.ofSeconds(15), () -> {
 			for (int i = 0; i < numberOfMounts; i++) {
 				var testDir = SANDBOX.resolve(testDirPrefix + i);
 				var mountPoint = SANDBOX.resolve("mnt" + i);
 				try {
 					MountFactory mountFactory = new MountFactory(mountThreads);
-					Mount m = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
-					mounts.add(m);
+					var mount = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
+					mounts.add(mount);
 				} catch (MountFailedException e) {
 					e.printStackTrace();
 				}
@@ -86,8 +86,8 @@ public class MultipleMirrorsTest {
 				var mountPoint = Path.of(driveLetter + ":\\");
 				try {
 					MountFactory mountFactory = new MountFactory(mountThreads);
-					Mount m = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
-					mounts.add(m);
+					var mount = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
+					mounts.add(mount);
 				} catch (MountFailedException e) {
 					e.printStackTrace();
 				}

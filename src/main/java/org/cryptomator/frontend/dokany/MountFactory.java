@@ -1,7 +1,7 @@
 package org.cryptomator.frontend.dokany;
 
-import com.dokany.java.DokanyDriver;
 import com.dokany.java.DokanyFileSystem;
+import com.dokany.java.DokanyMount;
 import com.dokany.java.constants.DokanOption;
 import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.structure.DeviceOptions;
@@ -26,6 +26,10 @@ public class MountFactory {
 	private static final Logger LOG = LoggerFactory.getLogger(MountFactory.class);
 	private static final int MOUNT_TIMEOUT_MS = 5000;
 	private static final short THREAD_COUNT = 5;
+	private static final String UNC_NAME = "";
+	private static final int TIMEOUT = 10000;
+	private static final int ALLOC_UNIT_SIZE = 4096;
+	private static final int SECTOR_SIZE = 4096;
 	private static final EnumIntegerSet<DokanOption> DOKAN_OPTIONS = new EnumIntegerSet<>( //
 			// DokanOption.DEBUG_MODE, //
 			// DokanOption.STD_ERR_OUTPUT, //
@@ -37,10 +41,6 @@ public class MountFactory {
 			// FileSystemFeature.PERSISTENT_ACLS, //
 			// FileSystemFeature.SUPPORTS_REMOTE_STORAGE, //
 			FileSystemFeature.UNICODE_ON_DISK);
-	private static final String UNC_NAME = "";
-	private static final int TIMEOUT = 10000;
-	private static final int ALLOC_UNIT_SIZE = 4096;
-	private static final int SECTOR_SIZE = 4096;
 
 	private final ExecutorService executorService;
 
@@ -60,29 +60,15 @@ public class MountFactory {
 	 * @throws MountFailedException if the mount process is aborted due to errors
 	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws MountFailedException {
-		Path absMountPoint = mountPoint.toAbsolutePath();
-		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(), THREAD_COUNT, DOKAN_OPTIONS, UNC_NAME, TIMEOUT, ALLOC_UNIT_SIZE, SECTOR_SIZE);
-		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
-		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
-		LockManager lockManager = new LockManager();
-		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
-		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed, handleCheckBuilder);
-		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
-		LOG.debug("Mounting on {}: ...", absMountPoint);
-		Mount mount = new Mount(absMountPoint, dokanyDriver, handleCheckBuilder.build());
-		try {
-			mount.mount(executorService);
-			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-			LOG.debug("Mounted directory at {} successfully.", absMountPoint.toString());
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		} catch (ExecutionException e) {
-			LOG.error("Mounting failed.", e);
-			throw new MountFailedException(e.getCause());
-		} catch (TimeoutException e) {
-			LOG.warn("Mounting timed out.");
-		}
-		return mount;
+		var absMountPoint = mountPoint.toAbsolutePath();
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
+				THREAD_COUNT,
+				DOKAN_OPTIONS,
+				UNC_NAME,
+				TIMEOUT,
+				ALLOC_UNIT_SIZE,
+				SECTOR_SIZE);
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions);
 	}
 
 	/**
@@ -94,46 +80,45 @@ public class MountFactory {
 	 * @param mountPoint The mount point of the mounted drive. Can be an empty directory or a drive letter.
 	 * @param volumeName The name of the drive as shown to the user.
 	 * @param fileSystemName The technical file system name shown in the drive properties window.
-	 * @param additionalOptions String of additional options to overwrite default values. See {@link MountUtil} for details.
+	 * @param additionalOptions Additional options for the mount. For any unset option a default value is used. See {@link MountUtil} for details.
 	 * @return The mount object.
 	 * @throws MountFailedException if the mount process is aborted due to errors
 	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws MountFailedException {
-		Path absMountPoint = mountPoint.toAbsolutePath();
-		MountUtil.MountOptions options = parseMountOptions(additionalOptions);
+		var absMountPoint = mountPoint.toAbsolutePath();
+		var mountOptions = parseMountOptions(additionalOptions);
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
-				options.getThreadCount().orElse(THREAD_COUNT),
-				options.getDokanOptions(),
+				mountOptions.getThreadCount().orElse(THREAD_COUNT),
+				mountOptions.getDokanOptions().isEmpty() ? DOKAN_OPTIONS : mountOptions.getDokanOptions(),
 				UNC_NAME,
-				options.getTimeout().orElse(TIMEOUT),
-				options.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
-				options.getSectorSize().orElse(SECTOR_SIZE));
+				mountOptions.getTimeout().orElse(TIMEOUT),
+				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
+				mountOptions.getSectorSize().orElse(SECTOR_SIZE));
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions);
+	}
+
+	private Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions) throws MountFailedException {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
-		LockManager lockManager = new LockManager();
 		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
-		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, lockManager, volumeInfo, mountDidSucceed, handleCheckBuilder);
-		DokanyDriver dokanyDriver = new DokanyDriver(deviceOptions, dokanyFs);
-
-		LOG.debug("Mounting on {}: ...", absMountPoint);
-		Mount mount = new Mount(absMountPoint, dokanyDriver, handleCheckBuilder.build());
+		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, new LockManager(), volumeInfo, mountDidSucceed, handleCheckBuilder);
+		DokanyMount mount = new DokanyMount(deviceOptions, dokanyFs, handleCheckBuilder.build());
+		LOG.debug("Mounting on {}: ...", deviceOptions.MountPoint);
 		try {
 			mount.mount(executorService);
 			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-			LOG.debug("Mounted directory at {} successfully.", absMountPoint.toString());
-		} catch (
-				InterruptedException e) {
+			LOG.debug("Mounted directory at {} successfully.", deviceOptions.MountPoint);
+		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-		} catch (
-				ExecutionException e) {
+		} catch (ExecutionException e) {
 			LOG.error("Mounting failed.", e);
 			throw new MountFailedException(e.getCause());
-		} catch (
-				TimeoutException e) {
+		} catch (TimeoutException e) {
 			LOG.warn("Mounting timed out.");
 		}
 		return mount;
 	}
+
 
 	private MountUtil.MountOptions parseMountOptions(String options) throws MountFailedException {
 		try {
