@@ -140,11 +140,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
 			} else {
-				LOG.debug("Resource {} is a directory and cannot be opened as a file.", path);
+				LOG.debug("Resource {} is a Directory and cannot be opened as a file.", path);
 				return Win32ErrorCode.ERROR_INVALID_STATE.getMask();
 			}
-		} else if (attr.isPresent()) {
-			dokanyFileInfo.IsDirectory = 0x00;
 		}
 
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
