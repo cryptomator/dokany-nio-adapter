@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of {@link com.dokany.java.DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
@@ -25,10 +26,14 @@ import java.util.List;
 final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 	private final static Logger LOG = LoggerFactory.getLogger(DokanyOperationsProxy.class);
-	private final static CallbackThreadInitializer DEFAULT_CALLBACK_THREAD_INITIALIZER = new CallbackThreadInitializer();
+	private final static String DEFAULT_THREAD_NAME = "DOKAN";
+
 
 	private final DokanyFileSystem fileSystem;
-	private List<Callback> usedCallbacks = new ArrayList<>();
+	private final ThreadGroup nativeDokanThreads = new ThreadGroup("AttachedDokanThreads");
+	private final CallbackThreadInitializer DEFAULT_CALLBACK_THREAD_INITIALIZER = new CallbackThreadInitializer(true, false, DEFAULT_THREAD_NAME, nativeDokanThreads);
+	private final AtomicInteger threadCounter = new AtomicInteger(0);
+	private final List<Callback> usedCallbacks = new ArrayList<>();
 
 	DokanyOperationsProxy(final DokanyFileSystem fileSystem) {
 		this.fileSystem = fileSystem;
@@ -107,7 +112,7 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.FindStreams = null;
 		//callbacks.add(super.FindStreams);
 
-		usedCallbacks.forEach(callback -> Native.setCallbackThreadInitializer(callback,DEFAULT_CALLBACK_THREAD_INITIALIZER));
+		usedCallbacks.forEach(callback -> Native.setCallbackThreadInitializer(callback, DEFAULT_CALLBACK_THREAD_INITIALIZER));
 	}
 
 	class ZwCreateFileProxy implements ZwCreateFile {
@@ -115,6 +120,11 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		@Override
 		public long callback(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 			try {
+				//hack to uniquely identify the dokan threads
+				if (Thread.currentThread().getName().equals(DEFAULT_THREAD_NAME)) {
+					Thread.currentThread().setName("dokan-" + threadCounter.getAndIncrement());
+				}
+
 				int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, rawDesiredAccess, rawFileAttributes, rawShareAccess, rawCreateDisposition, rawCreateOptions, dokanyFileInfo);
 				//little cheat for issue #24
 				if (win32ErrorCode == Win32ErrorCode.ERROR_INVALID_STATE.getMask()) {
