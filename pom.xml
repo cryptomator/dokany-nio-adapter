@@ -9,9 +9,9 @@
 	<url>https://github.com/cryptomator/dokany-nio-adapter</url>
 
 	<scm>
-		<connection>scm:git:git@github.com:cryptomator/fuse-nio-adapter.git</connection>
-		<developerConnection>scm:git:git@github.com:cryptomator/fuse-nio-adapter.git</developerConnection>
-		<url>git@github.com:cryptomator/fuse-nio-adapter.git</url>
+		<connection>scm:git:git@github.com:cryptomator/dokany-nio-adapter.git</connection>
+		<developerConnection>scm:git:git@github.com:cryptomator/dokany-nio-adapter.git</developerConnection>
+		<url>git@github.com:cryptomator/dokany-nio-adapter.git</url>
 	</scm>
 
 	<properties>
