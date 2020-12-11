@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 public class ReadWriteMirrorTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
 		System.setProperty(SimpleLogger.LOG_FILE_KEY, "System.out");
 		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
@@ -24,7 +24,6 @@ public class ReadWriteMirrorTest {
 		}
 
 		final Path dirPath;
-		final String vaultPassword;
 		final Path mountPoint;
 		Optional<String> testDirProp = Optional.ofNullable(System.getProperty("TestDir"));
 		Optional<String> testMountPoint = Optional.ofNullable(System.getProperty("TestMountPoint"));
@@ -41,10 +40,10 @@ public class ReadWriteMirrorTest {
 		}
 
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "Cryptomator FS")) {
+		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
 			mount.reveal();
 			System.in.read();
-			mount.unmount();
+			mount.unmountForced();
 		}
 	}
 

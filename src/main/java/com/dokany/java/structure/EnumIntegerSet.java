@@ -65,6 +65,6 @@ public final class EnumIntegerSet<T extends Enum<T> & EnumInteger> extends Abstr
 	@Override
 	@SuppressWarnings("all")
 	public String toString() {
-		return "EnumIntegerSet(elements=" + this.elements + ")";
+		return this.elements.toString();
 	}
 }

@@ -88,6 +88,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	/**
 	 * Creates a new ReadWriteAdapter with the given Path as root and adds to the OpenHandleCheckBuilder the check if the OpenHandleFactory is empty or not.
+	 *
 	 * @param fileSystemRoot
 	 * @param lockManager
 	 * @param volumeInfo
@@ -140,11 +141,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				dokanyFileInfo.IsDirectory = 0x01;
 				//TODO: set the share access like in the dokany mirror example
 			} else {
-				LOG.debug("Resource {} is a directory and cannot be opened as a file.", path);
+				LOG.debug("Resource {} is a Directory and cannot be opened as a file.", path);
 				return Win32ErrorCode.ERROR_INVALID_STATE.getMask();
 			}
-		} else if (attr.isPresent()) {
-			dokanyFileInfo.IsDirectory = 0x00;
 		}
 
 		try (PathLock pathLock = lockManager.createPathLock(path.toString()).forWriting();
@@ -531,7 +530,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			if (searchPattern.equals(MATCH_ALL_PATTERN)) {
 				filter = (Path p) -> true;  // match all
 			} else {
-				filter = (Path p) -> NativeMethods.DokanIsNameInExpression(new WString(p.getFileName().toString()), searchPattern, false);
+				filter = (Path p) -> NativeMethods.DokanIsNameInExpression(searchPattern, new WString(p.getFileName().toString()), true);
 			}
 			try (DirectoryStream<Path> ds = Files.newDirectoryStream(path, filter)) {
 				Spliterator<Path> spliterator = Spliterators.spliteratorUnknownSize(ds.iterator(), Spliterator.DISTINCT);

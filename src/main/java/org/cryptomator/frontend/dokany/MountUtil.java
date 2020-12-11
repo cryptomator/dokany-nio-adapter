@@ -148,7 +148,7 @@ public class MountUtil {
 	public static MountOptions parse(String argsString) throws ParseException, IllegalArgumentException {
 		CommandLineParser parser = new DefaultParser();
 
-		String[] args = argsString.split(" "); //possible since we don't have any option which muswt be enclosed by "
+		String[] args = argsString.split(" "); //possible since we don't have any option which must be enclosed by "
 		CommandLine cmd = parser.parse(OPTIONS, args);
 
 		if (!cmd.getArgList().isEmpty()) {

@@ -138,26 +138,6 @@ public class DokanyUtils {
 		return str.substring(0, Math.min(str.length(), len));
 	}
 
-	public static long exceptionToErrorCode(final Throwable t) {
-		return exceptionToErrorCode(t, NtStatus.UNSUCCESSFUL.getMask());
-	}
-
-	public static long exceptionToErrorCode(final Throwable t, final long defaultCode) {
-		LOG.warn(t.getMessage(), t);
-
-		if (t instanceof DokanyException) {
-			return ((DokanyException) t).getValue();
-		}
-		if (t instanceof FileNotFoundException) {
-			return ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
-		}
-		if (t instanceof FileAlreadyExistsException) {
-			return ErrorCode.ERROR_ALREADY_EXISTS.getMask();
-		}
-
-		return defaultCode;
-	}
-
 	public static FileTime toFileTime(final FILETIME time) {
 		return FileTime.from(time.toDate().toInstant());
 	}
