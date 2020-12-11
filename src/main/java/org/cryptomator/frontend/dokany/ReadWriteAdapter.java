@@ -88,6 +88,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	/**
 	 * Creates a new ReadWriteAdapter with the given Path as root and adds to the OpenHandleCheckBuilder the check if the OpenHandleFactory is empty or not.
+	 *
 	 * @param fileSystemRoot
 	 * @param lockManager
 	 * @param volumeInfo
