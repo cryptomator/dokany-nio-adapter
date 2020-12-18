@@ -1,5 +1,7 @@
 package org.cryptomator.frontend.dokany;
 
+import java.nio.file.Path;
+
 public interface Mount extends AutoCloseable {
 
 	@Override
@@ -9,7 +11,6 @@ public interface Mount extends AutoCloseable {
 
 	void unmountForced();
 
-	@Deprecated
-	boolean reveal();
+	Path getMountPoint();
 
 }

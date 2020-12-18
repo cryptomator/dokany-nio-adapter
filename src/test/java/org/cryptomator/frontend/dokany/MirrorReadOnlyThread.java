@@ -34,7 +34,7 @@ public class MirrorReadOnlyThread implements Runnable {
 		int allocationUnitSize = 4096;
 		int sectorSize = 4096;
 
-		devOps = new DeviceOptions(mountPoint.toString(), threadCount, mountOptions, uncName, timeout, allocationUnitSize, sectorSize);
+		devOps = new DeviceOptions(mountPoint, threadCount, mountOptions, uncName, timeout, allocationUnitSize, sectorSize);
 
 		EnumIntegerSet fsFeatures = new EnumIntegerSet<>(FileSystemFeature.class);
 		fsFeatures.add(FileSystemFeature.CASE_PRESERVED_NAMES, FileSystemFeature.CASE_SENSITIVE_SEARCH,

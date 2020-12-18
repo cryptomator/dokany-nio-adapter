@@ -61,7 +61,7 @@ public class MountFactory {
 	 */
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws MountFailedException {
 		var absMountPoint = mountPoint.toAbsolutePath();
-		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint,
 				THREAD_COUNT,
 				DOKAN_OPTIONS,
 				UNC_NAME,
@@ -87,7 +87,7 @@ public class MountFactory {
 	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws MountFailedException {
 		var absMountPoint = mountPoint.toAbsolutePath();
 		var mountOptions = parseMountOptions(additionalOptions);
-		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint,
 				mountOptions.getThreadCount().orElse(THREAD_COUNT),
 				mountOptions.getDokanOptions().isEmpty() ? DOKAN_OPTIONS : mountOptions.getDokanOptions(),
 				UNC_NAME,
