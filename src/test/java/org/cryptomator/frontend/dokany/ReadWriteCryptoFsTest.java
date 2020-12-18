@@ -55,7 +55,7 @@ public class ReadWriteCryptoFsTest {
 		Path path = cryptofs.getPath("/");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
-			System.out.println("CryptoFS successfully mounted.");
+			mount.reveal();
 			System.in.read();
 		}
 	}

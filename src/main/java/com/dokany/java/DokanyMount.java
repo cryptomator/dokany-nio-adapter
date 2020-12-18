@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -22,10 +21,12 @@ import java.util.concurrent.TimeoutException;
 public final class DokanyMount implements Mount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMount.class);
+	private static final int REVEAL_TIMEOUT_MS = 5000;
 
 	private final DeviceOptions deviceOptions;
 	private final DokanyFileSystem fileSystem;
 	private final SafeUnmountCheck unmountCheck;
+	private final ProcessBuilder revealCommand;
 
 	private volatile boolean isMounted;
 	private volatile CompletableFuture mountFuture;
@@ -40,6 +41,7 @@ public final class DokanyMount implements Mount {
 		this.mountFuture = CompletableFuture.failedFuture(new IllegalStateException("Not mounted."));
 		this.isMounted = false;
 		this.unmountCheck = unmountCheck;
+		this.revealCommand = new ProcessBuilder("explorer", "/root,", deviceOptions.MountPoint.toString());
 	}
 
 	/**
@@ -120,7 +122,7 @@ public final class DokanyMount implements Mount {
 				throw new LibraryNotFoundException(err.getMessage());
 			}
 		} else {
-			LOG.debug("Dokan Device already mounted on {}.", deviceOptions.getMountPoint());
+			LOG.debug("Dokan Device already mounted on {}.", deviceOptions.MountPoint);
 		}
 	}
 
@@ -134,7 +136,7 @@ public final class DokanyMount implements Mount {
 	 */
 	public synchronized void close() {
 		if (isMounted) {
-			LOG.info("Unmounting Dokan device at {}", deviceOptions.getMountPoint());
+			LOG.info("Unmounting Dokan device at {}", deviceOptions.MountPoint);
 			boolean unmounted = NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
 			if (unmounted) {
 				setIsMounted(false);
@@ -167,9 +169,26 @@ public final class DokanyMount implements Mount {
 		close();
 	}
 
-	@Override
-	public Path getMountPoint() {
-		return deviceOptions.getMountPoint();
+
+	@Deprecated
+	public boolean reveal() {
+		try {
+			Process proc = revealCommand.start();
+			boolean finishedInTime = proc.waitFor(REVEAL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+			if (finishedInTime) {
+				// The check proc.exitValue() == 0 is always false since Windows explorer return every time an exit value of 1
+				return true;
+			} else {
+				proc.destroyForcibly();
+				return false;
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return false;
+		} catch (IOException e) {
+			LOG.error("Failed to reveal drive.", e);
+			return false;
+		}
 	}
 
 }

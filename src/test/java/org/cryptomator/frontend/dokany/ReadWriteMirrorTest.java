@@ -41,7 +41,7 @@ public class ReadWriteMirrorTest {
 
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
-			System.out.println("Mirror successfully mounted.");
+			mount.reveal();
 			System.in.read();
 			mount.unmountForced();
 		}
