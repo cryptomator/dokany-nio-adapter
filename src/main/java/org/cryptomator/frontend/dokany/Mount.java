@@ -1,5 +1,8 @@
 package org.cryptomator.frontend.dokany;
 
+import java.nio.file.Path;
+import java.util.function.Consumer;
+
 public interface Mount extends AutoCloseable {
 
 	@Override
@@ -9,7 +12,6 @@ public interface Mount extends AutoCloseable {
 
 	void unmountForced();
 
-	@Deprecated
-	boolean reveal();
+	void reveal(Consumer<Path> revealer);
 
 }

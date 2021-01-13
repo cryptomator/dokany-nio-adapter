@@ -10,6 +10,9 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 public class ReadWriteCryptoFsTest {
 
@@ -55,7 +58,7 @@ public class ReadWriteCryptoFsTest {
 		Path path = cryptofs.getPath("/");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
-			mount.reveal();
+			mount.reveal(new WindowsExplorerRevealer());
 			System.in.read();
 		}
 	}

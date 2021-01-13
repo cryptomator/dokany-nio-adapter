@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 public class ReadWriteMirrorTest {
 
@@ -41,7 +44,7 @@ public class ReadWriteMirrorTest {
 
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
-			mount.reveal();
+			mount.reveal(new WindowsExplorerRevealer());
 			System.in.read();
 			mount.unmountForced();
 		}
