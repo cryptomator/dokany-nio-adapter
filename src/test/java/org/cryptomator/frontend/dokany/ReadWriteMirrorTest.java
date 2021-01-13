@@ -7,9 +7,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 public class ReadWriteMirrorTest {
 
@@ -35,9 +32,9 @@ public class ReadWriteMirrorTest {
 			mountPoint = Path.of(testMountPoint.get());
 		} else {
 			try (Scanner scanner = new Scanner(System.in)) {
-				System.out.println("Enter path to the vault you want to access:");
+				System.out.println("Enter path to the directory you want to mirror:");
 				dirPath = Path.of(scanner.nextLine());
-				System.out.println("Enter path where vault is mounted:");
+				System.out.println("Enter path where the mirror is mounted:");
 				mountPoint = Path.of(scanner.nextLine());
 			}
 		}
