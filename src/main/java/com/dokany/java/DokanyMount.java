@@ -3,6 +3,8 @@ package com.dokany.java;
 import com.dokany.java.constants.MountError;
 import com.dokany.java.structure.DeviceOptions;
 import org.cryptomator.frontend.dokany.Mount;
+import org.cryptomator.frontend.dokany.RevealException;
+import org.cryptomator.frontend.dokany.Revealer;
 import org.cryptomator.frontend.dokany.SafeUnmountCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,8 +171,8 @@ public final class DokanyMount implements Mount {
 
 
 	@Override
-	public void reveal(Consumer<Path> revealer) {
-		revealer.accept(Path.of(deviceOptions.MountPoint.toString()));
+	public void reveal(Revealer revealer) throws RevealException {
+		revealer.reveal(Path.of(deviceOptions.MountPoint.toString()));
 	}
 
 }
