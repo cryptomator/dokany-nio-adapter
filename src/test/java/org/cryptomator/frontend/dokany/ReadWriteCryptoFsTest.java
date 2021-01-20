@@ -55,7 +55,12 @@ public class ReadWriteCryptoFsTest {
 		Path path = cryptofs.getPath("/");
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
-			mount.reveal();
+			try {
+				mount.reveal(new WindowsExplorerRevealer());
+			} catch (RevealException e) {
+				System.out.println("Unable to reveal.");
+				e.printStackTrace();
+			}
 			System.in.read();
 		}
 	}

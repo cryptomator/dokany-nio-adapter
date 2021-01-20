@@ -30,11 +30,6 @@ public class MountFactory {
 	private static final int TIMEOUT = 10000;
 	private static final int ALLOC_UNIT_SIZE = 4096;
 	private static final int SECTOR_SIZE = 4096;
-	private static final EnumIntegerSet<DokanOption> DOKAN_OPTIONS = new EnumIntegerSet<>( //
-			// DokanOption.DEBUG_MODE, //
-			// DokanOption.STD_ERR_OUTPUT, //
-			// DokanOption.REMOVABLE_DRIVE, //
-			DokanOption.CURRENT_SESSION);
 	private static final EnumIntegerSet<FileSystemFeature> FILE_SYSTEM_FEATURES = new EnumIntegerSet<>( //
 			FileSystemFeature.CASE_PRESERVED_NAMES, //
 			FileSystemFeature.CASE_SENSITIVE_SEARCH, //
@@ -63,7 +58,7 @@ public class MountFactory {
 		var absMountPoint = mountPoint.toAbsolutePath();
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
 				THREAD_COUNT,
-				DOKAN_OPTIONS,
+				new EnumIntegerSet<>(DokanOption.class),
 				UNC_NAME,
 				TIMEOUT,
 				ALLOC_UNIT_SIZE,
@@ -89,7 +84,7 @@ public class MountFactory {
 		var mountOptions = parseMountOptions(additionalOptions);
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
 				mountOptions.getThreadCount().orElse(THREAD_COUNT),
-				mountOptions.getDokanOptions().isEmpty() ? DOKAN_OPTIONS : mountOptions.getDokanOptions(),
+				mountOptions.getDokanOptions(),
 				UNC_NAME,
 				mountOptions.getTimeout().orElse(TIMEOUT),
 				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),

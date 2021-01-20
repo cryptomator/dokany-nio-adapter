@@ -32,16 +32,21 @@ public class ReadWriteMirrorTest {
 			mountPoint = Path.of(testMountPoint.get());
 		} else {
 			try (Scanner scanner = new Scanner(System.in)) {
-				System.out.println("Enter path to the vault you want to access:");
+				System.out.println("Enter path to the directory you want to mirror:");
 				dirPath = Path.of(scanner.nextLine());
-				System.out.println("Enter path where vault is mounted:");
+				System.out.println("Enter path where the mirror is mounted:");
 				mountPoint = Path.of(scanner.nextLine());
 			}
 		}
 
 		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
 		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
-			mount.reveal();
+			try {
+				mount.reveal(new WindowsExplorerRevealer());
+			} catch (RevealException e) {
+				System.out.println("Unable to reveal.");
+				e.printStackTrace();
+			}
 			System.in.read();
 			mount.unmountForced();
 		}
