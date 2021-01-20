@@ -107,7 +107,7 @@ public class OpenHandleFactory implements AutoCloseable {
 		for (Iterator<Map.Entry<Long, OpenHandle>> it = openHandles.entrySet().iterator(); it.hasNext(); ) {
 			Map.Entry<Long, OpenHandle> entry = it.next();
 			OpenHandle openHandle = entry.getValue();
-			LOG.warn("Closing unclosed handle {}", openHandle);
+			LOG.warn("Closing unclosed handle to {}", openHandle.path);
 			try {
 				openHandle.close();
 			} catch (IOException e) {
