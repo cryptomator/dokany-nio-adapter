@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>dokany-nio-adapter</artifactId>
-	<version>1.2.2</version>
+	<version>1.3.0-SNAPSHOT</version>
 	<description>Access resources at a given NIO path via Dokany.</description>
 	<name>Dokany-NIO Adapter</name>
 	<url>https://github.com/cryptomator/dokany-nio-adapter</url>
