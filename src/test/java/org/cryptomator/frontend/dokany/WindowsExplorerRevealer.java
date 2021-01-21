@@ -7,15 +7,13 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * A simple mount revealer which opens the windows explorer.
- * <p>
- * TODO: maybe throw an exception on error.
  */
 public class WindowsExplorerRevealer implements Revealer {
 
 	private static final int REVEAL_TIMEOUT_MS = 5000;
 
 	@Override
-	public void reveal(Path path) {
+	public void reveal(Path path) throws TimeoutException, IOException {
 		var pb = new ProcessBuilder("explorer", "/root,", path.toString());
 		try {
 			Process proc = pb.start();
@@ -25,8 +23,6 @@ public class WindowsExplorerRevealer implements Revealer {
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-		} catch (IOException | TimeoutException e) {
-			e.printStackTrace();
 		}
 	}
 }

@@ -9,6 +9,6 @@ public interface Mount extends AutoCloseable {
 
 	void unmountForced();
 
-	void reveal(Revealer revealer) throws RevealException;
+	void reveal(Revealer revealer) throws Exception;
 
 }

@@ -5,6 +5,6 @@ import java.nio.file.Path;
 @FunctionalInterface
 public interface Revealer {
 
-	void reveal(Path path) throws RevealException;
+	void reveal(Path path) throws Exception;
 
 }

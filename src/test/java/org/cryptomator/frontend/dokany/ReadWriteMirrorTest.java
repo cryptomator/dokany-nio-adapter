@@ -43,7 +43,7 @@ public class ReadWriteMirrorTest {
 		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
 			try {
 				mount.reveal(new WindowsExplorerRevealer());
-			} catch (RevealException e) {
+			} catch (Exception e) {
 				System.out.println("Unable to reveal.");
 				e.printStackTrace();
 			}

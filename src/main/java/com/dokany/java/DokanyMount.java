@@ -3,7 +3,6 @@ package com.dokany.java;
 import com.dokany.java.constants.MountError;
 import com.dokany.java.structure.DeviceOptions;
 import org.cryptomator.frontend.dokany.Mount;
-import org.cryptomator.frontend.dokany.RevealException;
 import org.cryptomator.frontend.dokany.Revealer;
 import org.cryptomator.frontend.dokany.SafeUnmountCheck;
 import org.slf4j.Logger;
@@ -16,7 +15,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 /**
  * Main class to start and stop Dokany file system.
@@ -171,7 +169,7 @@ public final class DokanyMount implements Mount {
 
 
 	@Override
-	public void reveal(Revealer revealer) throws RevealException {
+	public void reveal(Revealer revealer) throws Exception {
 		revealer.reveal(Path.of(deviceOptions.MountPoint.toString()));
 	}
 
