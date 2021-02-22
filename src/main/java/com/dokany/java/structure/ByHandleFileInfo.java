@@ -30,45 +30,48 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ByHandleFileInfo extends Structure implements Structure.ByReference {
 
+	/*
+	DWORD    nNumberOfLinks;
+	DWORD    nFileIndexHigh;
+	DWORD    nFileIndexLow;
 	AtomicLong counter = new AtomicLong();
+	*/
 	// Used to store actual values (instead of high/low) which can be retrieved using getter method
-
 	String filePath;
 	long fileIndex;
 	long fileSize;
-	/**
-	 * The high-order DWORD value of the file size, in bytes. This value is zero unless the file size is greater than MAXDWORD. The size of the file is equal to (nFileSizeHigh*
-	 * (MAXDWORD+1)) + nFileSizeLow.
-	 */
-	public int nFileIndexHigh;
-	/**
-	 * The low-order DWORD value of the file size, in bytes.
-	 */
-	public int nFileIndexLow;
+
+	//the native fields
 	/**
 	 * The file attributes of a file. For possible values and their descriptions, see File Attribute Constants. The FILE_ATTRIBUTE_SPARSE_FILE attribute on the file is set if any
 	 * of the streams of the file have ever been sparse.
 	 */
 	public int dwFileAttributes;
+
 	/**
 	 * A FILETIME structure that specifies when a file or directory was created. If the underlying file system does not support creation time, this member is zero.
 	 */
-
 	public FILETIME ftCreationTime;
+
 	/**
 	 * A FILETIME structure. For a file, the structure specifies when the file was last read from, written to, or for executable files, run. For a directory, the structure
 	 * specifies when the directory is created. If the underlying file system does not support last access time, this member is zero. On the FAT file system, the specified date for
 	 * both files and directories is correct, but the time of day is always set to midnight.
 	 */
-
 	public FILETIME ftLastAccessTime;
+
 	/**
 	 * A FILETIME structure. For a file, the structure specifies when the file was last written to, truncated, or overwritten, for example, when WriteFile or SetEndOfFile are used.
 	 * The date and time are not updated when file attributes or security descriptors are changed. For a directory, the structure specifies when the directory is created. If the
 	 * underlying file system does not support last write time, this member is zero.
 	 */
-
 	public FILETIME ftLastWriteTime;
+
+	/**
+	 * The serial number of the volume that contains a file.
+	 */
+	public int dwVolumeSerialNumber;
+
 	/**
 	 * The high-order DWORD value of the file size, in bytes. This value is zero unless the file size is greater than MAXDWORD. The size of the file is equal to (nFileSizeHigh *
 	 * (MAXDWORD+1)) + nFileSizeLow.
@@ -78,8 +81,22 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	 * The low-order DWORD value of the file size, in bytes.
 	 */
 	public int nFileSizeLow;
-	public int dwVolumeSerialNumber;
+
+	/**
+	 * The number of links to this file. For the FAT file system this member is always 1. For the NTFS file system, it can be more than 1.
+	 */
 	public int dwNumberOfLinks = 1;
+
+	/**
+	 * The high-order DWORD value of the file size, in bytes. This value is zero unless the file size is greater than MAXDWORD. The size of the file is equal to (nFileSizeHigh*
+	 * (MAXDWORD+1)) + nFileSizeLow.
+	 */
+	public int nFileIndexHigh;
+
+	/**
+	 * The low-order DWORD value of the file size, in bytes.
+	 */
+	public int nFileIndexLow;
 
 	public ByHandleFileInfo(final FILETIME creationTime, final FILETIME lastAccessTime, final FILETIME lastWriteTime) {
 		setTimes(creationTime, lastAccessTime, lastWriteTime);
@@ -180,6 +197,6 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	@Override
 	@SuppressWarnings("all")
 	public String toString() {
-		return "ByHandleFileInfo(counter=" + this.counter + ", filePath=" + this.filePath + ", fileIndex=" + this.fileIndex + ", fileSize=" + this.fileSize + ", nFileIndexHigh=" + this.nFileIndexHigh + ", nFileIndexLow=" + this.nFileIndexLow + ", dwFileAttributes=" + this.dwFileAttributes + ", ftCreationTime=" + this.ftCreationTime + ", ftLastAccessTime=" + this.ftLastAccessTime + ", ftLastWriteTime=" + this.ftLastWriteTime + ", nFileSizeHigh=" + this.nFileSizeHigh + ", nFileSizeLow=" + this.nFileSizeLow + ", dwVolumeSerialNumber=" + this.dwVolumeSerialNumber + ", dwNumberOfLinks=" + this.dwNumberOfLinks + ")";
+		return "ByHandleFileInfo(filePath=" + this.filePath + ", fileIndex=" + this.fileIndex + ", fileSize=" + this.fileSize + ", nFileIndexHigh=" + this.nFileIndexHigh + ", nFileIndexLow=" + this.nFileIndexLow + ", dwFileAttributes=" + this.dwFileAttributes + ", ftCreationTime=" + this.ftCreationTime + ", ftLastAccessTime=" + this.ftLastAccessTime + ", ftLastWriteTime=" + this.ftLastWriteTime + ", nFileSizeHigh=" + this.nFileSizeHigh + ", nFileSizeLow=" + this.nFileSizeLow + ", dwVolumeSerialNumber=" + this.dwVolumeSerialNumber + ", dwNumberOfLinks=" + this.dwNumberOfLinks + ")";
 	}
 }
