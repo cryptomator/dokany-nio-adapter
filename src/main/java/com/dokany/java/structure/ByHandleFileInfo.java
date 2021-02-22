@@ -163,17 +163,13 @@ public class ByHandleFileInfo extends Structure implements Structure.ByReference
 	}
 
 	public void setIndex(final long indexToSet) {
-		if (indexToSet == 0) {
-			counter.getAndIncrement();
-		}
-		setIndex(indexToSet, (int) (indexToSet >> 32), (int) indexToSet);
+		setIndex(indexToSet, (int) (indexToSet >>> 32), (int) ((indexToSet << 32) >>> 32));
 	}
 
 	final void setIndex(final long index, final int indexHigh, final int indexLow) {
 		this.fileIndex = index;
-		final WinNT.LARGE_INTEGER largeInt = new WinNT.LARGE_INTEGER(index);
-		this.nFileIndexHigh = largeInt.getHigh().intValue();
-		this.nFileIndexLow = largeInt.getLow().intValue();
+		this.nFileIndexHigh = indexHigh;
+		this.nFileIndexLow = indexLow;
 	}
 
 	@Override
