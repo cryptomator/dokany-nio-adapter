@@ -3,8 +3,6 @@ package com.dokany.java;
 import com.dokany.java.constants.EnumInteger;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.sun.jna.platform.win32.WinBase.FILETIME;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
@@ -13,7 +11,6 @@ import java.util.Date;
  */
 public class DokanyUtils {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DokanyUtils.class);
 
 	private DokanyUtils() {
 

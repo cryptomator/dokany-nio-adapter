@@ -51,7 +51,6 @@ import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -469,7 +468,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 			try (PathLock pathLock = lockManager.createPathLock(path.toString()).forReading();
 				 DataLock dataLock = pathLock.lockDataForReading()) {
 				DosFileAttributes attr = Files.readAttributes(path, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-				LOG.trace("({}) Filesize of {} is {}.", dokanyFileInfo.Context, path, attr.size());
 				FullFileInfo data = toFullFileInfo(path, attr);
 				data.copyTo(handleFileInfo);
 				LOG.trace("({}) File Information successful read from {}.", dokanyFileInfo.Context, path);
@@ -498,7 +496,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 				DokanyUtils.getTime(attr.lastAccessTime().toMillis()),
 				DokanyUtils.getTime(attr.lastModifiedTime().toMillis()));
 		data.setSize(attr.size());
-		LOG.trace("Timestamps for {}:\t mTime {} \t cTime {} \t aTime {}",path, data.ftLastWriteTime.toTime(), data.ftCreationTime.toTime(), data.ftLastAccessTime.toTime());
 		return data;
 	}
 
@@ -875,19 +872,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 
 	@Override
 	public int setFileSecurity(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, DokanyFileInfo dokanyFileInfo) {
-//		Path path = getRootedPath(rawPath);
-//		LOG.trace("setFileSecurity() is called for " + path.toString());
-//		if (Files.exists(path)) {
-//			byte[] securityDescriptor = FileUtil.getStandardSecurityDescriptor();
-//			if (securityDescriptor.length <= rawSecurityDescriptorLength) {
-//				rawSecurityDescriptor.write(0L, securityDescriptor, 0, securityDescriptor.length);
-//				return Win32ErrorCode.SUCCESS.getMask();
-//			} else {
-//				return Win32ErrorCode.BUFFER_OVERFLOW.getMask();
-//			}
-//		} else {
-//			return Win32ErrorCode.ERROR_FILE_NOT_FOUND.getMask();
-//		}
 		return 0;
 	}
 
