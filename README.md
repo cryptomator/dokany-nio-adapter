@@ -1,6 +1,6 @@
 [![Build Status](https://github.com/cryptomator/dokany-nio-adapter/workflows/Build/badge.svg)](https://github.com/cryptomator/dokany-nio-adapter/actions?query=workflow%3ABuild)
-[![Codacy Code Quality](https://app.codacy.com/project/badge/Grade/f3f46474adb14bc59d4fc489903950f5)](https://www.codacy.com/gh/cryptomator/dokany-nio-adapter)
-[![Codacy Coverage](https://app.codacy.com/project/badge/Coverage/f3f46474adb14bc59d4fc489903950f5)](https://www.codacy.com/gh/cryptomator/dokany-nio-adapter)
+[![Codacy Code Quality](https://app.codacy.com/project/badge/Grade/f3f46474adb14bc59d4fc489903950f5)](https://www.codacy.com/gh/cryptomator/dokany-nio-adapter/dashboard)
+[![Codacy Coverage](https://app.codacy.com/project/badge/Coverage/f3f46474adb14bc59d4fc489903950f5)](https://www.codacy.com/gh/cryptomator/dokany-nio-adapter/dashboard)
 [![Known Vulnerabilities](https://snyk.io/test/github/cryptomator/dokany-nio-adapter/badge.svg)](https://snyk.io/test/github/cryptomator/dokany-nio-adapter)
 
 # dokany-nio-adapter
