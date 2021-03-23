@@ -117,7 +117,7 @@ public final class DokanyMount implements Mount {
 				setIsMounted(true);
 			} catch (UnsatisfiedLinkError err) {
 				LOG.error("Unable to load dokan driver.", err);
-				throw new LibraryNotFoundException(err.getMessage());
+				throw new DokanyException(err);
 			}
 		} else {
 			LOG.debug("Dokan Device already mounted on {}.", deviceOptions.MountPoint);
