@@ -15,7 +15,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
 
 /**
  * Main class to start and stop Dokany file system.
@@ -29,7 +28,6 @@ public final class DokanyMount implements Mount {
 	private final SafeUnmountCheck unmountCheck;
 
 	private volatile boolean isMounted;
-	private volatile CompletableFuture<Void> mountFuture;
 
 	public DokanyMount(final DeviceOptions deviceOptions, final DokanyFileSystem fileSystem) {
 		this(deviceOptions, fileSystem, () -> true);
@@ -38,7 +36,6 @@ public final class DokanyMount implements Mount {
 	public DokanyMount(final DeviceOptions deviceOptions, final DokanyFileSystem fileSystem, SafeUnmountCheck unmountCheck) {
 		this.deviceOptions = deviceOptions;
 		this.fileSystem = fileSystem;
-		this.mountFuture = CompletableFuture.failedFuture(new IllegalStateException("Not mounted."));
 		this.isMounted = false;
 		this.unmountCheck = unmountCheck;
 	}
@@ -69,7 +66,7 @@ public final class DokanyMount implements Mount {
 	 * <p>
 	 * Additionally a shutdown hook invoking {@link #close()} is registered to the JVM.
 	 */
-	public synchronized void mount() throws DokanyException {
+	public void mount() throws DokanyException {
 		this.mount(ForkJoinPool.commonPool(), () -> {});
 	}
 
@@ -83,7 +80,7 @@ public final class DokanyMount implements Mount {
 	 * @param executor
 	 * @throws DokanyException
 	 */
-	public synchronized void mount(Executor executor) throws DokanyException {
+	public void mount(Executor executor) throws DokanyException {
 		this.mount(executor, () -> {});
 	}
 
@@ -95,9 +92,9 @@ public final class DokanyMount implements Mount {
 	 * Additionally a shutdown hook invoking {@link #close()} is registered to the JVM.
 	 *
 	 * @param executor
-	 * @param afterUnmountAction object with a run() method which is executed after unmount
+	 * @param afterExitAction object with a run() method which is executed after the mount process exited
 	 */
-	public synchronized void mount(Executor executor, Runnable afterUnmountAction) throws DokanyException {
+	public synchronized void mount(Executor executor, Runnable afterExitAction) throws DokanyException {
 		if (!isMounted) {
 			isMounted = true;
 			try {
@@ -105,30 +102,26 @@ public final class DokanyMount implements Mount {
 
 				LOG.info("Dokany API/driver version: {} / {}", getVersion(), getDriverVersion());
 				//real mount op
-				mountFuture = CompletableFuture
-						.supplyAsync(() -> NativeMethods.DokanMain(deviceOptions, new DokanyOperationsProxy(fileSystem)), executor)
-						.handle((BiFunction<? super Integer, Throwable, Void>) (returnVal, throwable) -> {
+				CompletableFuture.supplyAsync(() -> NativeMethods.DokanMain(deviceOptions, new DokanyOperationsProxy(fileSystem)), executor)
+						.whenComplete((returnVal, throwable) -> {
 							isMounted = false;
-							afterUnmountAction.run();
+							afterExitAction.run();
 							if (throwable != null) {
-								throw new DokanyRuntimeException(throwable);
+								throw new DokanyException(throwable);
 							}
 							if (returnVal != null && returnVal != 0) {
-								throw new DokanyRuntimeException("Non-Zero return code " + returnVal + ": " + MountError.fromInt(returnVal).getDescription());
+								throw new DokanyException("Non-Zero return code " + returnVal + ": " + MountError.fromInt(returnVal).getDescription());
 							}
-							return null;
-						});
+						})
+						.get(1000, TimeUnit.MILLISECONDS);
 
-				//check if mount runs
-				mountFuture.get(1000, TimeUnit.MILLISECONDS);
-
-				//if the execution reaches this point, was directly unmounted.
+				//if the execution reaches this point, device was directly unmounted.
 				throw new DokanyException("Mount failed: Volume was instantly unmounted.");
 			} catch (UnsatisfiedLinkError err) {
 				throw new DokanyException(err);
 			} catch (ExecutionException e) {
-				if (e.getCause() instanceof DokanyRuntimeException) {
-					throw new DokanyException(e.getMessage(), e.getCause());
+				if (e.getCause() instanceof DokanyException) {
+					throw (DokanyException) e.getCause();
 				} else {
 					throw new DokanyException(e.getCause());
 				}
@@ -189,22 +182,6 @@ public final class DokanyMount implements Mount {
 		} else {
 			throw new IllegalStateException("Filesystem not mounted.");
 		}
-	}
-
-	private static class DokanyRuntimeException extends RuntimeException {
-
-		DokanyRuntimeException(String msg) {
-			super(msg);
-		}
-
-		DokanyRuntimeException(Throwable cause) {
-			super(cause);
-		}
-
-		DokanyRuntimeException(String msg, Throwable cause) {
-			super(msg, cause);
-		}
-
 	}
 
 }
