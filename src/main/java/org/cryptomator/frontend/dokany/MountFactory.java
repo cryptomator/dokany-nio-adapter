@@ -44,7 +44,7 @@ public class MountFactory {
 	}
 
 	/**
-	 * Mounts a virtual drive at the given mount point containing contents of the given path.
+	 * Mounts the root of a filesystem at the given mount point.
 	 * This method blocks until the mount succeeds or times out.
 	 *
 	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
@@ -63,11 +63,11 @@ public class MountFactory {
 				TIMEOUT,
 				ALLOC_UNIT_SIZE,
 				SECTOR_SIZE);
-		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions);
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, () -> {});
 	}
 
 	/**
-	 * Mounts a virtual drive at the given mount point containing contents of the given path with the specified additional mount options.
+	 * Mounts the root of a filesystem at the given mount point with the specified additional mount options.
 	 * If an additional mount option is not specified the default value is used.
 	 * This method blocks until the mount succeeds or times out.
 	 *
@@ -89,10 +89,37 @@ public class MountFactory {
 				mountOptions.getTimeout().orElse(TIMEOUT),
 				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
 				mountOptions.getSectorSize().orElse(SECTOR_SIZE));
-		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions);
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, () -> {});
 	}
 
-	private Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions) throws MountFailedException {
+	/**
+	 * Mounts the root of a filesystem at the given mount point with the specified additional mount options and an action which is executed after unmount.
+	 * If an additional mount option is not specified the default value is used.
+	 * This method blocks until the mount succeeds or times out.
+	 *
+	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
+	 * @param mountPoint The mount point of the mounted drive. Can be an empty directory or a drive letter.
+	 * @param volumeName The name of the drive as shown to the user.
+	 * @param fileSystemName The technical file system name shown in the drive properties window.
+	 * @param additionalOptions Additional options for the mount. For any unset option a default value is used. See {@link MountUtil} for details.
+	 * @param afterUnmountAction action to be performed after the filesystem is unmounted.
+	 * @return The mount object.
+	 * @throws MountFailedException if the mount process is aborted due to errors
+	 */
+	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions, Runnable afterUnmountAction) throws MountFailedException {
+		var absMountPoint = mountPoint.toAbsolutePath();
+		var mountOptions = parseMountOptions(additionalOptions);
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
+				mountOptions.getThreadCount().orElse(THREAD_COUNT),
+				mountOptions.getDokanOptions(),
+				UNC_NAME,
+				mountOptions.getTimeout().orElse(TIMEOUT),
+				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
+				mountOptions.getSectorSize().orElse(SECTOR_SIZE));
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, afterUnmountAction);
+	}
+
+	private Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions, Runnable afterUnmountAction) throws MountFailedException {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
@@ -100,7 +127,7 @@ public class MountFactory {
 		DokanyMount mount = new DokanyMount(deviceOptions, dokanyFs, handleCheckBuilder.build());
 		LOG.debug("Mounting on {}: ...", deviceOptions.MountPoint);
 		try {
-			mount.mount(executorService);
+			mount.mount(executorService, afterUnmountAction);
 			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 			LOG.debug("Mounted directory at {} successfully.", deviceOptions.MountPoint);
 		} catch (InterruptedException e) {

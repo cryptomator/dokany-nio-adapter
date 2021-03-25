@@ -39,8 +39,9 @@ public class ReadWriteMirrorTest {
 			}
 		}
 
-		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
+		MountFactory mountFactory = new MountFactory(Executors.newSingleThreadExecutor());
+		Runnable afterUnmountAction = () -> System.out.println("Volume unmounted");
+		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS", "--thread-count 5", afterUnmountAction)) {
 			try {
 				mount.reveal(new WindowsExplorerRevealer());
 			} catch (Exception e) {
