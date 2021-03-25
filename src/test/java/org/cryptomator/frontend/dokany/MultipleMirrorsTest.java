@@ -69,7 +69,7 @@ public class MultipleMirrorsTest {
 					MountFactory mountFactory = new MountFactory(mountThreads);
 					var mount = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
 					mounts.add(mount);
-				} catch (MountFailedException e) {
+				} catch (DokanyMountFailedException e) {
 					e.printStackTrace();
 				}
 			}
@@ -88,7 +88,7 @@ public class MultipleMirrorsTest {
 					MountFactory mountFactory = new MountFactory(mountThreads);
 					var mount = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
 					mounts.add(mount);
-				} catch (MountFailedException e) {
+				} catch (DokanyMountFailedException e) {
 					e.printStackTrace();
 				}
 			}

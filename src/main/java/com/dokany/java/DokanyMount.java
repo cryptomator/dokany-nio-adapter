@@ -107,14 +107,14 @@ public final class DokanyMount implements Mount {
 				//real mount op
 				mountFuture = CompletableFuture
 						.supplyAsync(() -> NativeMethods.DokanMain(deviceOptions, new DokanyOperationsProxy(fileSystem)), executor)
-						.handle((BiFunction<? super Integer, Throwable, Void>) (returnVal, exception) -> {
+						.handle((BiFunction<? super Integer, Throwable, Void>) (returnVal, throwable) -> {
 							isMounted = false;
 							afterUnmountAction.run();
-							if (exception != null) {
-								throw new DokanyException(exception);
+							if (throwable != null) {
+								throw new DokanyRuntimeException(throwable);
 							}
 							if (returnVal != null && returnVal != 0) {
-								throw new DokanyException("Return Code " + returnVal + ": " + MountError.fromInt(returnVal).getDescription());
+								throw new DokanyRuntimeException("Non-Zero return code " + returnVal + ": " + MountError.fromInt(returnVal).getDescription());
 							}
 							return null;
 						});
@@ -127,8 +127,8 @@ public final class DokanyMount implements Mount {
 			} catch (UnsatisfiedLinkError err) {
 				throw new DokanyException(err);
 			} catch (ExecutionException e) {
-				if (e.getCause() instanceof DokanyException) {
-					throw (DokanyException) e.getCause();
+				if (e.getCause() instanceof DokanyRuntimeException) {
+					throw new DokanyException(e.getMessage(), e.getCause());
 				} else {
 					throw new DokanyException(e.getCause());
 				}
@@ -189,6 +189,22 @@ public final class DokanyMount implements Mount {
 		} else {
 			throw new IllegalStateException("Filesystem not mounted.");
 		}
+	}
+
+	private static class DokanyRuntimeException extends RuntimeException {
+
+		DokanyRuntimeException(String msg) {
+			super(msg);
+		}
+
+		DokanyRuntimeException(Throwable cause) {
+			super(cause);
+		}
+
+		DokanyRuntimeException(String msg, Throwable cause) {
+			super(msg, cause);
+		}
+
 	}
 
 }
