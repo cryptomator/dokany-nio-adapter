@@ -125,10 +125,8 @@ public final class DokanyMount implements Mount {
 				//if the execution reaches this point, was directly unmounted.
 				throw new DokanyException("Mount failed: Volume was instantly unmounted.");
 			} catch (UnsatisfiedLinkError err) {
-				LOG.error("Unable to load dokan driver.", err);
 				throw new DokanyException(err);
 			} catch (ExecutionException e) {
-				LOG.error("Error while mounting", e.getCause());
 				if (e.getCause() instanceof DokanyException) {
 					throw (DokanyException) e.getCause();
 				} else {
