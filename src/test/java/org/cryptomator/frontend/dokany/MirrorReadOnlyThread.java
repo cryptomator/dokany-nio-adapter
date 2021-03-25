@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.dokany;
 
+import com.dokany.java.DokanyException;
 import com.dokany.java.DokanyMount;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.constants.FileSystemFeature;
@@ -48,8 +49,12 @@ public class MirrorReadOnlyThread implements Runnable {
 
 	@Override
 	public void run() {
-		dokany.mount();
 		System.out.println("Starting new dokany thread with mount point " + mountPoint.toString());
+		try {
+			dokany.mount();
+		} catch (DokanyException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public DokanyMount getDokanyDriver() {
