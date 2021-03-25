@@ -186,7 +186,11 @@ public final class DokanyMount implements Mount {
 
 	@Override
 	public void reveal(Revealer revealer) throws Exception {
-		revealer.reveal(Path.of(deviceOptions.MountPoint.toString()));
+		if (isMounted) {
+			revealer.reveal(Path.of(deviceOptions.MountPoint.toString()));
+		} else {
+			throw new IllegalStateException("Filesystem not mounted.");
+		}
 	}
 
 }
