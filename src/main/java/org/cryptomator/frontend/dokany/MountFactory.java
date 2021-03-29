@@ -103,11 +103,11 @@ public class MountFactory {
 	 * @param volumeName The name of the drive as shown to the user.
 	 * @param fileSystemName The technical file system name shown in the drive properties window.
 	 * @param additionalOptions Additional options for the mount. For any unset option a default value is used. See {@link MountUtil} for details.
-	 * @param afterMountExitAction action to be performed after the dokan mount exited (regularly or irregularly)
+	 * @param onDokanExit action to be performed after the dokan mount exited (regularly or irregularly)
 	 * @return The mount object.
 	 * @throws DokanyMountFailedException if the mount process is aborted due to errors
 	 */
-	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions, Runnable afterMountExitAction) throws DokanyMountFailedException {
+	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions, Runnable onDokanExit) throws DokanyMountFailedException {
 		var absMountPoint = mountPoint.toAbsolutePath();
 		var mountOptions = parseMountOptions(additionalOptions);
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
@@ -117,10 +117,10 @@ public class MountFactory {
 				mountOptions.getTimeout().orElse(TIMEOUT),
 				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
 				mountOptions.getSectorSize().orElse(SECTOR_SIZE));
-		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, afterMountExitAction);
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, onDokanExit);
 	}
 
-	private Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions, Runnable afterMountExitAction) throws DokanyMountFailedException {
+	private Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions, Runnable onDokanExit) throws DokanyMountFailedException {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
 		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
@@ -128,7 +128,7 @@ public class MountFactory {
 		DokanyMount mount = new DokanyMount(deviceOptions, dokanyFs, handleCheckBuilder.build());
 		LOG.debug("Mounting on {}: ...", deviceOptions.MountPoint);
 		try {
-			mount.mount(executorService, afterMountExitAction);
+			mount.mount(executorService, onDokanExit);
 			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 			LOG.debug("Mounted directory at {} successfully.", deviceOptions.MountPoint);
 		} catch (InterruptedException e) {

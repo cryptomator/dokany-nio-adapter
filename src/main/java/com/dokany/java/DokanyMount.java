@@ -92,9 +92,9 @@ public final class DokanyMount implements Mount {
 	 * Additionally a shutdown hook invoking {@link #close()} is registered to the JVM.
 	 *
 	 * @param executor
-	 * @param afterExitAction object with a run() method which is executed after the mount process exited
+	 * @param onDokanExit object with a run() method which is executed after the Dokan process exited
 	 */
-	public synchronized void mount(Executor executor, Runnable afterExitAction) throws DokanyException {
+	public synchronized void mount(Executor executor, Runnable onDokanExit) throws DokanyException {
 		if (!isMounted) {
 			isMounted = true;
 			try {
@@ -105,7 +105,7 @@ public final class DokanyMount implements Mount {
 				CompletableFuture.supplyAsync(() -> NativeMethods.DokanMain(deviceOptions, new DokanyOperationsProxy(fileSystem)), executor)
 						.whenComplete((returnVal, throwable) -> {
 							isMounted = false;
-							afterExitAction.run();
+							onDokanExit.run();
 							if (throwable != null) {
 								throw new DokanyException(throwable);
 							}
