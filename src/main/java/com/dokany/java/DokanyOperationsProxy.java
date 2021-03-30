@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -26,17 +27,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 	private final static Logger LOG = LoggerFactory.getLogger(DokanyOperationsProxy.class);
-	private final static String DEFAULT_THREAD_NAME = "DOKAN";
 
-
+	private final CountDownLatch mountSuccessSignaler;
 	private final DokanyFileSystem fileSystem;
-	private final ThreadGroup nativeDokanThreads = new ThreadGroup("AttachedDokanThreads");
-	private final CallbackThreadInitializer DEFAULT_CALLBACK_THREAD_INITIALIZER = new CallbackThreadInitializer(true, false, DEFAULT_THREAD_NAME, nativeDokanThreads);
+	private final String nativeThreadNamePrefix;
+	private final ThreadGroup nativeThreadGroup;
+	private final CallbackThreadInitializer callbackThreadInitializer;
 	private final AtomicInteger threadCounter = new AtomicInteger(0);
 	private final List<Callback> usedCallbacks = new ArrayList<>();
 
-	DokanyOperationsProxy(final DokanyFileSystem fileSystem) {
+	DokanyOperationsProxy(CountDownLatch mountSuccessSignaler, final DokanyFileSystem fileSystem, String nativeThreadNamePrefix) {
+		this.mountSuccessSignaler = mountSuccessSignaler;
 		this.fileSystem = fileSystem;
+		this.nativeThreadNamePrefix = nativeThreadNamePrefix;
+		this.nativeThreadGroup = new ThreadGroup(nativeThreadNamePrefix);
+		this.callbackThreadInitializer = new CallbackThreadInitializer(true, false, nativeThreadNamePrefix, nativeThreadGroup);
 		super.ZwCreateFile = new ZwCreateFileProxy();
 		usedCallbacks.add(super.ZwCreateFile);
 
@@ -112,7 +117,7 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.FindStreams = null;
 		//callbacks.add(super.FindStreams);
 
-		usedCallbacks.forEach(callback -> Native.setCallbackThreadInitializer(callback, DEFAULT_CALLBACK_THREAD_INITIALIZER));
+		usedCallbacks.forEach(callback -> Native.setCallbackThreadInitializer(callback, callbackThreadInitializer));
 	}
 
 	class ZwCreateFileProxy implements ZwCreateFile {
@@ -121,8 +126,8 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		public long callback(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 			try {
 				//hack to uniquely identify the dokan threads
-				if (Thread.currentThread().getName().equals(DEFAULT_THREAD_NAME)) {
-					Thread.currentThread().setName("dokan-" + threadCounter.getAndIncrement());
+				if (Thread.currentThread().getName().equals(nativeThreadNamePrefix)) {
+					Thread.currentThread().setName(nativeThreadNamePrefix + threadCounter.getAndIncrement());
 				}
 
 				int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, rawDesiredAccess, rawFileAttributes, rawShareAccess, rawCreateDisposition, rawCreateOptions, dokanyFileInfo);
@@ -372,6 +377,7 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 		@Override
 		public long mounted(DokanyFileInfo dokanyFileInfo) {
+			mountSuccessSignaler.countDown();
 			try {
 				return NativeMethods.DokanNtStatusFromWin32(fileSystem.mounted(dokanyFileInfo));
 			} catch (Exception e) {

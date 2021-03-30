@@ -53,8 +53,7 @@ public class ReadWriteCryptoFsTest {
 				.build();
 		CryptoFileSystem cryptofs = CryptoFileSystemProvider.newFileSystem(vaultPath, props);
 		Path path = cryptofs.getPath("/");
-		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
+		try (Mount mount = MountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
 			try {
 				mount.reveal(new WindowsExplorerRevealer());
 			} catch (Exception e) {

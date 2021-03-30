@@ -29,8 +29,6 @@ public class MultipleMirrorsTest {
 	private static String testDirPrefix = "testDir";
 
 	private ConcurrentLinkedQueue<Mount> mounts;
-	private MountFactory mountFactory;
-	private ExecutorService mountThreads;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -53,8 +51,6 @@ public class MultipleMirrorsTest {
 	@BeforeEach
 	public void init() throws IOException {
 		this.mounts = new ConcurrentLinkedQueue<>();
-		this.mountThreads = Executors.newCachedThreadPool();
-		this.mountFactory = new MountFactory(mountThreads);
 	}
 
 
@@ -66,8 +62,7 @@ public class MultipleMirrorsTest {
 				var testDir = SANDBOX.resolve(testDirPrefix + i);
 				var mountPoint = SANDBOX.resolve("mnt" + i);
 				try {
-					MountFactory mountFactory = new MountFactory(mountThreads);
-					var mount = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
+					var mount = MountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
 					mounts.add(mount);
 				} catch (DokanyMountFailedException e) {
 					e.printStackTrace();
@@ -85,8 +80,7 @@ public class MultipleMirrorsTest {
 				char driveLetter = Character.toChars(0x4a + i)[0];
 				var mountPoint = Path.of(driveLetter + ":\\");
 				try {
-					MountFactory mountFactory = new MountFactory(mountThreads);
-					var mount = mountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
+					var mount = MountFactory.mount(testDir, mountPoint, "mnt" + i, "Mirror FS");
 					mounts.add(mount);
 				} catch (DokanyMountFailedException e) {
 					e.printStackTrace();

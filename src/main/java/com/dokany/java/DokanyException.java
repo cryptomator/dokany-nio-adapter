@@ -1,6 +1,6 @@
 package com.dokany.java;
 
-public final class DokanyException extends RuntimeException {
+public final class DokanyException extends Exception {
 
 	public DokanyException(String msg) {
 		super(msg);

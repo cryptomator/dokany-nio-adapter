@@ -43,7 +43,7 @@ public class MirrorReadOnlyThread implements Runnable {
 
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, "Mirror", 0x98765432, "Dokany MirrorFS", fsFeatures);
 
-		DokanyFileSystem myFs = new ReadWriteAdapter(dirToMirror, new LockManager(), volumeInfo, new CompletableFuture());
+		DokanyFileSystem myFs = new ReadWriteAdapter(dirToMirror, new LockManager(), volumeInfo);
 		dokany = new DokanyMount(devOps, myFs);
 	}
 
