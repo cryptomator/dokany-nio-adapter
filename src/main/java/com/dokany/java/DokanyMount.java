@@ -23,7 +23,7 @@ public final class DokanyMount implements Mount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMount.class);
 	private static final int MOUNT_TIMEOUT_MILLIS = 3000;
-	private static final AtomicInteger mountCounter = new AtomicInteger(1);
+	private static final AtomicInteger MOUNT_COUNTER = new AtomicInteger(1);
 
 	private final DeviceOptions deviceOptions;
 	private final DokanyFileSystem fileSystem;
@@ -82,7 +82,7 @@ public final class DokanyMount implements Mount {
 	 */
 	public synchronized void mount(Consumer<Throwable> onDokanExit) throws DokanyException {
 		if (!isMounted.getAndSet(true)) {
-			int mountId = mountCounter.getAndIncrement();
+			int mountId = MOUNT_COUNTER.getAndIncrement();
 			try {
 				Runtime.getRuntime().addShutdownHook(new Thread(this::close));
 
