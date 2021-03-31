@@ -30,18 +30,13 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 
 	private final CountDownLatch mountSuccessSignaler;
 	private final DokanyFileSystem fileSystem;
-	private final String nativeThreadNamePrefix;
-	private final ThreadGroup nativeThreadGroup;
 	private final CallbackThreadInitializer callbackThreadInitializer;
-	private final AtomicInteger threadCounter = new AtomicInteger(0);
 	private final List<Callback> usedCallbacks = new ArrayList<>();
 
 	DokanyOperationsProxy(CountDownLatch mountSuccessSignaler, final DokanyFileSystem fileSystem, String nativeThreadNamePrefix) {
 		this.mountSuccessSignaler = mountSuccessSignaler;
 		this.fileSystem = fileSystem;
-		this.nativeThreadNamePrefix = nativeThreadNamePrefix;
-		this.nativeThreadGroup = new ThreadGroup(nativeThreadNamePrefix);
-		this.callbackThreadInitializer = new CallbackThreadInitializer(true, false, nativeThreadNamePrefix, nativeThreadGroup);
+		this.callbackThreadInitializer = new DokanCallbackThreadInitializer(nativeThreadNamePrefix);
 		super.ZwCreateFile = new ZwCreateFileProxy();
 		usedCallbacks.add(super.ZwCreateFile);
 
@@ -125,11 +120,6 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		@Override
 		public long callback(WString rawPath, WinBase.SECURITY_ATTRIBUTES securityContext, int rawDesiredAccess, int rawFileAttributes, int rawShareAccess, int rawCreateDisposition, int rawCreateOptions, DokanyFileInfo dokanyFileInfo) {
 			try {
-				//hack to uniquely identify the dokan threads
-				if (Thread.currentThread().getName().equals(nativeThreadNamePrefix)) {
-					Thread.currentThread().setName(nativeThreadNamePrefix + threadCounter.getAndIncrement());
-				}
-
 				int win32ErrorCode = fileSystem.zwCreateFile(rawPath, securityContext, rawDesiredAccess, rawFileAttributes, rawShareAccess, rawCreateDisposition, rawCreateOptions, dokanyFileInfo);
 				//little cheat for issue #24
 				if (win32ErrorCode == Win32ErrorCode.ERROR_INVALID_STATE.getMask()) {
@@ -436,6 +426,23 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 				LOG.warn("findStreams(): Uncaught exception. Returning generic failure code.", e);
 				return NtStatus.UNSUCCESSFUL.getMask();
 			}
+		}
+	}
+
+	private static class DokanCallbackThreadInitializer extends CallbackThreadInitializer {
+
+		private String prefix;
+		private AtomicInteger counter;
+
+		DokanCallbackThreadInitializer(String prefix) {
+			super(true, false, prefix, new ThreadGroup(prefix));
+			this.prefix = prefix;
+			this.counter = new AtomicInteger(0);
+		}
+
+		@Override
+		public String getName(Callback cb) {
+			return prefix + counter.getAndIncrement();
 		}
 	}
 
