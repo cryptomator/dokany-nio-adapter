@@ -9,7 +9,7 @@ public enum MountError implements EnumInteger {
 	DRIVE_LETTER_ERROR(-2, "Dokan mount failed - Bad drive letter."),
 	DRIVER_INSTALL_ERROR(-3, "Dokan mount failed - Cannot install driver."),
 	START_ERROR(-4, "Dokan mount failed - Driver answer that something is wrong."),
-	MOUNT_ERROR(-5, "Dokan mount failed -Cannot assign a drive letter or mount point. Probably already used by another volume."),
+	MOUNT_ERROR(-5, "Dokan mount failed - Cannot assign a drive letter or mount point. Probably already used by another volume."),
 	MOUNT_POINT_ERROR(-6, "Dokan mount failed - Mount point is invalid."),
 	VERSION_ERROR(-7, "Dokan mount failed - Requested an incompatible version.");
 

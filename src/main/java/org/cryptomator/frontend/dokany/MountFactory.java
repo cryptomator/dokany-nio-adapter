@@ -1,5 +1,6 @@
 package org.cryptomator.frontend.dokany;
 
+import com.dokany.java.DokanyException;
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.DokanyMount;
 import com.dokany.java.constants.DokanOption;
@@ -20,11 +21,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 public class MountFactory {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MountFactory.class);
-	private static final int MOUNT_TIMEOUT_MS = 5000;
 	private static final short THREAD_COUNT = 5;
 	private static final String UNC_NAME = "";
 	private static final int TIMEOUT = 10000;
@@ -37,14 +38,10 @@ public class MountFactory {
 			// FileSystemFeature.SUPPORTS_REMOTE_STORAGE, //
 			FileSystemFeature.UNICODE_ON_DISK);
 
-	private final ExecutorService executorService;
-
-	public MountFactory(ExecutorService executorService) {
-		this.executorService = executorService;
-	}
+	private MountFactory() {}
 
 	/**
-	 * Mounts a virtual drive at the given mount point containing contents of the given path.
+	 * Mounts the root of a filesystem at the given mount point.
 	 * This method blocks until the mount succeeds or times out.
 	 *
 	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
@@ -52,9 +49,9 @@ public class MountFactory {
 	 * @param volumeName The name of the drive as shown to the user.
 	 * @param fileSystemName The technical file system name shown in the drive properties window.
 	 * @return The mount object.
-	 * @throws MountFailedException if the mount process is aborted due to errors
+	 * @throws DokanyMountFailedException if the mount process is aborted due to errors
 	 */
-	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws MountFailedException {
+	public static Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName) throws DokanyMountFailedException {
 		var absMountPoint = mountPoint.toAbsolutePath();
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
 				THREAD_COUNT,
@@ -63,11 +60,11 @@ public class MountFactory {
 				TIMEOUT,
 				ALLOC_UNIT_SIZE,
 				SECTOR_SIZE);
-		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions);
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, ignored -> {});
 	}
 
 	/**
-	 * Mounts a virtual drive at the given mount point containing contents of the given path with the specified additional mount options.
+	 * Mounts the root of a filesystem at the given mount point with the specified additional mount options.
 	 * If an additional mount option is not specified the default value is used.
 	 * This method blocks until the mount succeeds or times out.
 	 *
@@ -77,9 +74,9 @@ public class MountFactory {
 	 * @param fileSystemName The technical file system name shown in the drive properties window.
 	 * @param additionalOptions Additional options for the mount. For any unset option a default value is used. See {@link MountUtil} for details.
 	 * @return The mount object.
-	 * @throws MountFailedException if the mount process is aborted due to errors
+	 * @throws DokanyMountFailedException if the mount process is aborted due to errors
 	 */
-	public Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws MountFailedException {
+	public static Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions) throws DokanyMountFailedException {
 		var absMountPoint = mountPoint.toAbsolutePath();
 		var mountOptions = parseMountOptions(additionalOptions);
 		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
@@ -89,37 +86,58 @@ public class MountFactory {
 				mountOptions.getTimeout().orElse(TIMEOUT),
 				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
 				mountOptions.getSectorSize().orElse(SECTOR_SIZE));
-		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions);
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, ignored -> {});
 	}
 
-	private Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions) throws MountFailedException {
+	/**
+	 * Mounts the root of a filesystem at the given mount point with the specified additional mount options and an action which is executed after unmount.
+	 * If an additional mount option is not specified the default value is used.
+	 * This method blocks until the mount succeeds or times out.
+	 *
+	 * @param fileSystemRoot Path to the directory which will be the content root of the mounted drive.
+	 * @param mountPoint The mount point of the mounted drive. Can be an empty directory or a drive letter.
+	 * @param volumeName The name of the drive as shown to the user.
+	 * @param fileSystemName The technical file system name shown in the drive properties window.
+	 * @param additionalOptions Additional options for the mount. For any unset option a default value is used. See {@link MountUtil} for details.
+	 * @param onDokanExit consumer which runs after the dokan mount exited. If the exit was irregularly, the Throwable parameter is not null.
+	 * @return The mount object.
+	 * @throws DokanyMountFailedException if the mount process is aborted due to errors
+	 */
+	public static Mount mount(Path fileSystemRoot, Path mountPoint, String volumeName, String fileSystemName, String additionalOptions, Consumer<Throwable> onDokanExit) throws DokanyMountFailedException {
+		var absMountPoint = mountPoint.toAbsolutePath();
+		var mountOptions = parseMountOptions(additionalOptions);
+		DeviceOptions deviceOptions = new DeviceOptions(absMountPoint.toString(),
+				mountOptions.getThreadCount().orElse(THREAD_COUNT),
+				mountOptions.getDokanOptions(),
+				UNC_NAME,
+				mountOptions.getTimeout().orElse(TIMEOUT),
+				mountOptions.getAllocationUnitSize().orElse(ALLOC_UNIT_SIZE),
+				mountOptions.getSectorSize().orElse(SECTOR_SIZE));
+		return mount(fileSystemRoot, volumeName, fileSystemName, deviceOptions, onDokanExit);
+	}
+
+	private static Mount mount(Path fileSystemRoot, String volumeName, String fileSystemName, DeviceOptions deviceOptions, Consumer<Throwable> onDokanExit) throws DokanyMountFailedException {
 		VolumeInformation volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeName, 0x98765432, fileSystemName, FILE_SYSTEM_FEATURES);
-		CompletableFuture<Void> mountDidSucceed = new CompletableFuture<>();
 		OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
-		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, new LockManager(), volumeInfo, mountDidSucceed, handleCheckBuilder);
+		DokanyFileSystem dokanyFs = new ReadWriteAdapter(fileSystemRoot, new LockManager(), volumeInfo, handleCheckBuilder);
 		DokanyMount mount = new DokanyMount(deviceOptions, dokanyFs, handleCheckBuilder.build());
 		LOG.debug("Mounting on {}: ...", deviceOptions.MountPoint);
 		try {
-			mount.mount(executorService);
-			mountDidSucceed.get(MOUNT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+			mount.mount(onDokanExit);
 			LOG.debug("Mounted directory at {} successfully.", deviceOptions.MountPoint);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		} catch (ExecutionException e) {
+		} catch (DokanyException e) {
 			LOG.error("Mounting failed.", e);
-			throw new MountFailedException(e.getCause());
-		} catch (TimeoutException e) {
-			LOG.warn("Mounting timed out.");
+			throw new DokanyMountFailedException("Error while mounting.", e);
 		}
 		return mount;
 	}
 
 
-	private MountUtil.MountOptions parseMountOptions(String options) throws MountFailedException {
+	private static MountUtil.MountOptions parseMountOptions(String options) throws DokanyMountFailedException {
 		try {
 			return MountUtil.parse(options);
 		} catch (IllegalArgumentException | ParseException e) {
-			throw new MountFailedException(e);
+			throw new DokanyMountFailedException("Unable to parse mount options", e);
 		}
 	}
 
