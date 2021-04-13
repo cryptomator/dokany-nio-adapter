@@ -103,8 +103,8 @@ final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
 		super.Unmounted = new UnmountedProxy();
 		usedCallbacks.add(super.Unmounted);
 
-		super.GetFileSecurity = null;
-		//callbacks.add(super.GetFileSecurity);
+		super.GetFileSecurity = ((rawPath, rawSecurityInformation, rawSecurityDescriptor, rawSecurityDescriptorLength, rawSecurityDescriptorLengthNeeded, dokanyFileInfo) -> NtStatus.NOT_IMPLEMENTED.getMask());
+		usedCallbacks.add(super.GetFileSecurity);
 
 		super.SetFileSecurity = null;
 		//callbacks.add(super.SetFileSecurity);

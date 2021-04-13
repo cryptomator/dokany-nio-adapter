@@ -845,6 +845,16 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		return 0;
 	}
 
+	/**
+	 * Not implemented, handled in proxy.
+	 * @param rawPath
+	 * @param rawSecurityInformation
+	 * @param rawSecurityDescriptor
+	 * @param rawSecurityDescriptorLength
+	 * @param rawSecurityDescriptorLengthNeeded
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 */
 	@Override
 	public int getFileSecurity(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, IntByReference rawSecurityDescriptorLengthNeeded, DokanyFileInfo dokanyFileInfo) {
 //		Path path = getRootedPath(rawPath);
