@@ -20,7 +20,7 @@ public class ReadWriteCryptoFsTest {
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
 	}
 
-	public static void main(String[] args) throws IOException, MountFailedException {
+	public static void main(String[] args) throws IOException, DokanyMountFailedException {
 		if (!MountFactory.isApplicable()) {
 			System.err.println("Dokany not installed.");
 			return;
@@ -53,8 +53,7 @@ public class ReadWriteCryptoFsTest {
 				.build();
 		CryptoFileSystem cryptofs = CryptoFileSystemProvider.newFileSystem(vaultPath, props);
 		Path path = cryptofs.getPath("/");
-		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
+		try (Mount mount = MountFactory.mount(path, mountPoint, "MyVault", "CryptoFS")) {
 			try {
 				mount.reveal(new WindowsExplorerRevealer());
 			} catch (Exception e) {

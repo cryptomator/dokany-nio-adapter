@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class ReadWriteMirrorTest {
 
@@ -17,7 +19,7 @@ public class ReadWriteMirrorTest {
 		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
 	}
 
-	public static void main(String[] args) throws IOException, MountFailedException {
+	public static void main(String[] args) throws IOException, DokanyMountFailedException, InterruptedException {
 		if (!MountFactory.isApplicable()) {
 			System.err.println("Dokany not installed.");
 			return;
@@ -39,8 +41,9 @@ public class ReadWriteMirrorTest {
 			}
 		}
 
-		MountFactory mountFactory = new MountFactory(Executors.newCachedThreadPool());
-		try (Mount mount = mountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS")) {
+		CountDownLatch exitSignal = new CountDownLatch(1);
+		Consumer<Throwable> onDokanExitAction = exception -> exitSignal.countDown();
+		try (Mount mount = MountFactory.mount(dirPath, mountPoint, "Test", "DokanyNioFS", "--thread-count 5", onDokanExitAction)) {
 			try {
 				mount.reveal(new WindowsExplorerRevealer());
 			} catch (Exception e) {
@@ -49,7 +52,15 @@ public class ReadWriteMirrorTest {
 			}
 			System.in.read();
 			mount.unmountForced();
+
+		} finally {
+			if (exitSignal.await(3000, TimeUnit.MILLISECONDS)) {
+				System.out.println("onExit action executed.");
+			} else {
+				System.out.println("onExit action NOT executed after 3s. Exiting...");
+			}
 		}
+
 	}
 
 }

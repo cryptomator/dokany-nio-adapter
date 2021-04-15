@@ -68,15 +68,13 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	private final Path root;
 	private final LockManager lockManager;
 	private final VolumeInformation volumeInformation;
-	private final CompletableFuture didMount;
 	private final OpenHandleFactory fac;
 	private final FileStore fileStore;
 
-	public ReadWriteAdapter(Path root, LockManager lockManager, VolumeInformation volumeInformation, CompletableFuture<?> didMount) {
+	public ReadWriteAdapter(Path root, LockManager lockManager, VolumeInformation volumeInformation) {
 		this.root = root;
 		this.lockManager = lockManager;
 		this.volumeInformation = volumeInformation;
-		this.didMount = didMount;
 		this.fac = new OpenHandleFactory();
 		try {
 			this.fileStore = Files.getFileStore(root);
@@ -91,14 +89,12 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param fileSystemRoot
 	 * @param lockManager
 	 * @param volumeInfo
-	 * @param mountDidSucceed
 	 * @param handleCheckBuilder
 	 */
-	public ReadWriteAdapter(Path fileSystemRoot, LockManager lockManager, VolumeInformation volumeInfo, CompletableFuture<Void> mountDidSucceed, OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder) {
+	public ReadWriteAdapter(Path fileSystemRoot, LockManager lockManager, VolumeInformation volumeInfo, OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder) {
 		this.root = fileSystemRoot;
 		this.lockManager = lockManager;
 		this.volumeInformation = volumeInfo;
-		this.didMount = mountDidSucceed;
 		this.fac = new OpenHandleFactory();
 		try {
 			this.fileStore = Files.getFileStore(root);
@@ -835,7 +831,6 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public int mounted(DokanyFileInfo dokanyFileInfo) {
 		LOG.trace("mounted() is called.");
-		didMount.complete(null);
 		return 0;
 	}
 
@@ -850,6 +845,16 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		return 0;
 	}
 
+	/**
+	 * Not implemented, handled in proxy.
+	 * @param rawPath
+	 * @param rawSecurityInformation
+	 * @param rawSecurityDescriptor
+	 * @param rawSecurityDescriptorLength
+	 * @param rawSecurityDescriptorLengthNeeded
+	 * @param dokanyFileInfo {@link DokanyFileInfo} with information about the file or directory.
+	 * @return
+	 */
 	@Override
 	public int getFileSecurity(WString rawPath, int rawSecurityInformation, Pointer rawSecurityDescriptor, int rawSecurityDescriptorLength, IntByReference rawSecurityDescriptorLengthNeeded, DokanyFileInfo dokanyFileInfo) {
 //		Path path = getRootedPath(rawPath);
