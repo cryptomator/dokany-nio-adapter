@@ -6,5 +6,15 @@
 # dokany-nio-adapter
 Provides directory contents specified by a `java.nio.file.Path` via a Dokany filesystem.
 
+## Configuration parameters
+
+This library uses the following system properties:
+
+* `org.cryptomator.frontend.dokany.mountTimeOut` - The mount timeout threshold in milliseonds. If the mounting operation exceeds it, the mounting is aborted.
+
+## Usage
+
+Have a look at `org.cryptomator.frontend.dokany.ReadWriteMirrorTest` in the test package.
+
 ## License
 This project is dual-licensed under the AGPLv3 for FOSS projects as well as a commercial license for independent software vendors and resellers. If you want to use this library in applications, that are *not* licensed under the AGPL, feel free to contact our [support team](https://cryptomator.org/help/).

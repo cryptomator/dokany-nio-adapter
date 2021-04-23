@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 public final class DokanyMount implements Mount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMount.class);
-	private static final int MOUNT_TIMEOUT_MILLIS = 3000;
+	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.dokany.mountTimeOut",10000);
 	private static final AtomicInteger MOUNT_COUNTER = new AtomicInteger(1);
 
 	private final DeviceOptions deviceOptions;
@@ -110,6 +110,7 @@ public final class DokanyMount implements Mount {
 
 				// wait for mounted() is called, unlocking the barrier
 				if (!mountSuccessSignal.await(MOUNT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+					NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
 					if (exception.get() != null) {
 						if( exception.get() instanceof DokanyException) {
 							throw (DokanyException) exception.get();
@@ -123,6 +124,7 @@ public final class DokanyMount implements Mount {
 			} catch (UnsatisfiedLinkError err) {
 				throw new DokanyException(err);
 			} catch (InterruptedException e) {
+				NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
 				Thread.currentThread().interrupt();
 				throw new DokanyException("Mount interrupted.");
 			}
