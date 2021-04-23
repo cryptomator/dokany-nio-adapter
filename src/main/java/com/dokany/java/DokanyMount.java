@@ -110,6 +110,7 @@ public final class DokanyMount implements Mount {
 
 				// wait for mounted() is called, unlocking the barrier
 				if (!mountSuccessSignal.await(MOUNT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+					NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
 					if (exception.get() != null) {
 						if( exception.get() instanceof DokanyException) {
 							throw (DokanyException) exception.get();
@@ -123,6 +124,7 @@ public final class DokanyMount implements Mount {
 			} catch (UnsatisfiedLinkError err) {
 				throw new DokanyException(err);
 			} catch (InterruptedException e) {
+				NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
 				Thread.currentThread().interrupt();
 				throw new DokanyException("Mount interrupted.");
 			}
