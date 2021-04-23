@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 public final class DokanyMount implements Mount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMount.class);
-	private static final int MOUNT_TIMEOUT_MILLIS = 3000;
+	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.dokany.mountTimeOut",10000);
 	private static final AtomicInteger MOUNT_COUNTER = new AtomicInteger(1);
 
 	private final DeviceOptions deviceOptions;
