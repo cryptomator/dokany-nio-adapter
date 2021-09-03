@@ -18,16 +18,16 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>11</maven.compiler.release>
 
-		<slf4j.version>1.7.27</slf4j.version>
-		<logback.version>1.2.3</logback.version>
-		<guava.version>30.0-jre</guava.version>
-		<jna.version>5.7.0</jna.version>
-		<jna-platform.version>5.7.0</jna-platform.version>
+		<slf4j.version>1.7.32</slf4j.version>
+		<logback.version>1.2.5</logback.version>
+		<guava.version>30.1.1-jre</guava.version>
+		<jna.version>5.9.0</jna.version>
+		<jna-platform.version>5.9.0</jna-platform.version>
 		<commons.cli.version>1.4</commons.cli.version>
 
 		<!-- Test -->
-		<junit.jupiter.version>5.7.0</junit.jupiter.version>
-		<mockito.version>2.24.0</mockito.version>
+		<junit.jupiter.version>5.7.2</junit.jupiter.version>
+		<mockito.version>3.12.4</mockito.version>
 	</properties>
 
 	<licenses>
