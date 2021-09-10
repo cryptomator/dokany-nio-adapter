@@ -12,27 +12,23 @@ public enum DokanOption implements EnumInteger {
 	REMOVABLE_DRIVE(32, "Use removable drive"),
 	MOUNT_MANAGER(64, "Use mount manager"),
 	CURRENT_SESSION(128, "Mount the drive on current session only"),
-	FILELOCK_USER_MODE(256, "Enable Lockfile/Unlockfile operations. Otherwise Dokan will take care of it");
+	FILELOCK_USER_MODE(256, "Enable Lockfile/Unlockfile operations. Otherwise Dokan will take care of it"),
+	ENABLE_NOTIFICATION_API(512,"Enable DokanNotify-API"),
+	ENABLE_FCB_GARBAGE_COLLECTION(2048,"Prevents exponentially slow down certain operations caused by filter drivers."),
+	CASE_SENSITIVE(4096,"Enables case sensitivity"),
+	ENABLE_UNMOUNT_NETWORK_DRIVE(8192,"Allows unmounting network drives via explorer"),
+	DISPATCH_DRIVER_LOGS(16384,"Forward driver and volume logs to userland");
 
 	private final int mask;
 	private final String description;
-	private final boolean isReadonly;
 
 	DokanOption(final int i, final String desc) {
 		mask = i;
 		description = desc;
-		// TODO: is this proper logic?
-		isReadonly = (mask == 8);
 	}
 
 	public static EnumIntegerSet<DokanOption> fromInt(final int value) {
 		return DokanyUtils.enumSetFromInt(value, values());
-	}
-
-	private DokanOption(final int mask, final String description, final boolean isReadonly) {
-		this.mask = mask;
-		this.description = description;
-		this.isReadonly = isReadonly;
 	}
 
 	public int getMask() {
@@ -43,7 +39,4 @@ public enum DokanOption implements EnumInteger {
 		return this.description;
 	}
 
-	public boolean isReadonly() {
-		return this.isReadonly;
-	}
 }
