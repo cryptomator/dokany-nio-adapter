@@ -22,7 +22,8 @@ import java.util.function.Consumer;
 public final class DokanyMount implements Mount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMount.class);
-	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.dokany.mountTimeOut",22500);
+	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.dokany.mountTimeOut", 5000);
+	private static final int ADDITIONAL_TIMEOUT_MILLIS = 5000;
 	private static final AtomicInteger MOUNT_COUNTER = new AtomicInteger(1);
 
 	private final DeviceOptions deviceOptions;
@@ -48,7 +49,7 @@ public final class DokanyMount implements Mount {
 	 * @return
 	 * @see {@link NativeMethods#DokanDriverVersion()}
 	 */
-	public long getDriverVersion() {
+	public static long getDriverVersion() {
 		return NativeMethods.DokanDriverVersion();
 	}
 
@@ -58,7 +59,7 @@ public final class DokanyMount implements Mount {
 	 * @return
 	 * @see {@link NativeMethods#DokanVersion()}
 	 */
-	public long getVersion() {
+	public static long getVersion() {
 		return NativeMethods.DokanVersion();
 	}
 
@@ -84,10 +85,8 @@ public final class DokanyMount implements Mount {
 		if (!isMounted.getAndSet(true)) {
 			int mountId = MOUNT_COUNTER.getAndIncrement();
 			try {
+				checkReportedVersions();
 				Runtime.getRuntime().addShutdownHook(new Thread(this::close));
-
-				LOG.info("Dokany API/driver version: {} / {}", getVersion(), getDriverVersion());
-
 				//real mount op
 				CountDownLatch mountSuccessSignal = new CountDownLatch(1);
 				AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -109,17 +108,17 @@ public final class DokanyMount implements Mount {
 				mountThread.start();
 
 				// wait for mounted() is called, unlocking the barrier
+				// since Dokany has problems with the execution of the mounted method,
+				// we do not rely completely on its call and assume after a certain time just a success (probably successful)
 				if (!mountSuccessSignal.await(MOUNT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-					NativeMethods.DokanRemoveMountPoint(deviceOptions.MountPoint);
-					if (exception.get() != null) {
-						if( exception.get() instanceof DokanyException) {
-							throw (DokanyException) exception.get();
-						} else {
-							throw new DokanyException(exception.get());
-						}
+					checkToChoke(exception.get(), mountThread.isAlive());
+					LOG.debug("Mount success not signaled after {} milliseconds. Waiting additional {} milliseconds.", MOUNT_TIMEOUT_MILLIS, ADDITIONAL_TIMEOUT_MILLIS);
+					if (!mountSuccessSignal.await(ADDITIONAL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+						checkToChoke(exception.get(), mountThread.isAlive());
+						LOG.info("Mount success not signaled after second wait. Assume successful mount.");
 					}
-					throw new DokanyException("Mount timed out");
 				}
+				return;
 
 			} catch (UnsatisfiedLinkError err) {
 				throw new DokanyException(err);
@@ -130,6 +129,28 @@ public final class DokanyMount implements Mount {
 			}
 		} else {
 			LOG.debug("Dokan Device already mounted on {}.", deviceOptions.MountPoint);
+		}
+	}
+
+	private void checkReportedVersions() throws DokanyException {
+		var apiVersion = NativeMethods.DokanVersion();
+		var driverVersion = NativeMethods.DokanDriverVersion();
+		LOG.info("Dokany API/driver version: {} / {}", getVersion(), getDriverVersion());
+		if (apiVersion == 0 || driverVersion == 0) {
+			throw new DokanyException("Dokany not properly installed (Reported versions: " + apiVersion + "/" + driverVersion);
+		}
+	}
+
+	//visible for testing
+	void checkToChoke(Throwable e, boolean threadIsAlive) throws DokanyException {
+		if (e != null) {
+			if (e instanceof DokanyException) {
+				throw (DokanyException) e;
+			} else {
+				throw new DokanyException(e);
+			}
+		} else if (!threadIsAlive) {
+			throw new DokanyException("Unknown reason of failure.");
 		}
 	}
 

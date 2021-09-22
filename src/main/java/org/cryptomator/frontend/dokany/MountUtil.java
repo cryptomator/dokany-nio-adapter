@@ -31,7 +31,7 @@ import static com.dokany.java.constants.DokanOption.*;
  * <item>allocation-unit-size -- Allocation Unit Size of the volume. This will affect the file size.</item>
  * <item>sector-size -- Sector Size of the volume. This will affect the file size.</item>
  * <item>timeout -- Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.</item>
- * <item>options -- Features enabled for the mount given as a comma separated list without whitespaces. Supported features are DEBUG_MODE, STD_ERR_OUTPUT, MOUNT_MANAGER, CURRENT_SESSION, REMOVABLE_DRIVE and WRITE_PROTECTION. For their description see the Dokany API documentation. </item>
+ * <item>options -- Features enabled for the mount given as a comma separated list without whitespaces. Supported features are DEBUG_MODE, STD_ERR_OUTPUT, MOUNT_MANAGER, CURRENT_SESSION, REMOVABLE_DRIVE, WRITE_PROTECTION and DISPATCH_DRIVER_LOGS. For their description see the Dokany API documentation. </item>
  * </li>
  */
 public class MountUtil {
@@ -48,22 +48,22 @@ public class MountUtil {
 		OPTIONS.addOption(null, allocationUnitSizeString, true, "Allocation Unit Size of the volume. This will affect the file size.");
 		OPTIONS.addOption(null, sectorSizeName, true, "Sector Size of the volume. This will affect the file size.");
 		OPTIONS.addOption(null, timeoutName, true, "Maximum timeout in milliseconds of each request before Dokany gives up to wait events to complete.");
-		OPTIONS.addOption(Option.builder()
-				.argName("arg1,arg2,...")
-				.longOpt(optionsName)
-				.hasArgs()
-				.valueSeparator(',')
-				.desc("Features enabled for the mount")
+		OPTIONS.addOption(Option.builder() //
+				.argName("arg1,arg2,...") //
+				.longOpt(optionsName) //
+				.hasArgs() //
+				.valueSeparator(',') //
+				.desc("Features enabled for the mount") //
 				.build());
 	}
 
-	private static final EnumIntegerSet<DokanOption> POSSIBLY_SUPPORTED_DOKAN_OPTIONS = new EnumIntegerSet(
-			DEBUG_MODE,
-			STD_ERR_OUTPUT,
-			MOUNT_MANAGER,
-			CURRENT_SESSION,
-			REMOVABLE_DRIVE,
-			WRITE_PROTECTION);
+	private static final EnumIntegerSet<DokanOption> POSSIBLY_SUPPORTED_DOKAN_OPTIONS = new EnumIntegerSet(DEBUG_MODE, //
+			STD_ERR_OUTPUT, //
+			MOUNT_MANAGER, //
+			CURRENT_SESSION, //
+			REMOVABLE_DRIVE, //
+			WRITE_PROTECTION, //
+			DISPATCH_DRIVER_LOGS);
 
 	public static class MountOptions {
 
@@ -173,12 +173,12 @@ public class MountUtil {
 			builder.addTimeout(Integer.parseInt(cmd.getOptionValue(timeoutName)));
 		}
 		if (cmd.hasOption(optionsName)) {
-			builder.addDokanOptions(
-					Arrays.stream(cmd.getOptionValues(optionsName))
-							.filter(s -> !s.isEmpty())
-							.map(String::trim)
-							.map(MountUtil::convertAndCheck)
-							.collect(Collectors.toList()));
+			builder.addDokanOptions(Arrays.stream(cmd.getOptionValues(optionsName)) //
+					.filter(s -> !s.isEmpty()) //
+					.map(String::trim) //
+					.map(MountUtil::convertAndCheck) //
+					.collect(Collectors.toList()) //
+			);
 
 		}
 		return builder.build();
