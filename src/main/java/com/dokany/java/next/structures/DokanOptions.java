@@ -123,7 +123,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 		@Unsigned
 		private long globalContext = 0;
 		private String mountPoint;
-		private String uncName = null;
+		private String uncName = "";
 		@Unsigned
 		private int timeout = 5000;
 		@Unsigned
