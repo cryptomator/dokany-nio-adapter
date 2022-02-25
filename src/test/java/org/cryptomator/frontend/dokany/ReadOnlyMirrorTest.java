@@ -16,7 +16,7 @@ public class ReadOnlyMirrorTest {
 		Path root = Path.of("T:\\txt");
 
 		LockManager lm = new LockManager();
-		var fs = new ReadOnlyAdapter(root, lm);
+		var fs = new MinimalReadOnlyAdapter(root, lm);
 
 		var mount = DokanMount.create(fs);
 
