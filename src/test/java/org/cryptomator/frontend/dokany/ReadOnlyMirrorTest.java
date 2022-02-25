@@ -20,17 +20,17 @@ public class ReadOnlyMirrorTest {
 
 		var mount = DokanMount.create(fs);
 
-		mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR , 10000);
-
 		try {
-			System.in.read();
-		} catch (IOException e) {
+			mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DISPATCH_DRIVER_LOGS | MountOptions.DEBUG, 10000);
+		} catch (InterruptedException e) {
+			mount.unmount();
 			e.printStackTrace();
+			return;
 		}
 
 		var reader = new BufferedReader(new InputStreamReader(System.in));
 		char exit = ' ';
-		while (Character.isAlphabetic(exit)) {
+		while (!Character.isAlphabetic(exit)) {
 			try {
 				exit = (char) reader.read();
 			} catch (IOException e) {
