@@ -14,16 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -40,11 +33,10 @@ public class DokanMount {
 	private final DokanOperations dokanOperations;
 	private final CallbackThreadInitializer callbackThreadInitializer;
 
-	private DokanOptions options;
+	private DokanOptions dokanOptions;
 	private Path mountPoint;
 
 	private final Pointer memoryContainingHandle;
-	private ByteBuffer buf;
 
 
 	DokanMount(DokanOperations dokanOperations, CallbackThreadInitializer callbackThreadInitializer) {
@@ -159,33 +151,25 @@ public class DokanMount {
 		if (!notImplementedMethods.contains("setFileSecurity")) {
 			dokanOperations.setSetFileSecurity(fs::setFileSecurity);
 			Native.setCallbackThreadInitializer(dokanOperations.SetFileSecurity, callbackThreadInitializer);
-		} if (!notImplementedMethods.contains("findStreams")) {
+		}
+		if (!notImplementedMethods.contains("findStreams")) {
 			dokanOperations.setFindStreams(fs::findStreams);
 			Native.setCallbackThreadInitializer(dokanOperations.FindStreams, callbackThreadInitializer);
 		}
 		return dokanOperations;
 	}
 
-	//TODO: crashes, if executing thread leaves too early method scope (~15s waiting time should be enough)
-	public synchronized void mount(Path mountPoint,  @EnumSet int options, @Unsigned int timeout) throws InterruptedException {
+	public synchronized void mount(Path mountPoint, @EnumSet int options, @Unsigned int timeout) throws InterruptedException {
 		DokanAPI.DokanInit();
-		var dokanOptions = new DokanOptions.Builder(mountPoint)
-				.withOptions(options)
-				.withTimeout(timeout)
-				.withSingleThreadEnabled(true)
+		this.dokanOptions = new DokanOptions.Builder(mountPoint)
+				.withOptions(options) //
+				.withTimeout(timeout) //
+				.withSingleThreadEnabled(true) //
 				.build();
-
-		Instant start = Instant.now();
-		int result= DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
-		if(result != 0) {
+		int result = DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
+		if (result != 0) {
 			throw new RuntimeException("DokanCreateFileSystem result != 0");
 		}
-
-		//wait a certain timespan
-		int delay = 5000;
-		CountDownLatch barrier = new CountDownLatch(1);
-		barrier.await(delay,TimeUnit.MILLISECONDS);
-		System.out.println("Leaving mount method after " + Duration.between(start,Instant.now()).toMillis());
 	}
 
 	public synchronized void unmount() {
