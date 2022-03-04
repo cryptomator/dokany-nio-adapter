@@ -168,7 +168,7 @@ public class DokanMount {
 				.build();
 		int result = DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
 		if (result != 0) {
-			throw new RuntimeException("DokanCreateFileSystem result != 0");
+			throw new RuntimeException("DokanCreateFileSystem returned non-zero result: " + result);
 		}
 	}
 

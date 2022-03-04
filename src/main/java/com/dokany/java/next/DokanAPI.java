@@ -12,7 +12,7 @@ import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
 
-public class DokanAPI {
+public final class DokanAPI {
 
 	private static final String DOKAN_DLL = "dokan2";
 
