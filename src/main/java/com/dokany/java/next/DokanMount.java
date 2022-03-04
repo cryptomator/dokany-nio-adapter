@@ -159,9 +159,9 @@ public class DokanMount {
 		return dokanOperations;
 	}
 
-	public synchronized void mount(Path mountPoint, @EnumSet int options, @Unsigned int timeout) throws InterruptedException {
+	public synchronized void mount(Path mountPoint, @EnumSet int options, @Unsigned int timeout) {
 		DokanAPI.DokanInit();
-		this.dokanOptions = new DokanOptions.Builder(mountPoint)
+		this.dokanOptions = new DokanOptions.Builder(mountPoint) //
 				.withOptions(options) //
 				.withTimeout(timeout) //
 				.withSingleThreadEnabled(true) //

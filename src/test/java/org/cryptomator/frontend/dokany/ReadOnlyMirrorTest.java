@@ -23,13 +23,7 @@ public class ReadOnlyMirrorTest {
 		var reader = new BufferedReader(new InputStreamReader(System.in));
 		waitForUserInput(reader);
 
-		try {
-			mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG, 10000);
-		} catch (InterruptedException e) {
-			mount.unmount();
-			e.printStackTrace();
-			return;
-		}
+		mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG, 10000);
 
 		waitForUserInput(reader);
 		mount.unmount();
