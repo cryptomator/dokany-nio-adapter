@@ -1,24 +1,13 @@
 package org.cryptomator.frontend.dokany;
 
-import com.dokany.java.constants.Win32ErrorCode;
-import com.dokany.java.next.DokanAPI;
 import com.dokany.java.next.DokanFileSystem;
-import com.dokany.java.next.constants.CreateDisposition;
 import com.dokany.java.next.constants.CreateOptions;
 import com.dokany.java.next.nativeannotations.Enum;
 import com.dokany.java.next.nativeannotations.EnumSet;
-import com.dokany.java.next.nativeannotations.Out;
-import com.dokany.java.next.nativeannotations.Unsigned;
 import com.dokany.java.next.structures.DokanFileInfo;
 import com.dokany.java.next.structures.DokanIOSecurityContext;
-import com.dokany.java.next.structures.DokanOperations;
 import com.google.common.base.CharMatcher;
-import com.sun.jna.Pointer;
 import com.sun.jna.WString;
-import com.sun.jna.platform.win32.WinBase;
-import com.sun.jna.platform.win32.WinNT;
-import com.sun.jna.ptr.IntByReference;
-import com.sun.jna.ptr.LongByReference;
 import org.cryptomator.frontend.dokany.locks.DataLock;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.cryptomator.frontend.dokany.locks.PathLock;
@@ -28,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -37,12 +25,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.DosFileAttributes;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
 
 public class MinimalReadOnlyAdapter implements DokanFileSystem {
 
@@ -96,12 +78,12 @@ public class MinimalReadOnlyAdapter implements DokanFileSystem {
 				if (containsAny(createOptions, CreateOptions.FILE_NON_DIRECTORY_FILE)) {
 					return NTStatus.FILE_IS_A_DIRECTORY;
 				}
-				//dokanFileInfo.isDirectory = 0x01;
+				dokanFileInfo.isDirectory = 0x01;
 			} else {
 				if (containsAny(createOptions, CreateOptions.FILE_DIRECTORY_FILE)) {
 					return NTStatus.NOT_A_DIRECTORY;
 				}
-				//dokanFileInfo.isDirectory = 0x00;
+				dokanFileInfo.isDirectory = 0x00;
 			}
 
 			if (dokanFileInfo.getIsDirectory()) {
@@ -128,7 +110,7 @@ public class MinimalReadOnlyAdapter implements DokanFileSystem {
 				} catch (NoSuchFileException e) {
 					return NTStatus.OBJECT_NAME_NOT_FOUND;
 				} catch (AccessDeniedException e) {
-					return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
+					return NTStatus.STATUS_ACCESS_DENIED;
 				} catch (IOException e) {
 					return NTStatus.IO_DEVICE_ERROR;
 				}
