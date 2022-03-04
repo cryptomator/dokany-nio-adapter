@@ -20,15 +20,25 @@ public class ReadOnlyMirrorTest {
 
 		var mount = DokanMount.create(fs);
 
+		var reader = new BufferedReader(new InputStreamReader(System.in));
+		waitForUserInput(reader);
+
 		try {
-			mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DISPATCH_DRIVER_LOGS | MountOptions.DEBUG, 10000);
+			mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG, 10000);
 		} catch (InterruptedException e) {
 			mount.unmount();
 			e.printStackTrace();
 			return;
 		}
 
-		var reader = new BufferedReader(new InputStreamReader(System.in));
+		waitForUserInput(reader);
+		mount.unmount();
+
+		DokanAPI.DokanShutdown();
+	}
+
+	private static void waitForUserInput(BufferedReader reader) throws IOException {
+		System.out.println("Please enter ONE Character to continue...");
 		char exit = ' ';
 		while (!Character.isAlphabetic(exit)) {
 			try {
@@ -38,10 +48,6 @@ public class ReadOnlyMirrorTest {
 				throw e;
 			}
 		}
-
-		mount.unmount();
-
-		DokanAPI.DokanShutdown();
 	}
 
 }
