@@ -193,8 +193,8 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 			dokanOptions.writeField("SingleThread", singleThread);
 			dokanOptions.writeField("Options", options);
 			dokanOptions.writeField("GlobalContext", globalContext);
-			dokanOptions.MountPoint = new WString(mountPoint);
-			dokanOptions.UNCName = new WString(uncName);
+			dokanOptions.writeField("MountPoint", new WString(mountPoint));
+			dokanOptions.writeField("UNCName", new WString(uncName));
 			dokanOptions.writeField("Timeout", timeout);
 			dokanOptions.writeField("AllocationUnitSize", allocationUnitSize);
 			dokanOptions.writeField("SectorSize", sectorSize);
