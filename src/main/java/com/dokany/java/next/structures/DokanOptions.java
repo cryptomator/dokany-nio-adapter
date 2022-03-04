@@ -41,15 +41,14 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 	 * Mount point. It can be a driver letter like "M:\" or a folder path "C:\mount\dokan" on a NTFS partition.
 	 */
 	//LPCWSTR
-	//TODO: should be volatile?
-	public WString MountPoint;
+	public volatile WString MountPoint;
 
 	/**
 	 * UNC Name for the Network Redirector
 	 * \see <a href="https://msdn.microsoft.com/en-us/library/windows/hardware/ff556761(v=vs.85).aspx">Support for UNC Naming</a>
 	 */
 	//LPCWSTR
-	public WString UNCName;
+	public volatile WString UNCName;
 
 	/**
 	 * Max timeout in milliseconds of each request before Dokan gives up to wait events to complete.
@@ -81,7 +80,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 	/**
 	 * Optional Volume Security descriptor. See <a href="https://docs.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-initializesecuritydescriptor">InitializeSecurityDescriptor</a>
 	 */
-	public byte[] VolumeSecurityDescriptor = new byte[VOLUME_SECURITY_DESCRIPTOR_MAX_SIZE];
+	public volatile byte[] VolumeSecurityDescriptor = new byte[VOLUME_SECURITY_DESCRIPTOR_MAX_SIZE];
 
 	public int getVersion() {
 		return Short.toUnsignedInt(Version);
