@@ -48,11 +48,11 @@ public class DokanMount implements AutoCloseable {
 	public static DokanMount mount(DokanFileSystem fs, Path mountPoint, @EnumSet int mountOptions) throws DokanException {
 		var callbackThreadInitializer = new DokanCallbackThreadInitializer("dokan-");
 		var dokanOperations = prepare(fs, callbackThreadInitializer);
-		var dokanOptions = new DokanOptions.Builder(mountPoint) //
+		var dokanOptions = new DokanOptions.Builder() //
 				.withOptions(mountOptions) //
 				.withTimeout(TIMEOUT) //
 				.withSingleThreadEnabled(true) //
-				.build();
+				.build(mountPoint);
 		var memoryContainingHandle = new Memory(Native.POINTER_SIZE);
 		memoryContainingHandle.clear(Native.POINTER_SIZE);
 

@@ -27,7 +27,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 	public volatile byte SingleThread;
 
 	/**
-	 * Features enabled for the mount. See \ref DOKAN_OPTION.
+	 * Features enabled for the mount. See {@link com.dokany.java.next.constants.MountOptions}
 	 */
 	@EnumSet
 	public volatile int Options;
@@ -127,7 +127,6 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 		private int options = 0;
 		@Unsigned
 		private long globalContext = 0;
-		private String mountPoint;
 		private String uncName = "";
 		@Unsigned
 		private int timeout = 5000;
@@ -141,8 +140,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 
 		public DokanOptions dokanOptions = new DokanOptions();
 
-		public Builder(Path mountPoint) {
-			this.mountPoint = mountPoint.toAbsolutePath().toString();
+		public Builder() {
 		}
 
 		public Builder withSecurityDescriptor(WinNT.SECURITY_DESCRIPTOR descriptor) {
@@ -203,12 +201,12 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 			return this;
 		}
 
-		public DokanOptions build() {
+		public DokanOptions build(Path mountPoint) {
 			dokanOptions.writeField("Version", version);
 			dokanOptions.writeField("SingleThread", singleThread);
 			dokanOptions.writeField("Options", options);
 			dokanOptions.writeField("GlobalContext", globalContext);
-			dokanOptions.writeField("MountPoint", new WString(mountPoint));
+			dokanOptions.writeField("MountPoint", new WString(mountPoint.toAbsolutePath().toString()));
 			dokanOptions.writeField("UNCName", new WString(uncName));
 			dokanOptions.writeField("Timeout", timeout);
 			dokanOptions.writeField("AllocationUnitSize", allocationUnitSize);
