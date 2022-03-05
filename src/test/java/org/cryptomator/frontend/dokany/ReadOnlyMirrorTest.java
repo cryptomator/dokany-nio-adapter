@@ -18,13 +18,10 @@ public class ReadOnlyMirrorTest {
 		LockManager lm = new LockManager();
 		var fs = new MinimalReadOnlyAdapter(root, lm);
 
-		var mount = DokanMount.create(fs);
-
 		var reader = new BufferedReader(new InputStreamReader(System.in));
 		waitForUserInput(reader);
 
-		mount.mount(Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG, 10000);
-
+		var mount = DokanMount.mount(fs, Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG);
 		waitForUserInput(reader);
 		mount.unmount();
 

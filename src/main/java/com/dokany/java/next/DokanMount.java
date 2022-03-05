@@ -1,9 +1,7 @@
 package com.dokany.java.next;
 
 
-import com.dokany.java.next.constants.MountOptions;
 import com.dokany.java.next.nativeannotations.EnumSet;
-import com.dokany.java.next.nativeannotations.Unsigned;
 import com.dokany.java.next.structures.DokanOperations;
 import com.dokany.java.next.structures.DokanOptions;
 import com.sun.jna.Callback;
@@ -35,26 +33,35 @@ public class DokanMount implements AutoCloseable {
 	}
 
 	private final DokanOperations dokanOperations;
+	private final DokanOptions dokanOptions;
 	private final CallbackThreadInitializer callbackThreadInitializer;
 	private final Pointer memoryContainingHandle;
 
-	private DokanOptions dokanOptions;
 	private volatile boolean isUnmounted;
 
-
-
-	DokanMount(DokanOperations dokanOperations, CallbackThreadInitializer callbackThreadInitializer) {
+	DokanMount(DokanOperations dokanOperations, DokanOptions dokanOptions, Memory dokanInstanceHandle, CallbackThreadInitializer callbackThreadInitializer) {
 		this.dokanOperations = dokanOperations;
+		this.dokanOptions = dokanOptions;
 		this.callbackThreadInitializer = callbackThreadInitializer;
-		this.memoryContainingHandle = new Memory(Native.POINTER_SIZE);
-		memoryContainingHandle.clear(Native.POINTER_SIZE);
+		this.memoryContainingHandle = dokanInstanceHandle;
 		this.isUnmounted = false;
 	}
 
-	public static DokanMount create(DokanFileSystem fs) {
+	public static DokanMount mount(DokanFileSystem fs, Path mountPoint, @EnumSet int mountOptions) {
 		var callbackThreadInitializer = new DokanCallbackThreadInitializer("dokan-");
-		var operations = prepare(fs, callbackThreadInitializer);
-		return new DokanMount(operations, callbackThreadInitializer);
+		var dokanOperations = prepare(fs, callbackThreadInitializer);
+		var dokanOptions = new DokanOptions.Builder(mountPoint) //
+				.withOptions(mountOptions) //
+				.withTimeout(TIMEOUT) //
+				.withSingleThreadEnabled(true) //
+				.build();
+		var memoryContainingHandle = new Memory(Native.POINTER_SIZE);
+		memoryContainingHandle.clear(Native.POINTER_SIZE);
+		int result = DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
+		if (result != 0) {
+			throw new RuntimeException("DokanCreateFileSystem returned non-zero result: " + result);
+		}
+		return new DokanMount(dokanOperations, dokanOptions, memoryContainingHandle, callbackThreadInitializer);
 	}
 
 	private static DokanOperations prepare(DokanFileSystem fs, DokanCallbackThreadInitializer callbackThreadInitializer) {
@@ -164,24 +171,10 @@ public class DokanMount implements AutoCloseable {
 		return dokanOperations;
 	}
 
-	public synchronized void mount(Path mountPoint) {
-		mount(mountPoint, MountOptions.MOUNT_MANAGER, TIMEOUT);
-	}
 
-	public synchronized void mount(Path mountPoint, @EnumSet int options, @Unsigned int timeout) {
-		this.dokanOptions = new DokanOptions.Builder(mountPoint) //
-				.withOptions(options) //
-				.withTimeout(timeout) //
-				.withSingleThreadEnabled(true) //
-				.build();
-		int result = DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
-		if (result != 0) {
-			throw new RuntimeException("DokanCreateFileSystem returned non-zero result: " + result);
-		}
-	}
-
+	//from here on thou shall be tested!
 	public synchronized void unmount() {
-		if(isUnmounted) {
+		if (isUnmounted) {
 			return;
 		}
 
@@ -196,6 +189,10 @@ public class DokanMount implements AutoCloseable {
 	public void close() throws Exception {
 		unmount();
 	}
+
+
+	//here thy testing ends
+
 
 	private static class DokanCallbackThreadInitializer extends CallbackThreadInitializer {
 
@@ -217,4 +214,5 @@ public class DokanMount implements AutoCloseable {
 			this.prefix = prefix;
 		}
 	}
+
 }
