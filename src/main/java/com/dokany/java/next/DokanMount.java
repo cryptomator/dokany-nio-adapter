@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 
 /**
  * Class to mount a {@link DokanFileSystem}.
+ * <p>
+ * When using this class, there is no need to call {@link DokanAPI#DokanInit()} or {@link DokanAPI#DokanShutdown()}. In contrast, it can even lead to illegal memory accesses.
+ * DokanInit() is called when this class is loaded, and for DokanShutdown a shutdownhook via {@link Runtime#addShutdownHook(Thread)} is installed.
  */
 public class DokanMount implements AutoCloseable {
 

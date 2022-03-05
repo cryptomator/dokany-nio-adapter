@@ -27,8 +27,6 @@ public class ReadOnlyMirrorTest {
 				.mount(Path.of("X:\\"));
 		waitForUserInput(reader);
 		mount.unmount();
-
-		DokanAPI.DokanShutdown();
 	}
 
 	private static void waitForUserInput(BufferedReader reader) throws IOException {

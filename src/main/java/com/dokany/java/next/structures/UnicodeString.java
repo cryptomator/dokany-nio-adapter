@@ -41,4 +41,9 @@ public class UnicodeString extends Structure {
 		return Short.toUnsignedInt(MaximumLength);
 	}
 
+	@Override
+	public String toString() {
+		return Buffer.getWideString(0);
+	}
+
 }

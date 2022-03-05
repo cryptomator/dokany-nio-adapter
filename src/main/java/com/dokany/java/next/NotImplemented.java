@@ -18,11 +18,12 @@ import static java.lang.annotation.ElementType.METHOD;
  * <p>This class is a copy of <a href="https://github.com/SerCeMan/jnr-fuse/blob/master/src/main/java/ru/serce/jnrfuse/NotImplemented.java">ru.serce.jnrfuse.NotImplemented</a>.</p>
  *
  * @author Sergey Tselovalnikov
+ * @author Armin Schrenk
  * @since 2.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = METHOD)
-public @interface NotImplemented {
+@interface NotImplemented {
 
 }

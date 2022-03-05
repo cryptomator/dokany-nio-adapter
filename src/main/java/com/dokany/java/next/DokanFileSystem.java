@@ -21,7 +21,7 @@ import com.sun.jna.ptr.LongByReference;
 public interface DokanFileSystem {
 
 	@NotImplemented
-	default int zwCreateFile(WString path, DokanIOSecurityContext securityContext, @EnumSet int DesiredAccess, @EnumSet int FileAttributes, @EnumSet int ShareAccess, @Enum int CreateDisposition, @EnumSet int CreateOptions, DokanFileInfo dokanFileInfo) {
+	default int zwCreateFile(WString path, DokanIOSecurityContext securityContext, @EnumSet int desiredAccess, @EnumSet int fileAttributes, @EnumSet int shareAccess, @Enum int createDisposition, @EnumSet int createOptions, DokanFileInfo dokanFileInfo) {
 		return NTStatus.STATUS_NOT_IMPLEMENTED;
 	}
 
