@@ -45,7 +45,7 @@ public class DokanMount implements AutoCloseable {
 	}
 
 	//TODO: extend to cover more dokanOptions variables
-	public static DokanMount mount(DokanFileSystem fs, Path mountPoint, @EnumSet int mountOptions) {
+	public static DokanMount mount(DokanFileSystem fs, Path mountPoint, @EnumSet int mountOptions) throws DokanException {
 		var callbackThreadInitializer = new DokanCallbackThreadInitializer("dokan-");
 		var dokanOperations = prepare(fs, callbackThreadInitializer);
 		var dokanOptions = new DokanOptions.Builder(mountPoint) //
@@ -58,7 +58,7 @@ public class DokanMount implements AutoCloseable {
 
 		int result = DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
 		if (result != 0) {
-			throw new RuntimeException("DokanCreateFileSystem returned non-zero result: " + result); //TODO: thrown own exception
+			throw new DokanException("DokanCreateFileSystem returned non-zero result: " + result); //TODO: thrown own exception
 		}
 
 		return new DokanMount(dokanOperations, dokanOptions, memoryContainingHandle, callbackThreadInitializer);
