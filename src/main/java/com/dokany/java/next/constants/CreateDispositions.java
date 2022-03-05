@@ -3,7 +3,7 @@ package com.dokany.java.next.constants;
 /**
  * As defined in wdm.h
  */
-public interface CreateDisposition {
+public interface CreateDispositions {
 
 	int FILE_SUPERSEDE = 0x00000000;
 	int FILE_OPEN = 0x00000001;

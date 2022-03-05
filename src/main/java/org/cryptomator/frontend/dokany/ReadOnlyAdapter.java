@@ -3,7 +3,7 @@ package org.cryptomator.frontend.dokany;
 import com.dokany.java.constants.Win32ErrorCode;
 import com.dokany.java.next.DokanAPI;
 import com.dokany.java.next.DokanFileSystem;
-import com.dokany.java.next.constants.CreateDisposition;
+import com.dokany.java.next.constants.CreateDispositions;
 import com.dokany.java.next.constants.CreateOptions;
 import com.dokany.java.next.nativeannotations.Enum;
 import com.dokany.java.next.nativeannotations.EnumSet;
@@ -85,7 +85,7 @@ public class ReadOnlyAdapter implements DokanFileSystem {
 		 */
 
 
-		assert (createDisposition == CreateDisposition.FILE_OPEN || createDisposition == CreateDisposition.FILE_OPEN_IF);
+		assert (createDisposition == CreateDispositions.FILE_OPEN || createDisposition == CreateDispositions.FILE_OPEN_IF);
 		try (PathLock pathLock = lockManager.createPathLock(file.toString()).forWriting(); DataLock dataLock = pathLock.lockDataForWriting()) {
 			DosFileAttributes attr;
 
