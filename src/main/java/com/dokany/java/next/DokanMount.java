@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 public class DokanMount {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanMount.class);
-
 	private static final int TIMEOUT = 3000;
 
 	static {
@@ -37,11 +36,10 @@ public class DokanMount {
 
 	private final DokanOperations dokanOperations;
 	private final CallbackThreadInitializer callbackThreadInitializer;
+	private final Pointer memoryContainingHandle;
 
 	private DokanOptions dokanOptions;
-	private Path mountPoint;
 
-	private final Pointer memoryContainingHandle;
 
 
 	DokanMount(DokanOperations dokanOperations, CallbackThreadInitializer callbackThreadInitializer) {
