@@ -1,5 +1,6 @@
 package com.dokany.java.next.structures;
 
+import com.dokany.java.next.constants.MountOptions;
 import com.dokany.java.next.nativeannotations.Boolean;
 import com.dokany.java.next.nativeannotations.EnumSet;
 import com.dokany.java.next.nativeannotations.Unsigned;
@@ -124,7 +125,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 		@Boolean
 		private byte singleThread = 0x00;
 		@EnumSet
-		private int options = 0;
+		private int options = MountOptions.MOUNT_MANAGER;
 		@Unsigned
 		private long globalContext = 0;
 		private String uncName = "";
