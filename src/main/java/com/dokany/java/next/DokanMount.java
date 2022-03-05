@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * TODO: Add Description to this class
  */
-public class DokanMount {
+public class DokanMount implements AutoCloseable {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanMount.class);
 	private static final int TIMEOUT = 3000;
@@ -39,6 +39,7 @@ public class DokanMount {
 	private final Pointer memoryContainingHandle;
 
 	private DokanOptions dokanOptions;
+	private volatile boolean isUnmounted;
 
 
 
@@ -47,6 +48,7 @@ public class DokanMount {
 		this.callbackThreadInitializer = callbackThreadInitializer;
 		this.memoryContainingHandle = new Memory(Native.POINTER_SIZE);
 		memoryContainingHandle.clear(Native.POINTER_SIZE);
+		this.isUnmounted = false;
 	}
 
 	public static DokanMount create(DokanFileSystem fs) {
@@ -179,10 +181,21 @@ public class DokanMount {
 	}
 
 	public synchronized void unmount() {
-		DokanAPI.DokanCloseHandle(memoryContainingHandle.getPointer(0));
+		if(isUnmounted) {
+			return;
+		}
+
+		if (DokanAPI.DokanIsFileSystemRunning(memoryContainingHandle.getPointer(0))) {
+			DokanAPI.DokanCloseHandle(memoryContainingHandle.getPointer(0));
+		}
 		this.memoryContainingHandle.clear(Native.POINTER_SIZE);
+		this.isUnmounted = true;
 	}
 
+	@Override
+	public void close() throws Exception {
+		unmount();
+	}
 
 	private static class DokanCallbackThreadInitializer extends CallbackThreadInitializer {
 
