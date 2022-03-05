@@ -110,6 +110,9 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 		return Integer.toUnsignedLong(VolumeSecurityDescriptorLength);
 	}
 
+	public static DokanOptions.Builder create(Path mountpoint) {
+		return new Builder(mountpoint);
+	}
 
 	public static class Builder {
 
@@ -143,10 +146,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 			if (descriptor.data.length > this.volumeSecurityDescriptor.length) {
 				throw new IllegalArgumentException("Given security descriptor is too big");
 			}
-
-			for (int i = 0; i < descriptor.data.length; i++) {
-				this.volumeSecurityDescriptor[i] = descriptor.data[i];
-			}
+			System.arraycopy(descriptor.data,0,volumeSecurityDescriptor,0,descriptor.data.length);
 			this.volumeSecurityDescriptorLength = descriptor.data.length;
 			return this;
 		}
