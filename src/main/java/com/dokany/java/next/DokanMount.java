@@ -9,8 +9,6 @@ import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -25,8 +23,7 @@ import java.util.stream.Collectors;
  */
 public class DokanMount implements AutoCloseable {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DokanMount.class);
-	private static final int TIMEOUT = 3000;
+	private static final int TIMEOUT = 5000;
 
 	static {
 		DokanAPI.DokanInit();
@@ -47,6 +44,7 @@ public class DokanMount implements AutoCloseable {
 		this.isUnmounted = false;
 	}
 
+	//TODO: extend to cover more dokanOptions variables
 	public static DokanMount mount(DokanFileSystem fs, Path mountPoint, @EnumSet int mountOptions) {
 		var callbackThreadInitializer = new DokanCallbackThreadInitializer("dokan-");
 		var dokanOperations = prepare(fs, callbackThreadInitializer);
@@ -57,10 +55,12 @@ public class DokanMount implements AutoCloseable {
 				.build();
 		var memoryContainingHandle = new Memory(Native.POINTER_SIZE);
 		memoryContainingHandle.clear(Native.POINTER_SIZE);
+
 		int result = DokanAPI.DokanCreateFileSystem(dokanOptions, dokanOperations, memoryContainingHandle);
 		if (result != 0) {
-			throw new RuntimeException("DokanCreateFileSystem returned non-zero result: " + result);
+			throw new RuntimeException("DokanCreateFileSystem returned non-zero result: " + result); //TODO: thrown own exception
 		}
+
 		return new DokanMount(dokanOperations, dokanOptions, memoryContainingHandle, callbackThreadInitializer);
 	}
 
@@ -171,14 +171,12 @@ public class DokanMount implements AutoCloseable {
 		return dokanOperations;
 	}
 
-
-	//from here on thou shall be tested!
 	public synchronized void unmount() {
 		if (isUnmounted) {
 			return;
 		}
 
-		if (DokanAPI.DokanIsFileSystemRunning(memoryContainingHandle.getPointer(0))) {
+		if (isRunning()) {
 			DokanAPI.DokanCloseHandle(memoryContainingHandle.getPointer(0));
 		}
 		this.memoryContainingHandle.clear(Native.POINTER_SIZE);
@@ -186,12 +184,13 @@ public class DokanMount implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		unmount();
 	}
 
-
-	//here thy testing ends
+	public synchronized boolean isRunning() {
+		return DokanAPI.DokanIsFileSystemRunning(memoryContainingHandle.getPointer(0));
+	}
 
 
 	private static class DokanCallbackThreadInitializer extends CallbackThreadInitializer {
