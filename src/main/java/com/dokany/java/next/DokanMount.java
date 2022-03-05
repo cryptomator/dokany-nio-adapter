@@ -25,6 +25,7 @@ public class DokanMount implements AutoCloseable {
 
 	static {
 		DokanAPI.DokanInit();
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> DokanAPI.DokanShutdown()));
 	}
 
 	private final DokanOperations dokanOperations;

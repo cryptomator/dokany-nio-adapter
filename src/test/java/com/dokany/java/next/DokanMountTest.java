@@ -1,11 +1,9 @@
 package com.dokany.java.next;
 
-import com.dokany.java.next.constants.MountOptions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import java.nio.file.Files;
@@ -45,7 +43,7 @@ public class DokanMountTest {
 	}
 
 	@Test
-	public void testMountToDriveSuccessful(@TempDir Path testRoot) throws DokanException {
+	public void testMountToDriveSuccessful() throws DokanException {
 		var fsSpy = Mockito.spy(fs);
 		this.mount = DokanMount.create(fsSpy)
 				.mount(TEST_DRIVE_LETTER);
@@ -53,11 +51,6 @@ public class DokanMountTest {
 
 		Mockito.verify(fsSpy, Mockito.times(1)).mounted(Mockito.any(), Mockito.any());
 		Mockito.verify(fsSpy, Mockito.times(1)).unmounted(Mockito.any());
-	}
-
-	@AfterAll
-	public static void shutdown() {
-		DokanAPI.DokanShutdown();
 	}
 
 }
