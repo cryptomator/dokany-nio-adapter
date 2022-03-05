@@ -31,6 +31,10 @@ public class DokanMount {
 
 	private static final int TIMEOUT = 3000;
 
+	static {
+		DokanAPI.DokanInit();
+	}
+
 	private final DokanOperations dokanOperations;
 	private final CallbackThreadInitializer callbackThreadInitializer;
 
@@ -165,7 +169,6 @@ public class DokanMount {
 	}
 
 	public synchronized void mount(Path mountPoint, @EnumSet int options, @Unsigned int timeout) {
-		DokanAPI.DokanInit();
 		this.dokanOptions = new DokanOptions.Builder(mountPoint) //
 				.withOptions(options) //
 				.withTimeout(timeout) //
