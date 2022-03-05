@@ -36,7 +36,9 @@ public class DokanMountTest {
 	@Test
 	public void testMountToDirSuccessful() throws InterruptedException, DokanException {
 		var fsSpy = Mockito.spy(fs);
-		this.mount = DokanMount.mount(fsSpy, TEST_DIR, MountOptions.MOUNT_MANAGER);
+		this.mount = DokanMount.create(fsSpy)
+				.withMountOptions(MountOptions.MOUNT_MANAGER)
+				.mount(TEST_DIR);
 		mount.unmount();
 
 		Mockito.verify(fsSpy, Mockito.times(1)).mounted(Mockito.any(), Mockito.any());
@@ -46,7 +48,9 @@ public class DokanMountTest {
 	@Test
 	public void testMountToDriveSuccessful(@TempDir Path testRoot) throws DokanException {
 		var fsSpy = Mockito.spy(fs);
-		this.mount = DokanMount.mount(fsSpy, TEST_DRIVE_LETTER, MountOptions.MOUNT_MANAGER);
+		this.mount = DokanMount.create(fsSpy)
+				.withMountOptions(MountOptions.MOUNT_MANAGER)
+				.mount(TEST_DRIVE_LETTER);
 		mount.unmount();
 
 		Mockito.verify(fsSpy, Mockito.times(1)).mounted(Mockito.any(), Mockito.any());

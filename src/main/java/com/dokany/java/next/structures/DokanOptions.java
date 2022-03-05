@@ -113,8 +113,8 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 		return Integer.toUnsignedLong(VolumeSecurityDescriptorLength);
 	}
 
-	public static DokanOptions.Builder create(Path mountpoint) {
-		return new Builder(mountpoint);
+	public static DokanOptions.Builder create() {
+		return new Builder();
 	}
 
 	public static class Builder {

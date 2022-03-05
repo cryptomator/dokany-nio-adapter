@@ -1,6 +1,5 @@
 package com.dokany.java.next.structures;
 
-import com.google.common.base.Strings;
 import com.sun.jna.platform.win32.WinNT;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +27,7 @@ public class DokanOptionsTest {
 			mountPoint = Mockito.mock(Path.class);
 			Mockito.when(mountPoint.toString()).thenReturn("/foo/bar");
 			Mockito.when(mountPoint.toAbsolutePath()).thenReturn(mountPoint);
-			builder = new DokanOptions.Builder(mountPoint);
+			builder = new DokanOptions.Builder();
 		}
 
 		@Test
@@ -36,7 +35,7 @@ public class DokanOptionsTest {
 		public void testSettingSecDescriptorSetsArrayAndLength() {
 			var securityDescriptorContent = "This is a security descriptor".getBytes(StandardCharsets.UTF_8);
 
-			DokanOptions result = builder.withSecurityDescriptor(new WinNT.SECURITY_DESCRIPTOR(securityDescriptorContent)).build();
+			DokanOptions result = builder.withSecurityDescriptor(new WinNT.SECURITY_DESCRIPTOR(securityDescriptorContent)).build(mountPoint);
 
 			Assertions.assertEquals(securityDescriptorContent.length,result.VolumeSecurityDescriptorLength);
 			var resultDescriptor = Arrays.copyOf(result.VolumeSecurityDescriptor,result.VolumeSecurityDescriptorLength);
@@ -46,7 +45,7 @@ public class DokanOptionsTest {
 		@Test
 		@DisplayName("Setting minor and patch version results sets correct overall version")
 		public void testSettingMinorAndPatchVersion() {
-			DokanOptions result = builder.withMinorAndPatchVersion(3, 4).build();
+			DokanOptions result = builder.withMinorAndPatchVersion(3, 4).build(mountPoint);
 
 			Assertions.assertEquals(result.getVersion(), 234);
 		}
@@ -54,13 +53,13 @@ public class DokanOptionsTest {
 		@Test
 		@DisplayName("Throw IllegalArgumentException on minor version requiring more than one decimal digit ")
 		public void testSettingAtLeastTwoDigitMinorVersionThrows() {
-			Assertions.assertThrows(IllegalArgumentException.class, () -> builder.withMinorAndPatchVersion(33, 4).build());
+			Assertions.assertThrows(IllegalArgumentException.class, () -> builder.withMinorAndPatchVersion(33, 4).build(mountPoint));
 		}
 
 		@Test
 		@DisplayName("Throw IllegalArgumentException on patch version requiring more than one decimal digit ")
 		public void testSettingAtLeastTwoDigitPatchVersionThrows() {
-			Assertions.assertThrows(IllegalArgumentException.class, () -> builder.withMinorAndPatchVersion(3, 44).build());
+			Assertions.assertThrows(IllegalArgumentException.class, () -> builder.withMinorAndPatchVersion(3, 44).build(mountPoint));
 		}
 
 	}

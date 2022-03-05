@@ -1,6 +1,7 @@
 package org.cryptomator.frontend.dokany;
 
 import com.dokany.java.next.DokanAPI;
+import com.dokany.java.next.DokanException;
 import com.dokany.java.next.DokanMount;
 import com.dokany.java.next.constants.MountOptions;
 import org.cryptomator.frontend.dokany.locks.LockManager;
@@ -12,7 +13,7 @@ import java.nio.file.Path;
 
 public class ReadOnlyMirrorTest {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, DokanException {
 		Path root = Path.of("T:\\txt");
 
 		LockManager lm = new LockManager();
@@ -21,7 +22,9 @@ public class ReadOnlyMirrorTest {
 		var reader = new BufferedReader(new InputStreamReader(System.in));
 		waitForUserInput(reader);
 
-		var mount = DokanMount.mount(fs, Path.of("X:\\"), MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG);
+		var mount = DokanMount.create(fs)
+				.withMountOptions(MountOptions.MOUNT_MANAGER | MountOptions.STDERR | MountOptions.DEBUG)
+				.mount(Path.of("X:\\"));
 		waitForUserInput(reader);
 		mount.unmount();
 
