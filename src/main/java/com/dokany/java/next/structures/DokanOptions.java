@@ -15,6 +15,7 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 	private static final int VOLUME_SECURITY_DESCRIPTOR_MAX_SIZE = 1024 * 16;
 	/**
 	 * Version of the Dokan features requested without dots (version "123" is equal to Dokan version 1.2.3).
+	 * TODO: What happens if the requested version does not exist?
 	 */
 	@Unsigned
 	public volatile short Version;
@@ -33,6 +34,8 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 
 	/**
 	 * FileSystem can store anything here.
+	 *
+	 * TODO: maybe make this non-volatile
 	 */
 	@Unsigned
 	public volatile long GlobalContext;
@@ -148,6 +151,18 @@ public class DokanOptions extends Structure implements Structure.ByReference {
 			}
 			System.arraycopy(descriptor.data,0,volumeSecurityDescriptor,0,descriptor.data.length);
 			this.volumeSecurityDescriptorLength = descriptor.data.length;
+			return this;
+		}
+
+		public Builder withMinorAndPatchVersion(int minorVersion, int patchVersion) {
+			if( minorVersion >= 10) {
+				throw new IllegalArgumentException("minorVersion must be a number between 0 and 9 (inclusive)");
+			}
+			if( patchVersion >= 10) {
+				throw new IllegalArgumentException("patchVersion must be a number between 0 and 9 (inclusive)");
+			}
+
+			version += minorVersion*10 + patchVersion;
 			return this;
 		}
 

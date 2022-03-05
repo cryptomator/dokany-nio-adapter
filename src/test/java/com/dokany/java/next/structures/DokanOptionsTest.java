@@ -43,6 +43,26 @@ public class DokanOptionsTest {
 			Assertions.assertArrayEquals(securityDescriptorContent,resultDescriptor);
 		}
 
+		@Test
+		@DisplayName("Setting minor and patch version results sets correct overall version")
+		public void testSettingMinorAndPatchVersion() {
+			DokanOptions result = builder.withMinorAndPatchVersion(3, 4).build();
+
+			Assertions.assertEquals(result.getVersion(), 234);
+		}
+
+		@Test
+		@DisplayName("Throw IllegalArgumentException on minor version requiring more than one decimal digit ")
+		public void testSettingAtLeastTwoDigitMinorVersionThrows() {
+			Assertions.assertThrows(IllegalArgumentException.class, () -> builder.withMinorAndPatchVersion(33, 4).build());
+		}
+
+		@Test
+		@DisplayName("Throw IllegalArgumentException on patch version requiring more than one decimal digit ")
+		public void testSettingAtLeastTwoDigitPatchVersionThrows() {
+			Assertions.assertThrows(IllegalArgumentException.class, () -> builder.withMinorAndPatchVersion(3, 44).build());
+		}
+
 	}
 
 }
