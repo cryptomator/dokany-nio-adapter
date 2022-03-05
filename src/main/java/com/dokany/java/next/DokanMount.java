@@ -1,6 +1,7 @@
 package com.dokany.java.next;
 
 
+import com.dokany.java.next.constants.MountOptions;
 import com.dokany.java.next.nativeannotations.EnumSet;
 import com.dokany.java.next.nativeannotations.Unsigned;
 import com.dokany.java.next.structures.DokanOperations;
@@ -157,6 +158,10 @@ public class DokanMount {
 			Native.setCallbackThreadInitializer(dokanOperations.FindStreams, callbackThreadInitializer);
 		}
 		return dokanOperations;
+	}
+
+	public synchronized void mount(Path mountPoint) {
+		mount(mountPoint, MountOptions.MOUNT_MANAGER, TIMEOUT);
 	}
 
 	public synchronized void mount(Path mountPoint, @EnumSet int options, @Unsigned int timeout) {
