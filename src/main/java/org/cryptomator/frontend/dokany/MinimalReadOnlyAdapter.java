@@ -55,7 +55,7 @@ public class MinimalReadOnlyAdapter implements DokanFileSystem {
 		try {
 			actualFile = getRootedPath(file);
 		} catch (InvalidPathException e) {
-			return NTStatus.OBJECT_PATH_INVALID;
+			return NTStatus.OBJECT_NAME_INVALID;
 		}
 
 		//TODO: too restrictive
