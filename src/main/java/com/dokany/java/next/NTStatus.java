@@ -4,7 +4,7 @@ package com.dokany.java.next;
 public interface NTStatus extends com.sun.jna.platform.win32.NTStatus {
 
 	int STATUS_NOT_IMPLEMENTED = 0xC0000002;
-	int OBJECT_NAME_NOT_FOUND = 0xC0000034;
+	int NO_SUCH_FILE = 0xC000000F;
 	int IO_DEVICE_ERROR = 0xC0000185;
 	int NOT_A_DIRECTORY = 0xC0000103;
 	int OBJECT_NAME_COLLISION = 0xC0000035;

@@ -92,7 +92,7 @@ public class ReadOnlyAdapter implements DokanFileSystem {
 			try {
 				attr = Files.readAttributes(actualFile, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 			} catch (NoSuchFileException e) {
-				return NTStatus.OBJECT_NAME_NOT_FOUND;
+				return NTStatus.NO_SUCH_FILE;
 			} catch (IOException e) {
 				return NTStatus.IO_DEVICE_ERROR;
 			}
@@ -119,7 +119,7 @@ public class ReadOnlyAdapter implements DokanFileSystem {
 					LOG.info("({}) Opened directory handle for {}.", dokanFileInfo.context, file);
 					return NTStatus.STATUS_SUCCESS;
 				} catch (NoSuchFileException e) {
-					return NTStatus.OBJECT_NAME_NOT_FOUND;
+					return NTStatus.NO_SUCH_FILE;
 				} catch (IOException e) {
 					return NTStatus.IO_DEVICE_ERROR;
 				}
@@ -131,7 +131,7 @@ public class ReadOnlyAdapter implements DokanFileSystem {
 					dokanFileInfo.context = fac.openFile(actualFile, StandardOpenOption.READ);
 					return NTStatus.STATUS_SUCCESS;
 				} catch (NoSuchFileException e) {
-					return NTStatus.OBJECT_NAME_NOT_FOUND;
+					return NTStatus.NO_SUCH_FILE;
 				} catch (AccessDeniedException e) {
 					return Win32ErrorCode.ERROR_ACCESS_DENIED.getMask();
 				} catch (IOException e) {

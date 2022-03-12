@@ -13,7 +13,7 @@ public class MinimalDokanAdapter implements DokanFileSystem {
 
 	@Override
 	public int zwCreateFile(WString path, DokanIOSecurityContext securityContext, @EnumSet int DesiredAccess, @EnumSet int FileAttributes, @EnumSet int ShareAccess, int CreateDisposition, @EnumSet int CreateOptions, DokanFileInfo dokanFileInfo) {
-		return NTStatus.OBJECT_NAME_NOT_FOUND;
+		return NTStatus.NO_SUCH_FILE;
 	}
 
 	@Override
