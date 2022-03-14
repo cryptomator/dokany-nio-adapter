@@ -15,5 +15,7 @@ public interface NTStatus extends com.sun.jna.platform.win32.NTStatus {
 	int UNSUCCESSFUL = 0xC0000001;
 	int DISK_QUOTA_EXCEEDED = 0xC0000802;
 	int OBJECT_NAME_INVALID = 0xC0000033;
+	int BUFFER_OVERFLOW	= 0x80000005;
+	int INVALID_PARAMETER = 0xC000000D;
 
 }

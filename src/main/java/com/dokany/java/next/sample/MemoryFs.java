@@ -55,10 +55,17 @@ public class MemoryFs implements DokanFileSystem {
 				case DIR -> handleExistingDir(path, (Directory) r, crtDspstn, createOptions, fileAttributes, dokanFileInfo);
 			};
 		} else {
-			return switch (createOptions & CreateOptions.FILE_DIRECTORY_FILE) {
-				case 0 -> handleNewFile(path, crtDspstn, createOptions, fileAttributes);
-				default -> handleNewDirectory(path, crtDspstn, createOptions, fileAttributes);
-			};
+			boolean createDir = (createOptions & CreateOptions.FILE_DIRECTORY_FILE) != 0;
+			boolean createFile = (createOptions & CreateOptions.FILE_NON_DIRECTORY_FILE) != 0;
+			if (createFile && createDir) {
+				return NTStatus.INVALID_PARAMETER;
+			} else if( createDir) {
+				return handleNewDirectory(path, crtDspstn, createOptions, fileAttributes);
+			} else if (createFile){
+				return handleNewFile(path, crtDspstn, createOptions, fileAttributes);
+			} else {
+				return NTStatus.UNSUCCESSFUL;
+			}
 		}
 
 	}
