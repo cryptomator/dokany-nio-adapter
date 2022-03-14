@@ -31,7 +31,7 @@ public final class Directory extends Resource {
 	 */
 	public Directory(String name, int attributes, Instant creationTime, Instant lastAccessTime, Instant lastModificationTime) {
 		super(name, attributes, SIZE, creationTime, lastAccessTime, lastModificationTime);
-		attributes |= FILE_ATTRIBUTE_DIRECTORY;
+		this.attributes |= FILE_ATTRIBUTE_DIRECTORY;
 		this.resources = new ArrayList<>();
 	}
 

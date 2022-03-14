@@ -46,7 +46,7 @@ public class MemFsIntegrationTest {
 
 	@Test
 	@DisplayName("After successful file creation, file exists")
-	public void testCreatedFileInFileListing() throws DokanException {
+	public void testFileCreation() throws DokanException {
 		var file = mountPoint.resolve("test.file");
 		var interalFilePath = MemoryPath.of("\\test.file");
 
@@ -60,7 +60,7 @@ public class MemFsIntegrationTest {
 
 	@Test
 	@DisplayName("After successful dir creation, dir exists")
-	public void testCreatedDirInFileListing() throws DokanException {
+	public void testDirCreation() throws DokanException {
 		var dir = mountPoint.resolve("testDir");
 		var interalDirPath = MemoryPath.of("\\testDir");
 
@@ -68,7 +68,9 @@ public class MemFsIntegrationTest {
 			Assertions.assertDoesNotThrow(() -> Files.createDirectory(dir));
 		}
 
-		Assertions.assertTrue(resourceManager.exists(interalDirPath), "Dir creation failed.");
+		Assertions.assertTrue(resourceManager.exists(interalDirPath), "Resource creation failed.");
+		Resource r = resourceManager.get(interalDirPath);
+		Assertions.assertInstanceOf(Directory.class, r);
 	}
 
 	@Test
