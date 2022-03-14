@@ -6,6 +6,11 @@ import com.dokany.java.next.nativeannotations.Unsigned;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
+/**
+ * The DokanFileInfo Struct.
+ * <p>
+ * For field descriptions, see the <a href=https://dokan-dev.github.io/dokany-doc/html/struct_d_o_k_a_n___f_i_l_e___i_n_f_o.html>dokany documention</a>.
+ */
 @Structure.FieldOrder({"context", "dokanContext", "dokanOptions", "processingContext", "processId", "isDirectory", "deleteOnClose", "pagingIo", "synchronousIo", "noCache", "writeToEndOfFile"})
 public class DokanFileInfo extends Structure implements Structure.ByReference {
 
@@ -13,14 +18,21 @@ public class DokanFileInfo extends Structure implements Structure.ByReference {
 	public long context;
 
 	@Reserved
-	public long dokanContext;
+	public final long dokanContext;
+	{
+		this.dokanContext = -1;
+	}
 
 	public DokanOptions dokanOptions;
 
-	public Pointer processingContext;
+	@Reserved
+	public final Pointer processingContext;
+	{
+		this.processingContext = Pointer.NULL;
+	}
 
 	@Unsigned
-	public int processId;
+	public volatile int processId;
 
 	@Boolean
 	public byte isDirectory;
@@ -45,7 +57,7 @@ public class DokanFileInfo extends Structure implements Structure.ByReference {
 	}
 
 	public boolean getIsDirectory() {
-		return isDirectory !=0;
+		return isDirectory != 0;
 	}
 
 	public boolean getDeleteOnClose() {

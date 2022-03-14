@@ -16,9 +16,13 @@ import com.sun.jna.win32.StdCallLibrary;
 import static com.sun.jna.platform.win32.WinDef.MAX_PATH;
 
 
+/**
+ * The dokan operations struct.
+ */
 @Structure.FieldOrder({"ZwCreateFile", "Cleanup", "CloseFile", "ReadFile", "WriteFile", "FlushFileBuffers", "GetFileInformation", "FindFiles", "FindFilesWithPattern", "SetFileAttributes", "SetFileTime", "DeleteFile", "DeleteDirectory", "MoveFile", "SetEndOfFile", "SetAllocationSize", "LockFile", "UnlockFile", "GetDiskFreeSpace", "GetVolumeInformation", "Mounted", "Unmounted", "GetFileSecurity", "SetFileSecurity", "FindStreams"})
-public final class DokanOperations extends Structure {
+public class DokanOperations extends Structure {
 
+	//TODO: should this class be final?
 	public DokanOperations() {
 	}
 
