@@ -3,6 +3,7 @@ package com.dokany.java.next.sample;
 import com.dokany.java.next.DokanException;
 import com.dokany.java.next.DokanMount;
 import com.dokany.java.next.constants.MountOptions;
+import com.sun.jna.platform.win32.WinNT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,9 +33,9 @@ public class MemFsIntegrationTest {
 		this.resourceManager = new ResourceManager();
 		var memfs = new MemoryFs(resourceManager);
 		this.memfsSpy = Mockito.spy(memfs);
-		this.mounter = DokanMount.create(memfsSpy)
-				.withMountOptions(MountOptions.MOUNT_MANAGER | MountOptions.STDERR)
-				.withTimeout(3000)
+		this.mounter = DokanMount.create(memfsSpy) //
+				.withMountOptions(MountOptions.MOUNT_MANAGER | MountOptions.STDERR) //
+				.withTimeout(3000) //
 				.withSingleThreaded(true);
 	}
 
@@ -51,7 +55,7 @@ public class MemFsIntegrationTest {
 		}
 
 		//We could actually mock the resourceManager here
-		Assertions.assertTrue(resourceManager.exists(interalFilePath),"File creation failed");
+		Assertions.assertTrue(resourceManager.exists(interalFilePath), "File creation failed");
 	}
 
 	@Test
@@ -64,7 +68,7 @@ public class MemFsIntegrationTest {
 			Assertions.assertDoesNotThrow(() -> Files.createDirectory(dir));
 		}
 
-		Assertions.assertTrue(resourceManager.exists(interalDirPath),"Dir creation failed.");
+		Assertions.assertTrue(resourceManager.exists(interalDirPath), "Dir creation failed.");
 	}
 
 	@Test
@@ -120,21 +124,21 @@ public class MemFsIntegrationTest {
 	@Test
 	@DisplayName("Empty non-root dir returns empty listing")
 	public void testEmptyNonRootDirListing() throws DokanException, IOException {
-		resourceManager.put(MemoryPath.of("\\bar"),new Directory("bar",0x00));
+		resourceManager.put(MemoryPath.of("\\bar"), new Directory("bar", 0x00));
 		var path = mountPoint.resolve("bar");
 		final List<Path> result;
 		try (var mount = mounter.mount(mountPoint)) {
 			result = Files.list(path).collect(Collectors.toList());
 		}
 
-		Assertions.assertTrue(result.isEmpty(),"Listing of empty non-root dir contains unexpected elements");
+		Assertions.assertTrue(result.isEmpty(), "Listing of empty non-root dir contains unexpected elements");
 	}
 
 	@Test
 	@DisplayName("Existing resources appear in dir listing")
 	public void testDirListing() throws DokanException, IOException {
-		resourceManager.put(MemoryPath.of("\\foo"),new File("foo",0x00));
-		resourceManager.put(MemoryPath.of("\\bar"),new Directory("bar",0x00));
+		resourceManager.put(MemoryPath.of("\\foo"), new File("foo", 0x00));
+		resourceManager.put(MemoryPath.of("\\bar"), new Directory("bar", 0x00));
 
 		final List<Path> result;
 		try (var mount = mounter.mount(mountPoint)) {
@@ -144,6 +148,58 @@ public class MemFsIntegrationTest {
 		Assertions.assertTrue(2 <= result.size());
 		Assertions.assertTrue(result.stream().anyMatch(p -> p.endsWith("foo")));
 		Assertions.assertTrue(result.stream().anyMatch(p -> p.endsWith("bar")));
+	}
+
+	@Test
+	@DisplayName("Reading correct attribute values from existing, hidden, archived file")
+	public void testReadAttributesHiddenArchiveFile() throws DokanException, IOException {
+		Instant creationTime = Instant.parse("2007-12-03T10:15:30.00Z");
+		Instant lastAccessTime = Instant.parse("2020-01-03T18:05:44.10Z");
+		Instant lastModificationTime = Instant.parse("1970-07-20T23:55:01.00Z");
+		resourceManager.put(MemoryPath.of("\\foo"), //
+				new File("foo", //
+						WinNT.FILE_ATTRIBUTE_HIDDEN | WinNT.FILE_ATTRIBUTE_ARCHIVE, //
+						creationTime, //
+						lastAccessTime, //
+						lastModificationTime) //
+		);
+		var path = mountPoint.resolve("foo");
+
+		final DosFileAttributes attr;
+		try (var mount = mounter.mount(mountPoint)) {
+			attr = Files.readAttributes(path, DosFileAttributes.class);
+		}
+
+		Assertions.assertTrue(attr.isRegularFile());
+		Assertions.assertFalse(attr.isDirectory());
+		Assertions.assertFalse(attr.isOther());
+		Assertions.assertTrue(attr.isHidden());
+		Assertions.assertFalse(attr.isSystem());
+		Assertions.assertFalse(attr.isReadOnly());
+		Assertions.assertTrue(attr.isArchive());
+		Assertions.assertEquals(0, attr.creationTime().compareTo(FileTime.from(creationTime)));
+		Assertions.assertEquals(0, attr.lastAccessTime().compareTo(FileTime.from(lastAccessTime)));
+		Assertions.assertEquals(0, attr.lastModifiedTime().compareTo(FileTime.from(lastModificationTime)));
+	}
+
+	@Test
+	@DisplayName("Reading correct attribute values from existing directory")
+	public void testReadAttributesReadOnlyDirectory() throws DokanException, IOException {
+		resourceManager.put(MemoryPath.of("\\baz"), new Directory("baz", WinNT.FILE_READ_ONLY));
+		var path = mountPoint.resolve("baz");
+
+		final DosFileAttributes attr;
+		try (var mount = mounter.mount(mountPoint)) {
+			attr = Files.readAttributes(path, DosFileAttributes.class);
+		}
+
+		Assertions.assertTrue(attr.isDirectory());
+		Assertions.assertFalse(attr.isRegularFile());
+		Assertions.assertFalse(attr.isOther());
+		Assertions.assertFalse(attr.isHidden());
+		Assertions.assertFalse(attr.isSystem());
+		Assertions.assertTrue(attr.isReadOnly());
+		Assertions.assertFalse(attr.isArchive());
 	}
 
 }

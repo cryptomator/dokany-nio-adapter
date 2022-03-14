@@ -5,6 +5,8 @@ import com.dokany.java.next.NTStatus;
 import com.dokany.java.next.constants.CreateOptions;
 import com.dokany.java.next.enums.CreateDisposition;
 import com.dokany.java.next.nativeannotations.EnumSet;
+import com.dokany.java.next.nativeannotations.Out;
+import com.dokany.java.next.structures.ByHandleFileInformation;
 import com.dokany.java.next.structures.DokanFileInfo;
 import com.dokany.java.next.structures.DokanIOSecurityContext;
 import com.dokany.java.next.structures.DokanOperations;
@@ -155,6 +157,18 @@ public class MemoryFs implements DokanFileSystem {
 			return NTStatus.STATUS_SUCCESS;
 		} else {
 			return NTStatus.UNSUCCESSFUL;
+		}
+	}
+
+	@Override
+	public int getFileInformation(WString path, @Out ByHandleFileInformation handleFileInfo, DokanFileInfo dokanFileInfo) {
+		var p = MemoryPath.of(path.toString());
+		Resource r = resourceManager.get(p);
+		if( r != null) {
+			r.writeTo(handleFileInfo);
+			return NTStatus.STATUS_SUCCESS;
+		} else {
+			return NTStatus.NO_SUCH_FILE;
 		}
 	}
 

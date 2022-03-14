@@ -1,6 +1,7 @@
 package com.dokany.java.next.sample;
 
 import java.nio.ByteBuffer;
+import java.time.Instant;
 
 import static com.sun.jna.platform.win32.WinNT.FILE_ATTRIBUTE_NORMAL;
 
@@ -16,7 +17,11 @@ public final class File extends Resource {
 	}
 
 	public File (String name, int attributes) {
-		super(name, attributes, CAPACITY);
+		this(name, attributes, Instant.now(), Instant.now(), Instant.now());
+	}
+
+	public File(String name, int attributes, Instant creationTime, Instant lastAccessTime, Instant lastModificationTime) {
+		super(name, attributes, CAPACITY, creationTime, lastAccessTime, lastModificationTime);
 		this.content = ByteBuffer.allocate(CAPACITY); //1 kiBi
 	}
 

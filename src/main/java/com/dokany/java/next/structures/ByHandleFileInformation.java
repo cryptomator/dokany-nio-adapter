@@ -53,4 +53,14 @@ public class ByHandleFileInformation extends Structure {
 	public long getnFileIndexLow() {
 		return Integer.toUnsignedLong(nFileIndexLow);
 	}
+
+	public void setFileIndex(long index) {
+		nFileIndexLow = (int) index;
+		nFileIndexHigh = (int) (index >>> 32);
+	}
+
+	public void setFileSize(long size) {
+		nFileSizeLow = (int) size;
+		nFileSizeHigh = (int) (size >>> 32);
+	}
 }

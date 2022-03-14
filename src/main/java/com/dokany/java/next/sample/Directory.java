@@ -1,5 +1,6 @@
 package com.dokany.java.next.sample;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -16,16 +17,20 @@ public final class Directory extends Resource {
 		this(name, FILE_ATTRIBUTE_DIRECTORY);
 	}
 
+	public Directory(String name, int attributes) {
+		this(name, attributes, Instant.now(), Instant.now(), Instant.now());
+	}
+
 	/**
 	 * Instantiates a new directory.
-	 *
+	 * <p>
 	 * Note: Regardless of the given {@codes attributes}, {@link com.sun.jna.platform.win32.WinNT#FILE_ATTRIBUTE_DIRECTORY} is always set.
 	 *
 	 * @param name the name of the directory
 	 * @param attributes the attributes to be set on creation
 	 */
-	public Directory(String name, int attributes) {
-		super(name,attributes, SIZE);
+	public Directory(String name, int attributes, Instant creationTime, Instant lastAccessTime, Instant lastModificationTime) {
+		super(name, attributes, SIZE, creationTime, lastAccessTime, lastModificationTime);
 		attributes |= FILE_ATTRIBUTE_DIRECTORY;
 		this.resources = new ArrayList<>();
 	}

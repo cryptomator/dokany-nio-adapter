@@ -1,5 +1,6 @@
 package com.dokany.java.next.sample;
 
+import com.dokany.java.next.structures.ByHandleFileInformation;
 import com.sun.jna.platform.win32.WinBase;
 
 import java.sql.Date;
@@ -16,13 +17,13 @@ public sealed abstract class Resource permits File,Directory {
 	protected Instant lastModifiedTime;
 	protected long size;
 
-	Resource(String name, int attributes, long size) {
+	Resource(String name, int attributes, long size, Instant creationTime, Instant lastAccessTime, Instant lastModifiedTime) {
 		this.name = name;
 		this.attributes = attributes;
 		this.size = size;
-		this.creationTime = Instant.now();
-		this.lastAccessTime = Instant.now();
-		this.lastModifiedTime = Instant.now();
+		this.creationTime = creationTime;
+		this.lastAccessTime = lastAccessTime;
+		this.lastModifiedTime = lastModifiedTime;
 	}
 
 	abstract Type getType();
@@ -41,6 +42,17 @@ public sealed abstract class Resource permits File,Directory {
 				EMTPY_ALT_NAME
 				);
 	};
+
+	public void writeTo(ByHandleFileInformation fileInfoHandle) {
+		fileInfoHandle.dwFileAttributes = attributes;
+		fileInfoHandle.setFileSize(size);
+		fileInfoHandle.ftCreationTime = toFiletime(creationTime);
+		fileInfoHandle.ftLastWriteTime = toFiletime(lastModifiedTime);
+		fileInfoHandle.ftLastAccessTime = toFiletime(lastAccessTime);
+		fileInfoHandle.nNumberOfLinks = 1;
+		fileInfoHandle.setFileIndex(System.identityHashCode(this));
+		return;
+	}
 
 	//TODO: cache filetime objects (are they immutable?)
 	private WinBase.FILETIME toFiletime(Instant instant) {
