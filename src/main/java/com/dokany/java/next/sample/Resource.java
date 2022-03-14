@@ -30,13 +30,12 @@ public sealed abstract class Resource permits File,Directory {
 
 	//TODO: which constructor is more efficient of Win32FindData?
 	public WinBase.WIN32_FIND_DATA toFIND_DATAStruct() {
-		var fileSize = toFIND_DATAFileSize(size);
 		return new WinBase.WIN32_FIND_DATA(attributes,
 				toFiletime(creationTime),
 				toFiletime(lastAccessTime),
 				toFiletime(lastModifiedTime),
-				fileSize.high,
-				fileSize.low,
+				(int) (size >>> 32),
+				(int) size,
 				0,0,
 				toFIND_DATAFileName(name),
 				EMTPY_ALT_NAME
@@ -65,10 +64,6 @@ public sealed abstract class Resource permits File,Directory {
 		s.getChars(0,s.length(),buffer,0);
 		buffer[s.length()] = '\0';
 		return buffer;
-	}
-
-	private HighLowFileSize toFIND_DATAFileSize(long size) {
-		return new HighLowFileSize(size);
 	}
 
 	//-- Getter & Setter
@@ -123,13 +118,6 @@ public sealed abstract class Resource permits File,Directory {
 
 
 	//-- Utility object templates --
-
-	record HighLowFileSize(int high, int low) {
-
-		public HighLowFileSize(long size) {
-			 this((int) (size >>> 32),(int) size);
-		}
-	}
 
 	enum Type {
 		DIR,

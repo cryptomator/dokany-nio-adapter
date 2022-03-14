@@ -32,7 +32,7 @@ public class MemoryFs implements DokanFileSystem {
 	@Override
 	public int zwCreateFile(WString p, DokanIOSecurityContext securityContext, @EnumSet int desiredAccess, @EnumSet int fileAttributes, @EnumSet int shareAccess, int createDisposition, @EnumSet int createOptions, DokanFileInfo dokanFileInfo) {
 		final MemoryPath path = MemoryPath.of(p.toString());
-		if(! isValid(path)){
+		if (!isValid(path)) {
 			return NTStatus.OBJECT_NAME_INVALID;
 		}
 		/*
@@ -49,7 +49,7 @@ public class MemoryFs implements DokanFileSystem {
 		// TODO: ensure that file names can be at most MAX_PATH-1 long
 
 		//TODO: Locking
-		if(r != null) {
+		if (r != null) {
 			return switch (r.getType()) {
 				case FILE -> handleExistingFile(path, (File) r, crtDspstn, createOptions, fileAttributes);
 				case DIR -> handleExistingDir(path, (Directory) r, crtDspstn, createOptions, fileAttributes, dokanFileInfo);
@@ -59,9 +59,9 @@ public class MemoryFs implements DokanFileSystem {
 			boolean createFile = (createOptions & CreateOptions.FILE_NON_DIRECTORY_FILE) != 0;
 			if (createFile && createDir) {
 				return NTStatus.INVALID_PARAMETER;
-			} else if( createDir) {
+			} else if (createDir) {
 				return handleNewDirectory(path, crtDspstn, createOptions, fileAttributes);
-			} else if (createFile){
+			} else if (createFile) {
 				return handleNewFile(path, crtDspstn, createOptions, fileAttributes);
 			} else {
 				return NTStatus.UNSUCCESSFUL;
@@ -75,17 +75,17 @@ public class MemoryFs implements DokanFileSystem {
 			case CREATE -> NTStatus.OBJECT_NAME_COLLISION;
 			case OPEN, OPEN_IF -> {
 				//open file
-				yield  NTStatus.STATUS_SUCCESS;
+				yield NTStatus.STATUS_SUCCESS;
 			}
 			case OVERWRITE, OVERWRITE_IF -> {
 				file.wipe();
 				file.setAttributes(fileAttributes);
-				yield  NTStatus.STATUS_SUCCESS;
+				yield NTStatus.STATUS_SUCCESS;
 			}
 			case SUPERSEDE -> {
 				switch (createOptions & CreateOptions.FILE_DIRECTORY_FILE) {
-					case 0 -> resourceManager.put(path,new File(path.getFileName().toString(), fileAttributes));
-					default -> resourceManager.put(path,new Directory(path.getFileName().toString(), fileAttributes));
+					case 0 -> resourceManager.put(path, new File(path.getFileName().toString(), fileAttributes));
+					default -> resourceManager.put(path, new Directory(path.getFileName().toString(), fileAttributes));
 				}
 				yield NTStatus.STATUS_SUCCESS;
 			}
@@ -93,7 +93,7 @@ public class MemoryFs implements DokanFileSystem {
 	}
 
 	private int handleExistingDir(MemoryPath path, Directory r, CreateDisposition createDisposition, int createOptions, int fileAttributes, DokanFileInfo dokanFileInfo) {
-		if( (createOptions & CreateOptions.FILE_NON_DIRECTORY_FILE) != 0){
+		if ((createOptions & CreateOptions.FILE_NON_DIRECTORY_FILE) != 0) {
 			return NTStatus.FILE_IS_A_DIRECTORY;
 		}
 
@@ -107,7 +107,7 @@ public class MemoryFs implements DokanFileSystem {
 
 	private int handleNewFile(MemoryPath path, CreateDisposition createDisposition, int createOptions, int fileAttributes) {
 		return switch (createDisposition) {
-			case CREATE, OPEN_IF,OVERWRITE_IF, SUPERSEDE -> {
+			case CREATE, OPEN_IF, OVERWRITE_IF, SUPERSEDE -> {
 				resourceManager.put(path, new File(path.getFileName().toString(), fileAttributes));
 				yield NTStatus.STATUS_SUCCESS;
 			}
@@ -126,24 +126,14 @@ public class MemoryFs implements DokanFileSystem {
 		};
 	}
 
-
-	private boolean valueContainsAnyOf(int value, int ... flags) {
-		int mask = 0;
-		for(int f : flags) {
-			mask |=f;
-		}
-		return (value & mask) != 0;
-	}
-
 	@Override
 	public void cleanup(WString path, DokanFileInfo dokanFileInfo) {
 		final MemoryPath p = MemoryPath.of(path.toString());
-		if(dokanFileInfo.context == 0) {
-			//LOG
+		if (dokanFileInfo.context == 0) {
 			return;
 		}
 
-		if(dokanFileInfo.getDeleteOnClose()) {
+		if (dokanFileInfo.getDeleteOnClose()) {
 			resourceManager.remove(p);
 		}
 	}
@@ -155,11 +145,10 @@ public class MemoryFs implements DokanFileSystem {
 
 	@Override
 	public int findFiles(WString path, DokanOperations.FillWin32FindData fillFindDataCallback, DokanFileInfo dokanFileInfo) {
-		System.out.println(path);
 		final MemoryPath p = MemoryPath.of(path.toString());
-		if(resourceManager.get(p) instanceof Directory d) {
+		if (resourceManager.get(p) instanceof Directory d) {
 			d.list().forEach(resource -> {
-				fillFindDataCallback.invoke( resource.toFIND_DATAStruct(), dokanFileInfo);
+				fillFindDataCallback.invoke(resource.toFIND_DATAStruct(), dokanFileInfo);
 			});
 			return NTStatus.STATUS_SUCCESS;
 		} else {
@@ -171,7 +160,7 @@ public class MemoryFs implements DokanFileSystem {
 	public int getFileInformation(WString path, @Out ByHandleFileInformation handleFileInfo, DokanFileInfo dokanFileInfo) {
 		var p = MemoryPath.of(path.toString());
 		Resource r = resourceManager.get(p);
-		if( r != null) {
+		if (r != null) {
 			r.writeTo(handleFileInfo);
 			return NTStatus.STATUS_SUCCESS;
 		} else {
