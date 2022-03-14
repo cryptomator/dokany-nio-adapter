@@ -9,12 +9,9 @@ public class ResourceManager {
 	private final AtomicLong numberOfFiles;
 	private final AtomicLong numberOfDirs;
 
-	//with Runtime.getRuntime().maxMemory() we get Heapsize -> can set the quota to this!
-
-
 	public ResourceManager() {
 		this.existingResources = new ConcurrentHashMap<>();
-		existingResources.put(MemoryPath.ROOT,new Directory("\\",0)); //TODO: set attributes correct
+		existingResources.put(MemoryPath.ROOT,new Directory("\\"));
 		this.numberOfFiles = new AtomicLong();
 		this.numberOfDirs = new AtomicLong();
 	}
@@ -60,6 +57,8 @@ public class ResourceManager {
 		numberOfFiles.set(0);
 	}
 
+
+	//with Runtime.getRuntime().maxMemory() we get Heapsize -> can set the quota to this!
 	class Quota {
 
 		private final AtomicLong bytesUsed;

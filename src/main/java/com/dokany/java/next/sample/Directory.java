@@ -4,14 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.sun.jna.platform.win32.WinNT.FILE_ATTRIBUTE_DIRECTORY;
+
 public final class Directory extends Resource {
 
 	private static final long SIZE = 4L;
 
 	private final List<Resource> resources;
 
+	public Directory(String name) {
+		this(name, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	/**
+	 * Instantiates a new directory.
+	 *
+	 * Note: Regardless of the given {@codes attributes}, {@link com.sun.jna.platform.win32.WinNT#FILE_ATTRIBUTE_DIRECTORY} is always set.
+	 *
+	 * @param name the name of the directory
+	 * @param attributes the attributes to be set on creation
+	 */
 	public Directory(String name, int attributes) {
 		super(name,attributes, SIZE);
+		attributes |= FILE_ATTRIBUTE_DIRECTORY;
 		this.resources = new ArrayList<>();
 	}
 
