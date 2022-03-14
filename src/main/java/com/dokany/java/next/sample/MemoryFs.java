@@ -50,7 +50,7 @@ public class MemoryFs implements DokanFileSystem {
 		if(r != null) {
 			return switch (r.getType()) {
 				case FILE -> handleExistingFile(path, (File) r, crtDspstn, createOptions, fileAttributes);
-				case DIR -> handleExistingDir(path, (Directory) r, crtDspstn, createOptions, fileAttributes);
+				case DIR -> handleExistingDir(path, (Directory) r, crtDspstn, createOptions, fileAttributes, dokanFileInfo);
 			};
 		} else {
 			return switch (createOptions & CreateOptions.FILE_DIRECTORY_FILE) {
@@ -83,7 +83,12 @@ public class MemoryFs implements DokanFileSystem {
 		};
 	}
 
-	private int handleExistingDir(MemoryPath path, Directory r, CreateDisposition createDisposition, int createOptions, int fileAttributes) {
+	private int handleExistingDir(MemoryPath path, Directory r, CreateDisposition createDisposition, int createOptions, int fileAttributes, DokanFileInfo dokanFileInfo) {
+		if( (createOptions & CreateOptions.FILE_NON_DIRECTORY_FILE) != 0){
+			return NTStatus.FILE_IS_A_DIRECTORY;
+		}
+
+		dokanFileInfo.setIsDirectory(true); //according to the docs, this must be set
 		return switch (createDisposition) {
 			case CREATE -> NTStatus.OBJECT_NAME_COLLISION;
 			case OPEN, OPEN_IF -> NTStatus.STATUS_SUCCESS; //TODO: do we need to do something else?

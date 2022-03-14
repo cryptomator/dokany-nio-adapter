@@ -60,6 +60,10 @@ public class DokanFileInfo extends Structure implements Structure.ByReference {
 		return isDirectory != 0;
 	}
 
+	public void setIsDirectory(boolean value) {
+		this.isDirectory = (byte) (value? 1 : 0);
+	}
+
 	public boolean getDeleteOnClose() {
 		return deleteOnClose != 0;
 	}

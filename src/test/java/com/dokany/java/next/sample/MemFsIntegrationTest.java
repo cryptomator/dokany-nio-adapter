@@ -3,15 +3,12 @@ package com.dokany.java.next.sample;
 import com.dokany.java.next.DokanException;
 import com.dokany.java.next.DokanMount;
 import com.dokany.java.next.constants.MountOptions;
-import com.sun.jna.WString;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
-import org.mockito.exceptions.base.MockitoAssertionError;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -144,7 +141,7 @@ public class MemFsIntegrationTest {
 			result = Files.list(mountPoint).collect(Collectors.toList());
 		}
 
-		Assertions.assertEquals(2,result.size());
+		Assertions.assertTrue(2 <= result.size());
 		Assertions.assertTrue(result.stream().anyMatch(p -> p.endsWith("foo")));
 		Assertions.assertTrue(result.stream().anyMatch(p -> p.endsWith("bar")));
 	}
