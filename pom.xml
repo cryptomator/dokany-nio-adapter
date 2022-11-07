@@ -18,6 +18,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>17</java.version>
 
+		<integration-api.version>1.2.0-beta1</integration-api.version>
 		<slf4j.version>2.0.3</slf4j.version>
 		<guava.version>31.1-jre</guava.version>
 		<jna.version>5.12.1</jna.version>
@@ -66,6 +67,13 @@
 	</developers>
 
 	<dependencies>
+		<!-- Integrations-API -->
+		<dependency>
+			<groupId>org.cryptomator</groupId>
+			<artifactId>integrations-api</artifactId>
+			<version>${integration-api.version}</version>
+		</dependency>
+
 		<!-- Guava -->
 		<dependency>
 			<groupId>com.google.guava</groupId>
