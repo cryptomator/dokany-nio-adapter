@@ -3,24 +3,24 @@ package org.cryptomator.frontend.dokany;
 import org.cryptomator.cryptofs.CryptoFileSystem;
 import org.cryptomator.cryptofs.CryptoFileSystemProperties;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
-import org.slf4j.impl.SimpleLogger;
+import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.Executors;
 
 public class ReadWriteCryptoFsTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
-		System.setProperty(SimpleLogger.LOG_FILE_KEY, "System.out");
-		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
-		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
 
-	public static void main(String[] args) throws IOException, DokanyMountFailedException {
+	public static void main(String[] args) throws IOException, DokanyMountFailedException, NoSuchAlgorithmException {
 		if (!MountFactory.isApplicable()) {
 			System.err.println("Dokany not installed.");
 			return;
@@ -48,8 +48,9 @@ public class ReadWriteCryptoFsTest {
 			}
 		}
 
-		CryptoFileSystemProperties props = CryptoFileSystemProperties.withPassphrase(vaultPassword)
-				.withMasterkeyFilename("masterkey.cryptomator")
+		SecureRandom csprng = SecureRandom.getInstanceStrong();
+		CryptoFileSystemProperties props = CryptoFileSystemProperties.cryptoFileSystemProperties()
+				.withKeyLoader(uri -> new MasterkeyFileAccess(new byte[0], csprng).load(vaultPath.resolve("masterkey.cryptomator"), vaultPassword))
 				.build();
 		CryptoFileSystem cryptofs = CryptoFileSystemProvider.newFileSystem(vaultPath, props);
 		Path path = cryptofs.getPath("/");

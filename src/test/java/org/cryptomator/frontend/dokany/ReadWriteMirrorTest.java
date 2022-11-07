@@ -1,7 +1,5 @@
 package org.cryptomator.frontend.dokany;
 
-import org.slf4j.impl.SimpleLogger;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -13,10 +11,9 @@ import java.util.function.Consumer;
 public class ReadWriteMirrorTest {
 
 	static {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
-		System.setProperty(SimpleLogger.LOG_FILE_KEY, "System.out");
-		System.setProperty(SimpleLogger.SHOW_DATE_TIME_KEY, "true");
-		System.setProperty(SimpleLogger.DATE_TIME_FORMAT_KEY, "HH:mm:ss:SSS");
+		System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+		System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
+		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
 
 	public static void main(String[] args) throws IOException, DokanyMountFailedException, InterruptedException {
