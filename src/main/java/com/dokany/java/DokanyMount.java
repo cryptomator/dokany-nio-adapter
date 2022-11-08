@@ -2,13 +2,10 @@ package com.dokany.java;
 
 import com.dokany.java.constants.MountError;
 import com.dokany.java.structure.DeviceOptions;
-import org.cryptomator.frontend.dokany.Mount;
-import org.cryptomator.frontend.dokany.Revealer;
 import org.cryptomator.frontend.dokany.SafeUnmountCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,7 +16,7 @@ import java.util.function.Consumer;
 /**
  * Main class to start and stop Dokany file system.
  */
-public final class DokanyMount implements Mount {
+public final class DokanyMount implements AutoCloseable{
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMount.class);
 	private static final int MOUNT_TIMEOUT_MILLIS = Integer.getInteger("org.cryptomator.frontend.dokany.mountTimeOut", 5000);
@@ -70,7 +67,8 @@ public final class DokanyMount implements Mount {
 	 * Additionally a shutdown hook invoking {@link #close()} is registered to the JVM.
 	 */
 	public void mount() throws DokanyException {
-		this.mount(ignored -> {});
+		this.mount(ignored -> {
+		});
 	}
 
 	/**
@@ -175,7 +173,6 @@ public final class DokanyMount implements Mount {
 	 *
 	 * @throws IllegalStateException if it is currently not possible to unmount the filesytsem.
 	 */
-	@Override
 	public void unmount() throws IllegalStateException {
 		if (unmountCheck.safeUnmountPossible()) {
 			close();
@@ -187,19 +184,8 @@ public final class DokanyMount implements Mount {
 	/**
 	 * Unmounts the filesystem, no matter what.
 	 */
-	@Override
 	public void unmountForced() {
 		close();
-	}
-
-
-	@Override
-	public void reveal(Revealer revealer) throws Exception {
-		if (isMounted.get()) {
-			revealer.reveal(Path.of(deviceOptions.MountPoint.toString()));
-		} else {
-			throw new IllegalStateException("Filesystem not mounted.");
-		}
 	}
 
 }
