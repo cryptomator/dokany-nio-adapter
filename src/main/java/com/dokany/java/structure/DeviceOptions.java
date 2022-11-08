@@ -13,9 +13,9 @@ import com.sun.jna.WString;
  */
 public class DeviceOptions extends Structure implements Structure.ByReference {
 	/**
-	 * Version of the Dokany features requested (version "123" is equal to Dokany version 1.2.3). Currently is 100.
+	 * Version of the Dokany features requested (version "123" is equal to Dokany version 1.2.3).
 	 */
-	public short Version = 110;
+	public short Version = 150;
 	/**
 	 * Number of threads to be used internally by Dokany library. More thread will handle more event at the same time.
 	 */
