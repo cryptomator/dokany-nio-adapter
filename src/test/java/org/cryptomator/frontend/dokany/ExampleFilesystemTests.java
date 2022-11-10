@@ -40,7 +40,7 @@ public class ExampleFilesystemTests {
 			var mountService = MountService.get().findAny().orElseThrow(() -> new MountFailedException("Did not find a mount provider"));
 			LOG.info("Using mount provider: {}", mountService.displayName());
 			try (Scanner scanner = new Scanner(System.in)) {
-				System.out.println("Enter path to the directory you want to mirror:");
+				LOG.info("Enter path to the directory you want to mirror:");
 				Path p = Paths.get(scanner.nextLine());
 				mount(mountService, p, scanner);
 			}
