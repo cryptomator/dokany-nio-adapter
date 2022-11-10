@@ -4,12 +4,8 @@ package com.dokany.java;
 import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.structure.EnumIntegerSet;
 
-public final class VolumeInformation {
-	private final int maxComponentLength;
-	private final String name;
-	private final int serialNumber;
-	private final String fileSystemName;
-	private final EnumIntegerSet<FileSystemFeature> fileSystemFeatures;
+public record VolumeInformation(int maxComponentLength, String name, int serialNumber, String fileSystemName, EnumIntegerSet<FileSystemFeature> fileSystemFeatures) {
+
 	public static final int DEFAULT_MAX_COMPONENT_LENGTH = 255;
 	public static final int DEFAULT_SERIAL_NUMBER = 305419896;
 	public static final String DEFAULT_VOLUME_NAME = "VOLUME1";
@@ -38,79 +34,4 @@ public final class VolumeInformation {
 		this(DEFAULT_MAX_COMPONENT_LENGTH, DEFAULT_VOLUME_NAME, DEFAULT_SERIAL_NUMBER, DEFAULT_FS_NAME, DEFAULT_FS_FEATURES);
 	}
 
-	@SuppressWarnings("all")
-	public int getMaxComponentLength() {
-		return this.maxComponentLength;
-	}
-
-	@SuppressWarnings("all")
-	public String getName() {
-		return this.name;
-	}
-
-	@SuppressWarnings("all")
-	public int getSerialNumber() {
-		return this.serialNumber;
-	}
-
-	@SuppressWarnings("all")
-	public String getFileSystemName() {
-		return this.fileSystemName;
-	}
-
-	@SuppressWarnings("all")
-	public EnumIntegerSet<FileSystemFeature> getFileSystemFeatures() {
-		return this.fileSystemFeatures;
-	}
-
-	@Override
-	@SuppressWarnings("all")
-	public boolean equals(final Object o) {
-		if (o == this) return true;
-		if (!(o instanceof VolumeInformation)) return false;
-		final VolumeInformation other = (VolumeInformation) o;
-		if (this.getMaxComponentLength() != other.getMaxComponentLength()) return false;
-		final Object this$name = this.getName();
-		final Object other$name = other.getName();
-		if (this$name == null ? other$name != null : !this$name.equals(other$name)) return false;
-		if (this.getSerialNumber() != other.getSerialNumber()) return false;
-		final Object this$fileSystemName = this.getFileSystemName();
-		final Object other$fileSystemName = other.getFileSystemName();
-		if (this$fileSystemName == null ? other$fileSystemName != null : !this$fileSystemName.equals(other$fileSystemName)) return false;
-		final Object this$fileSystemFeatures = this.getFileSystemFeatures();
-		final Object other$fileSystemFeatures = other.getFileSystemFeatures();
-		if (this$fileSystemFeatures == null ? other$fileSystemFeatures != null : !this$fileSystemFeatures.equals(other$fileSystemFeatures)) return false;
-		return true;
-	}
-
-	@Override
-	@SuppressWarnings("all")
-	public int hashCode() {
-		final int PRIME = 59;
-		int result = 1;
-		result = result * PRIME + this.getMaxComponentLength();
-		final Object $name = this.getName();
-		result = result * PRIME + ($name == null ? 43 : $name.hashCode());
-		result = result * PRIME + this.getSerialNumber();
-		final Object $fileSystemName = this.getFileSystemName();
-		result = result * PRIME + ($fileSystemName == null ? 43 : $fileSystemName.hashCode());
-		final Object $fileSystemFeatures = this.getFileSystemFeatures();
-		result = result * PRIME + ($fileSystemFeatures == null ? 43 : $fileSystemFeatures.hashCode());
-		return result;
-	}
-
-	@Override
-	@SuppressWarnings("all")
-	public String toString() {
-		return "VolumeInformation(maxComponentLength=" + this.getMaxComponentLength() + ", name=" + this.getName() + ", serialNumber=" + this.getSerialNumber() + ", fileSystemName=" + this.getFileSystemName() + ", fileSystemFeatures=" + this.getFileSystemFeatures() + ")";
-	}
-
-	@SuppressWarnings("all")
-	public VolumeInformation(final int maxComponentLength, final String name, final int serialNumber, final String fileSystemName, final EnumIntegerSet<FileSystemFeature> fileSystemFeatures) {
-		this.maxComponentLength = maxComponentLength;
-		this.name = name;
-		this.serialNumber = serialNumber;
-		this.fileSystemName = fileSystemName;
-		this.fileSystemFeatures = fileSystemFeatures;
-	}
 }

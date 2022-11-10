@@ -816,11 +816,11 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	@Override
 	public int getVolumeInformation(Pointer rawVolumeNameBuffer, int rawVolumeNameSize, IntByReference rawVolumeSerialNumber, IntByReference rawMaximumComponentLength, IntByReference rawFileSystemFlags, Pointer rawFileSystemNameBuffer, int rawFileSystemNameSize, DokanyFileInfo dokanyFileInfo) {
 		try {
-			rawVolumeNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getName(), rawVolumeNameSize));
-			rawVolumeSerialNumber.setValue(volumeInformation.getSerialNumber());
-			rawMaximumComponentLength.setValue(volumeInformation.getMaxComponentLength());
-			rawFileSystemFlags.setValue(volumeInformation.getFileSystemFeatures().toInt());
-			rawFileSystemNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.getFileSystemName(), rawFileSystemNameSize));
+			rawVolumeNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.name(), rawVolumeNameSize));
+			rawVolumeSerialNumber.setValue(volumeInformation.serialNumber());
+			rawMaximumComponentLength.setValue(volumeInformation.maxComponentLength());
+			rawFileSystemFlags.setValue(volumeInformation.fileSystemFeatures().toInt());
+			rawFileSystemNameBuffer.setWideString(0L, DokanyUtils.trimStrToSize(volumeInformation.name(), rawFileSystemNameSize));
 			return Win32ErrorCode.ERROR_SUCCESS.getMask();
 		} catch (Throwable t) {
 			return Win32ErrorCode.ERROR_READ_FAULT.getMask();
