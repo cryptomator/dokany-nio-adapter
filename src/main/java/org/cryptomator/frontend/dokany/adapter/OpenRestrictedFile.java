@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.adapter;
 
 import com.sun.jna.Pointer;
 

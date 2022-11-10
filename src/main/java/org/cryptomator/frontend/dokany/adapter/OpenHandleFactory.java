@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.adapter;
 
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;

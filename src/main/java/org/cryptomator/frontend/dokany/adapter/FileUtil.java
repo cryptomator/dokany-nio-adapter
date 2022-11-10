@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.adapter;
 
 import com.dokany.java.constants.AccessMask;
 import com.dokany.java.constants.CreateOptions;

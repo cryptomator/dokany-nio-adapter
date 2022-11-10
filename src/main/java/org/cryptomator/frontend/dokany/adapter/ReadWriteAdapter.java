@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.adapter;
 
 import com.dokany.java.DokanyFileSystem;
 import com.dokany.java.structure.DokanyOperations;
