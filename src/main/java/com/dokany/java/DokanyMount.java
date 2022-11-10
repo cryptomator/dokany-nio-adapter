@@ -175,7 +175,7 @@ public final class DokanyMount implements AutoCloseable{
 	 * @throws IllegalStateException if it is currently not possible to unmount the filesytsem.
 	 */
 	public void unmount() throws IllegalStateException {
-		if (unmountCheck.safeUnmountPossible()) {
+		if (unmountCheck != null && unmountCheck.safeUnmountPossible()) {
 			close();
 		} else {
 			throw new IllegalStateException("There are handles to files or directories open.");

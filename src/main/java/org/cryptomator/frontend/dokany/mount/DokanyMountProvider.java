@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dokany.java.constants.FileSystemFeature.CASE_PRESERVED_NAMES;
 import static com.dokany.java.constants.FileSystemFeature.CASE_SENSITIVE_SEARCH;
@@ -146,11 +147,11 @@ public class DokanyMountProvider implements MountService {
 					mountFlags.allocationUnitSize(),
 					mountFlags.sectorSize());
 			var volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeLabel, 0x98765432, fsName, adjustedFSFeatures);
-			OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
-			DokanyFileSystem dokanyFs = new ReadWriteAdapter(fsRoot, new LockManager(), volumeInfo, handleCheckBuilder);
+			AtomicReference<SafeUnmountCheck> safeUnmountCheck = new AtomicReference<>(null);
+			DokanyFileSystem dokanyFs = new ReadWriteAdapter(fsRoot, new LockManager(), volumeInfo, safeUnmountCheck);
 
 
-			DokanyMount mount = new DokanyMount(deviceOptions, dokanyFs, handleCheckBuilder.build());
+			DokanyMount mount = new DokanyMount(deviceOptions, dokanyFs, safeUnmountCheck.get());
 			LOG.debug("Mounting on {}: ...", deviceOptions.MountPoint);
 			try {
 				//@formatter:off

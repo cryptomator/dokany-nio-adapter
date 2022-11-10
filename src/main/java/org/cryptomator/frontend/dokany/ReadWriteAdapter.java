@@ -24,7 +24,7 @@ import com.sun.jna.ptr.LongByReference;
 import org.cryptomator.frontend.dokany.locks.DataLock;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.cryptomator.frontend.dokany.locks.PathLock;
-import org.cryptomator.frontend.dokany.mount.OpenHandleCheck;
+import org.cryptomator.frontend.dokany.mount.SafeUnmountCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +57,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.StreamSupport;
 
 
@@ -89,9 +90,9 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 	 * @param fileSystemRoot
 	 * @param lockManager
 	 * @param volumeInfo
-	 * @param handleCheckBuilder
+	 * @param safeUnmountCheck
 	 */
-	public ReadWriteAdapter(Path fileSystemRoot, LockManager lockManager, VolumeInformation volumeInfo, OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder) {
+	public ReadWriteAdapter(Path fileSystemRoot, LockManager lockManager, VolumeInformation volumeInfo, AtomicReference<SafeUnmountCheck> safeUnmountCheck) {
 		this.root = fileSystemRoot;
 		this.lockManager = lockManager;
 		this.volumeInformation = volumeInfo;
@@ -101,7 +102,7 @@ public class ReadWriteAdapter implements DokanyFileSystem {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
-		handleCheckBuilder.setFunction(fac::areNoHandlesOpen);
+		safeUnmountCheck.set(fac::areNoHandlesOpen);
 	}
 
 	@Override
