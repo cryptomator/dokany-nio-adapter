@@ -22,7 +22,7 @@
 		<slf4j.version>2.0.3</slf4j.version>
 		<guava.version>31.1-jre</guava.version>
 		<jna.version>5.12.1</jna.version>
-		<commons.cli.version>1.5.0</commons.cli.version> <!-- TODO: needed? -->
+		<commons.cli.version>1.5.0</commons.cli.version>
 
 		<!-- Test -->
 		<junit.jupiter.version>5.9.1</junit.jupiter.version>

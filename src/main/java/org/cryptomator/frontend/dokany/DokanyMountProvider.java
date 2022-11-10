@@ -75,11 +75,11 @@ public class DokanyMountProvider implements MountService {
 
 		private final Path fsRoot;
 
-		private String fsName = "DokanyFS";
+		private String fsName = VolumeInformation.DEFAULT_FS_NAME;
 		private MountOptionParser.MountOptions mountFlags;
 		private Path mountPoint;
 		private boolean readOnly = false;
-		private String volumeLabel = "Test"; //TODO: shoudl be different
+		private String volumeLabel = VolumeInformation.DEFAULT_FS_NAME;
 
 		private DokanyMountBuilder(Path fsRoot) {
 			this.fsRoot = fsRoot;
@@ -87,11 +87,10 @@ public class DokanyMountProvider implements MountService {
 
 		@Override
 		public MountBuilder setFileSystemName(String fileSystemName) {
-			if( fsName.length() > WinNT.MAX_PATH ) {
+			//see parameter nFileSystemNameSize of  https://learn.microsoft.com/de-de/windows/win32/api/fileapi/nf-fileapi-getvolumeinformationw#parameters
+			if (fsName.length() > WinNT.MAX_PATH) {
 				throw new IllegalArgumentException("File system name must be at most 260 characters long");
 			}
-			//TODO req:
-			// and https://github.com/cryptomator/cryptomator/pull/1371
 			this.fsName = fileSystemName;
 			return this;
 		}
@@ -120,6 +119,7 @@ public class DokanyMountProvider implements MountService {
 
 		@Override
 		public MountBuilder setVolumeName(String volumeName) {
+			//see parameter nVolumeNameSize of  https://learn.microsoft.com/de-de/windows/win32/api/fileapi/nf-fileapi-getvolumeinformationw#parameters
 			if (volumeName.length() > WinNT.MAX_PATH) {
 				throw new IllegalArgumentException("Volume label must be at most 260 characters long");
 			}
@@ -144,7 +144,7 @@ public class DokanyMountProvider implements MountService {
 					mountFlags.timeout(),
 					mountFlags.allocationUnitSize(),
 					mountFlags.sectorSize());
-			var volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeLabel, 0x98765432, fsName, adjustedFSFeatures); //TODO: make component length adjustable
+			var volumeInfo = new VolumeInformation(VolumeInformation.DEFAULT_MAX_COMPONENT_LENGTH, volumeLabel, 0x98765432, fsName, adjustedFSFeatures);
 			OpenHandleCheck.OpenHandleCheckBuilder handleCheckBuilder = OpenHandleCheck.getBuilder();
 			DokanyFileSystem dokanyFs = new ReadWriteAdapter(fsRoot, new LockManager(), volumeInfo, handleCheckBuilder);
 

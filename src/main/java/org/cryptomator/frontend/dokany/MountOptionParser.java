@@ -2,7 +2,6 @@ package org.cryptomator.frontend.dokany;
 
 import com.dokany.java.constants.DokanOption;
 import com.dokany.java.structure.EnumIntegerSet;
-import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;

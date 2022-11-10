@@ -29,7 +29,7 @@ public class ExampleFilesystemTests {
 		System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "HH:mm:ss.SSS");
 	}
 
-	private static final Logger LOG = LoggerFactory.getLogger(ExampleFilesystemTests.class); //TODO
+	private static final Logger LOG = LoggerFactory.getLogger(ExampleFilesystemTests.class);
 
 	/**
 	 * Mirror directory
