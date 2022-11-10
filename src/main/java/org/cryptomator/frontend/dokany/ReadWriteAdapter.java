@@ -1,7 +1,7 @@
 package org.cryptomator.frontend.dokany;
 
 import com.dokany.java.DokanyFileSystem;
-import com.dokany.java.DokanyOperations;
+import com.dokany.java.structure.DokanyOperations;
 import com.dokany.java.DokanyUtils;
 import com.dokany.java.NativeMethods;
 import com.dokany.java.constants.AccessMask;
@@ -14,7 +14,7 @@ import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
 import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.structure.FullFileInfo;
-import com.dokany.java.structure.VolumeInformation;
+import com.dokany.java.VolumeInformation;
 import com.google.common.base.CharMatcher;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;

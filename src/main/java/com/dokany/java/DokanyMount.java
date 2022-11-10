@@ -2,6 +2,7 @@ package com.dokany.java;
 
 import com.dokany.java.constants.MountError;
 import com.dokany.java.structure.DeviceOptions;
+import com.dokany.java.structure.DokanyOperations;
 import org.cryptomator.frontend.dokany.SafeUnmountCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

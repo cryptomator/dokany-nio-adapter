@@ -5,6 +5,7 @@ import com.dokany.java.constants.NtStatus;
 import com.dokany.java.constants.Win32ErrorCode;
 import com.dokany.java.structure.ByHandleFileInfo;
 import com.dokany.java.structure.DokanyFileInfo;
+import com.dokany.java.structure.DokanyOperations;
 import com.sun.jna.Callback;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
@@ -22,9 +23,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Implementation of {@link com.dokany.java.DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
+ * Implementation of {@link DokanyOperations} which connects to {@link com.dokany.java.DokanyFileSystem}.
  */
-final class DokanyOperationsProxy extends com.dokany.java.DokanyOperations {
+final class DokanyOperationsProxy extends DokanyOperations {
 
 	private final static Logger LOG = LoggerFactory.getLogger(DokanyOperationsProxy.class);
 

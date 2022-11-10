@@ -8,7 +8,7 @@ import com.dokany.java.constants.DokanOption;
 import com.dokany.java.constants.FileSystemFeature;
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.EnumIntegerSet;
-import com.dokany.java.structure.VolumeInformation;
+import com.dokany.java.VolumeInformation;
 import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.cli.ParseException;
 import org.cryptomator.frontend.dokany.locks.LockManager;

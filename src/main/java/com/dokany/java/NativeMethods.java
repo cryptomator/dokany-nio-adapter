@@ -2,6 +2,7 @@ package com.dokany.java;
 
 import com.dokany.java.structure.DeviceOptions;
 import com.dokany.java.structure.DokanyFileInfo;
+import com.dokany.java.structure.DokanyOperations;
 import com.sun.jna.Native;
 import com.sun.jna.WString;
 import com.sun.jna.ptr.IntByReference;

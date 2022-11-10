@@ -3,6 +3,7 @@ package com.dokany.java;
 import java.util.Arrays;
 import java.util.List;
 
+import com.dokany.java.structure.DokanyOperations;
 import com.sun.jna.Structure;
 
 public class Win32FindStreamData extends Structure implements DokanyOperations.Win32FindStreamDataInterface {
