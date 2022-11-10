@@ -1,14 +1,14 @@
 package org.cryptomator.frontend.dokany.mount;
 
-import com.dokany.java.Dokany;
-import com.dokany.java.DokanyException;
-import com.dokany.java.DokanyFileSystem;
-import com.dokany.java.DokanyMount;
-import com.dokany.java.constants.DokanOption;
-import com.dokany.java.constants.FileSystemFeature;
-import com.dokany.java.structure.DeviceOptions;
-import com.dokany.java.structure.EnumIntegerSet;
-import com.dokany.java.VolumeInformation;
+import org.cryptomator.frontend.dokany.internal.Dokany;
+import org.cryptomator.frontend.dokany.internal.DokanyException;
+import org.cryptomator.frontend.dokany.internal.DokanyFileSystem;
+import org.cryptomator.frontend.dokany.internal.DokanyMount;
+import org.cryptomator.frontend.dokany.internal.constants.DokanOption;
+import org.cryptomator.frontend.dokany.internal.constants.FileSystemFeature;
+import org.cryptomator.frontend.dokany.internal.structure.DeviceOptions;
+import org.cryptomator.frontend.dokany.internal.structure.EnumIntegerSet;
+import org.cryptomator.frontend.dokany.internal.VolumeInformation;
 import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.cli.ParseException;
 import org.cryptomator.frontend.dokany.adapter.ReadWriteAdapter;
@@ -28,9 +28,9 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.dokany.java.constants.FileSystemFeature.CASE_PRESERVED_NAMES;
-import static com.dokany.java.constants.FileSystemFeature.CASE_SENSITIVE_SEARCH;
-import static com.dokany.java.constants.FileSystemFeature.UNICODE_ON_DISK;
+import static org.cryptomator.frontend.dokany.internal.constants.FileSystemFeature.CASE_PRESERVED_NAMES;
+import static org.cryptomator.frontend.dokany.internal.constants.FileSystemFeature.CASE_SENSITIVE_SEARCH;
+import static org.cryptomator.frontend.dokany.internal.constants.FileSystemFeature.UNICODE_ON_DISK;
 
 /**
  * Dokany implementation of the {@link MountService} interface.

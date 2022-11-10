@@ -1,7 +1,7 @@
 package org.cryptomator.frontend.dokany.mount;
 
-import com.dokany.java.constants.DokanOption;
-import com.dokany.java.structure.EnumIntegerSet;
+import org.cryptomator.frontend.dokany.internal.constants.DokanOption;
+import org.cryptomator.frontend.dokany.internal.structure.EnumIntegerSet;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -18,14 +18,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.dokany.java.constants.DokanOption.CURRENT_SESSION;
-import static com.dokany.java.constants.DokanOption.DEBUG_MODE;
-import static com.dokany.java.constants.DokanOption.DISPATCH_DRIVER_LOGS;
-import static com.dokany.java.constants.DokanOption.ENABLE_FCB_GARBAGE_COLLECTION;
-import static com.dokany.java.constants.DokanOption.MOUNT_MANAGER;
-import static com.dokany.java.constants.DokanOption.REMOVABLE_DRIVE;
-import static com.dokany.java.constants.DokanOption.STD_ERR_OUTPUT;
-import static com.dokany.java.constants.DokanOption.WRITE_PROTECTION;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.CURRENT_SESSION;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.DEBUG_MODE;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.DISPATCH_DRIVER_LOGS;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.ENABLE_FCB_GARBAGE_COLLECTION;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.MOUNT_MANAGER;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.REMOVABLE_DRIVE;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.STD_ERR_OUTPUT;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.WRITE_PROTECTION;
 
 /**
  * Utility class for processing a string of mount options.

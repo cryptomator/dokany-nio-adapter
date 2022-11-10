@@ -1,12 +1,12 @@
 package org.cryptomator.frontend.dokany.mount;
 
-import com.dokany.java.structure.EnumIntegerSet;
+import org.cryptomator.frontend.dokany.internal.structure.EnumIntegerSet;
 import org.apache.commons.cli.ParseException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static com.dokany.java.constants.DokanOption.CURRENT_SESSION;
-import static com.dokany.java.constants.DokanOption.DEBUG_MODE;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.CURRENT_SESSION;
+import static org.cryptomator.frontend.dokany.internal.constants.DokanOption.DEBUG_MODE;
 import static org.cryptomator.frontend.dokany.mount.MountOptionParser.MountOptions;
 
 public class MountOptionParserTest {

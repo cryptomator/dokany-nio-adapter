@@ -1,11 +1,11 @@
 package org.cryptomator.frontend.dokany.adapter;
 
-import com.dokany.java.constants.AccessMask;
-import com.dokany.java.constants.CreateOptions;
-import com.dokany.java.constants.CreationDisposition;
-import com.dokany.java.constants.FileAccessMask;
-import com.dokany.java.constants.FileAttribute;
-import com.dokany.java.structure.EnumIntegerSet;
+import org.cryptomator.frontend.dokany.internal.constants.AccessMask;
+import org.cryptomator.frontend.dokany.internal.constants.CreateOptions;
+import org.cryptomator.frontend.dokany.internal.constants.CreationDisposition;
+import org.cryptomator.frontend.dokany.internal.constants.FileAccessMask;
+import org.cryptomator.frontend.dokany.internal.constants.FileAttribute;
+import org.cryptomator.frontend.dokany.internal.structure.EnumIntegerSet;
 import com.google.common.collect.Sets;
 import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinNT;
@@ -23,7 +23,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import static com.dokany.java.constants.CreationDisposition.*;
+import static org.cryptomator.frontend.dokany.internal.constants.CreationDisposition.CREATE_ALWAYS;
+import static org.cryptomator.frontend.dokany.internal.constants.CreationDisposition.CREATE_NEW;
+import static org.cryptomator.frontend.dokany.internal.constants.CreationDisposition.OPEN_ALWAYS;
+import static org.cryptomator.frontend.dokany.internal.constants.CreationDisposition.OPEN_EXISTING;
+import static org.cryptomator.frontend.dokany.internal.constants.CreationDisposition.TRUNCATE_EXISTING;
 
 public class FileUtil {
 

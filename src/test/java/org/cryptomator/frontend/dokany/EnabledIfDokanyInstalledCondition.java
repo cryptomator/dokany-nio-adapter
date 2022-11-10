@@ -1,7 +1,6 @@
 package org.cryptomator.frontend.dokany;
 
-import com.dokany.java.Dokany;
-import org.cryptomator.integrations.mount.MountService;
+import org.cryptomator.frontend.dokany.internal.Dokany;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;

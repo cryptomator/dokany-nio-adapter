@@ -8,9 +8,9 @@ module org.cryptomator.frontend.dokany {
 	requires commons.cli;
 	requires com.google.common;// TODO try to remove
 
-	opens com.dokany.java to com.sun.jna;
-	opens com.dokany.java.structure to com.sun.jna;
-	opens com.dokany.java.structure.filesecurity to com.sun.jna;
+	opens org.cryptomator.frontend.dokany.internal to com.sun.jna;
+	opens org.cryptomator.frontend.dokany.internal.structure to com.sun.jna;
+	opens org.cryptomator.frontend.dokany.internal.structure.filesecurity to com.sun.jna;
 
 	provides org.cryptomator.integrations.mount.MountService with DokanyMountProvider;
 }
