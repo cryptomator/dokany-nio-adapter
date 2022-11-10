@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.mount;
 
 public interface SafeUnmountCheck {
 

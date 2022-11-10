@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.mount;
 
 import com.dokany.java.structure.EnumIntegerSet;
 import org.apache.commons.cli.ParseException;
@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 
 import static com.dokany.java.constants.DokanOption.CURRENT_SESSION;
 import static com.dokany.java.constants.DokanOption.DEBUG_MODE;
-import static org.cryptomator.frontend.dokany.MountOptionParser.MountOptions;
+import static org.cryptomator.frontend.dokany.mount.MountOptionParser.MountOptions;
 
-public class MountUtilTest {
+public class MountOptionParserTest {
 
 	@Test
 	void testIllegalOptionString() {

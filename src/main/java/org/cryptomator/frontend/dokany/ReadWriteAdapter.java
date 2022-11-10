@@ -24,6 +24,7 @@ import com.sun.jna.ptr.LongByReference;
 import org.cryptomator.frontend.dokany.locks.DataLock;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.cryptomator.frontend.dokany.locks.PathLock;
+import org.cryptomator.frontend.dokany.mount.OpenHandleCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

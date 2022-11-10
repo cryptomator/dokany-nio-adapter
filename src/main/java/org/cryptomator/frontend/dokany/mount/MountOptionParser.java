@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.mount;
 
 import com.dokany.java.constants.DokanOption;
 import com.dokany.java.structure.EnumIntegerSet;
@@ -125,7 +125,6 @@ public class MountOptionParser {
 	}
 
 
-	//TODO: rewire sector size and alloc size
 	public static MountOptions parse(String argsString) throws ParseException, IllegalArgumentException {
 		CommandLineParser parser = DefaultParser.builder().setStripLeadingAndTrailingQuotes(true).build();
 

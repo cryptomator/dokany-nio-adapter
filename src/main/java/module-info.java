@@ -1,4 +1,4 @@
-import org.cryptomator.frontend.dokany.DokanyMountProvider;
+import org.cryptomator.frontend.dokany.mount.DokanyMountProvider;
 
 module org.cryptomator.frontend.dokany {
 	requires org.cryptomator.integrations.api;

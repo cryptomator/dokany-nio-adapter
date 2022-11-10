@@ -1,4 +1,4 @@
-package org.cryptomator.frontend.dokany;
+package org.cryptomator.frontend.dokany.mount;
 
 import com.dokany.java.Dokany;
 import com.dokany.java.DokanyException;
@@ -11,6 +11,7 @@ import com.dokany.java.structure.EnumIntegerSet;
 import com.dokany.java.VolumeInformation;
 import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.cli.ParseException;
+import org.cryptomator.frontend.dokany.ReadWriteAdapter;
 import org.cryptomator.frontend.dokany.locks.LockManager;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
