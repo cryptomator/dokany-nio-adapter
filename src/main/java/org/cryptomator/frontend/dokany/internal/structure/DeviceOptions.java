@@ -12,10 +12,13 @@ import com.sun.jna.WString;
  * Dokany mount options used to describe Dokany device behavior. This is the same structure as PDOKAN_OPTIONS (dokan.h) in the C++ version of Dokany.
  */
 public class DeviceOptions extends Structure implements Structure.ByReference {
+
+	public static short DOKANY_FEATURE_VERSION = 150;
+
 	/**
 	 * Version of the Dokany features requested (version "123" is equal to Dokany version 1.2.3).
 	 */
-	public short Version = 150;
+	public short Version = DOKANY_FEATURE_VERSION;
 	/**
 	 * Number of threads to be used internally by Dokany library. More thread will handle more event at the same time.
 	 */
