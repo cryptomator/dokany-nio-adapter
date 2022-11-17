@@ -13,6 +13,8 @@ import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.cli.ParseException;
 import org.cryptomator.frontend.dokany.adapter.ReadWriteAdapter;
 import org.cryptomator.frontend.dokany.locks.LockManager;
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountCapability;
@@ -35,6 +37,8 @@ import static org.cryptomator.frontend.dokany.internal.constants.FileSystemFeatu
 /**
  * Dokany implementation of the {@link MountService} interface.
  */
+@Priority(80)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class DokanyMountProvider implements MountService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMountProvider.class);
