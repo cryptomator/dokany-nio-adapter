@@ -40,7 +40,7 @@ public class DokanyMountProvider implements MountService {
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMountProvider.class);
 
 	private static final int SUPPORTED_API_VERSION = 150;
-	private static final int SUPPORTED_DRIVER_VERSION = 150;
+	private static final int SUPPORTED_DRIVER_VERSION = 400;
 
 	private static final EnumIntegerSet<FileSystemFeature> DEFAULT_FS_FEATURES = new EnumIntegerSet(CASE_PRESERVED_NAMES, CASE_SENSITIVE_SEARCH, UNICODE_ON_DISK);
 
