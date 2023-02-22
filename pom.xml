@@ -36,7 +36,8 @@
 		<maven.source.version>3.2.1</maven.source.version>
 		<maven.javadoc.version>3.4.1</maven.javadoc.version>
 		<maven.gpg.version>3.0.1</maven.gpg.version>
-		<dependency-check.version>7.4.0</dependency-check.version>
+		<maven.deploy.version>3.1.0</maven.deploy.version>
+		<dependency-check.version>8.1.0</dependency-check.version>
 		<jacoco.version>0.8.8</jacoco.version>
 		<nexus.staging.version>1.6.13</nexus.staging.version>
 	</properties>
