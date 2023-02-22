@@ -13,6 +13,8 @@ import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.cli.ParseException;
 import org.cryptomator.frontend.dokany.adapter.ReadWriteAdapter;
 import org.cryptomator.frontend.dokany.locks.LockManager;
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.mount.Mount;
 import org.cryptomator.integrations.mount.MountBuilder;
 import org.cryptomator.integrations.mount.MountCapability;
@@ -35,12 +37,13 @@ import static org.cryptomator.frontend.dokany.internal.constants.FileSystemFeatu
 /**
  * Dokany implementation of the {@link MountService} interface.
  */
+@Priority(80)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class DokanyMountProvider implements MountService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DokanyMountProvider.class);
 
-	private static final int SUPPORTED_API_VERSION = 150;
-	private static final int SUPPORTED_DRIVER_VERSION = 150;
+	private static final int SUPPORTED_DRIVER_VERSION = 400;
 
 	private static final EnumIntegerSet<FileSystemFeature> DEFAULT_FS_FEATURES = new EnumIntegerSet(CASE_PRESERVED_NAMES, CASE_SENSITIVE_SEARCH, UNICODE_ON_DISK);
 
@@ -52,7 +55,7 @@ public class DokanyMountProvider implements MountService {
 	@Override
 	public boolean isSupported() {
 		return Dokany.isInstalled() //
-				&& Dokany.apiVersion() >= SUPPORTED_API_VERSION //
+				&& Dokany.apiVersion() >= DeviceOptions.DOKANY_FEATURE_VERSION //
 				&& Dokany.driverVersion() >= SUPPORTED_DRIVER_VERSION;
 	}
 

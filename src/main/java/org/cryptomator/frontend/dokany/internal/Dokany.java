@@ -9,7 +9,7 @@ public class Dokany {
 		try {
 			NativeMethods.DokanVersion();
 			return true;
-		} catch (UnsatisfiedLinkError err) {
+		} catch (UnsatisfiedLinkError | NoClassDefFoundError err) {
 			return false;
 		}
 	}
@@ -21,7 +21,7 @@ public class Dokany {
 	public static long apiVersion() {
 		try {
 			return NativeMethods.DokanVersion();
-		} catch (UnsatisfiedLinkError err) {
+		} catch (UnsatisfiedLinkError | NoClassDefFoundError err) {
 			return -1L;
 		}
 	}
@@ -33,7 +33,7 @@ public class Dokany {
 	public static long driverVersion() {
 		try {
 			return NativeMethods.DokanDriverVersion();
-		} catch (UnsatisfiedLinkError err) {
+		} catch (UnsatisfiedLinkError | NoClassDefFoundError err) {
 			return -1L;
 		}
 
