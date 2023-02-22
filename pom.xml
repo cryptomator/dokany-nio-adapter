@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>dokany-nio-adapter</artifactId>
-	<version>1.3.3</version>
+	<version>2.0.0</version>
 	<description>Access resources at a given NIO path via Dokany.</description>
 	<name>Dokany-NIO Adapter</name>
 	<url>https://github.com/cryptomator/dokany-nio-adapter</url>
@@ -16,18 +16,30 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.release>11</maven.compiler.release>
+		<java.version>17</java.version>
 
-		<slf4j.version>1.7.32</slf4j.version>
-		<logback.version>1.2.5</logback.version>
-		<guava.version>30.1.1-jre</guava.version>
-		<jna.version>5.9.0</jna.version>
-		<jna-platform.version>5.9.0</jna-platform.version>
-		<commons.cli.version>1.4</commons.cli.version>
+		<integration-api.version>1.2.0</integration-api.version>
+		<slf4j.version>2.0.3</slf4j.version>
+		<guava.version>31.1-jre</guava.version>
+		<jna.version>5.12.1</jna.version>
+		<commons.cli.version>1.5.0</commons.cli.version>
 
 		<!-- Test -->
-		<junit.jupiter.version>5.7.2</junit.jupiter.version>
-		<mockito.version>3.12.4</mockito.version>
+		<junit.jupiter.version>5.9.1</junit.jupiter.version>
+		<mockito.version>4.8.1</mockito.version>
+		<cryptofs.version>2.4.5</cryptofs.version>
+
+		<!-- Build Time -->
+		<maven.compiler.version>3.10.1</maven.compiler.version>
+		<maven.surefire.version>3.0.0-M7</maven.surefire.version>
+		<maven.jar.version>3.3.0</maven.jar.version>
+		<maven.source.version>3.2.1</maven.source.version>
+		<maven.javadoc.version>3.4.1</maven.javadoc.version>
+		<maven.gpg.version>3.0.1</maven.gpg.version>
+		<maven.deploy.version>3.1.0</maven.deploy.version>
+		<dependency-check.version>8.1.0</dependency-check.version>
+		<jacoco.version>0.8.8</jacoco.version>
+		<nexus.staging.version>1.6.13</nexus.staging.version>
 	</properties>
 
 	<licenses>
@@ -56,6 +68,13 @@
 	</developers>
 
 	<dependencies>
+		<!-- Integrations-API -->
+		<dependency>
+			<groupId>org.cryptomator</groupId>
+			<artifactId>integrations-api</artifactId>
+			<version>${integration-api.version}</version>
+		</dependency>
+
 		<!-- Guava -->
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -66,13 +85,13 @@
 		<!-- JNA -->
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
+			<artifactId>jna-jpms</artifactId>
 			<version>${jna.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna-platform</artifactId>
-			<version>${jna-platform.version}</version>
+			<artifactId>jna-platform-jpms</artifactId>
+			<version>${jna.version}</version>
 		</dependency>
 
 		<!-- Apache Commons -->
@@ -113,7 +132,7 @@
 		<dependency>
 			<groupId>org.cryptomator</groupId>
 			<artifactId>cryptofs</artifactId>
-			<version>1.9.11</version>
+			<version>${cryptofs.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -122,19 +141,20 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>${maven.compiler.version}</version>
 				<configuration>
 					<showWarnings>true</showWarnings>
+					<release>${java.version}</release>
 				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
+				<version>${maven.surefire.version}</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>${maven.jar.version}</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
@@ -145,7 +165,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>${maven.source.version}</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -157,7 +177,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>${maven.javadoc.version}</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -182,7 +202,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>6.1.1</version>
+						<version>${dependency-check.version}</version>
 						<configuration>
 							<cveValidForHours>24</cveValidForHours>
 							<failBuildOnCVSS>0</failBuildOnCVSS>
@@ -211,7 +231,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.8.6</version>
+						<version>${jacoco.version}</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
@@ -237,7 +257,7 @@
 				<plugins>
 					<plugin>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
+						<version>${maven.gpg.version}</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -264,7 +284,7 @@
 				<repository>
 					<id>ossrh</id>
 					<name>Maven Central</name>
-					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+					<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 				</repository>
 			</distributionManagement>
 			<build>
@@ -272,11 +292,11 @@
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
 						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>1.6.8</version>
+						<version>${nexus.staging.version}</version>
 						<extensions>true</extensions>
 						<configuration>
 							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+							<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
 							<autoReleaseAfterClose>true</autoReleaseAfterClose>
 						</configuration>
 					</plugin>
@@ -293,6 +313,15 @@
 					<url>https://maven.pkg.github.com/cryptomator/dokany-nio-adapter</url>
 				</repository>
 			</distributionManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-deploy-plugin</artifactId>
+						<version>${maven.deploy.version}</version>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 </project>
