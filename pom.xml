@@ -20,7 +20,7 @@
 
 		<integration-api.version>1.2.0</integration-api.version>
 		<slf4j.version>2.0.3</slf4j.version>
-		<guava.version>31.1-jre</guava.version>
+		<guava.version>32.0.0-jre</guava.version>
 		<jna.version>5.12.1</jna.version>
 		<commons.cli.version>1.5.0</commons.cli.version>
 
